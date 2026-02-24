@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Local outputs
+output/
+*.log
+*.tmp
+
+# OS
+.DS_Store
