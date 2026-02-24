@@ -11,3 +11,4 @@ output/
 # OS
 .DS_Store
 test.json
+release_output/
