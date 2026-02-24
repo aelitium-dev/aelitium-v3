@@ -1,0 +1,14 @@
+{
+  "active_signing_kid": "system-2",
+  "keys": [
+    {
+      "kid": "system-2",
+      "alg": "Ed25519",
+      "public_key": "0f2cc390ae478e3e89de2c49545a1ba262cb23428d44273017452f7fe388f5e5",
+      "status": "standby",
+      "not_before": "2026-02-17T22:35:59Z",
+      "not_after": null,
+      "comment": "emergency rotation only (created, not active)"
+    }
+  ]
+}

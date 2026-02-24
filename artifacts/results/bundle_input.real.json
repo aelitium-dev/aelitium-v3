@@ -1,0 +1,17 @@
+{
+  "bundle_id": "bundle-real-20260217T205256Z",
+  "tenant": "tenant_prod_a",
+  "artifacts": [
+    {
+      "id": "artifact-01",
+      "kind": "json",
+      "path": "/tmp/aelitium_real/input/test.json",
+      "sha256": "6711b8d176d76feadd279c083d5c5a2600bd3023880583cda279deb48812d736",
+      "notes": "real export"
+    }
+  ],
+  "provenance": {
+    "generated_by": "wsl-real-input",
+    "exported_at_utc": "2026-02-17T20:52:56Z"
+  }
+}
