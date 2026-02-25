@@ -19,3 +19,7 @@
 ## Naming
 - Tags: v3.0.0-rcN only. No rcX.
 
+
+## Offline verification (third-party)
+- docs/OFFLINE_VERIFIER.md
+- ./scripts/offline_verify.sh <release_output_dir | bundle.zip>
