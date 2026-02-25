@@ -67,6 +67,17 @@ if [[ "$RC_BUNDLE" -ne 0 ]]; then
   exit 2
 fi
 
+# --- Tag integrity: if exists, must point to HEAD ---
+HEAD_SHA="$(git rev-parse HEAD)"
+TAG_SHA=""
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  TAG_SHA="$(git rev-list -n 1 "$TAG")"
+  if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
+    echo "RELEASE_STATUS=NO_GO reason=TAG_POINTS_ELSEWHERE tag=$TAG tag_sha=$TAG_SHA head_sha=$HEAD_SHA"
+    exit 2
+  fi
+fi
+
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   echo "TAG_STATUS=EXISTS tag=$TAG"
 else
