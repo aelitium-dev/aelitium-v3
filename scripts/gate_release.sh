@@ -10,6 +10,16 @@ TAG="$1"
 INPUT="$2"
 OUTDIR="release_output"
 
+if [[ -z "${TAG:-}" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=EMPTY_TAG"
+  exit 2
+fi
+
+if [[ -z "${INPUT:-}" || ! -f "$INPUT" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=INPUT_MISSING input=$INPUT"
+  exit 2
+fi
+
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
 
@@ -40,7 +50,7 @@ VK_SHA="$(sha256sum "$OUTDIR/verification_keys.json" | awk '{print $1}')"
 GIT_SHA="$(git rev-parse HEAD)"
 
 # --- Generate release metadata artifact ---
-cat > "$OUTDIR/release_metadata.json" <<EOF
+cat > "$OUTDIR/release_metadata.json" <<EOF_JSON
 {
   "tag": "$TAG",
   "ts_utc": "$TS_UTC",
@@ -55,20 +65,17 @@ cat > "$OUTDIR/release_metadata.json" <<EOF
   "verification_keys_sha256": "$VK_SHA",
   "decision": "GO"
 }
-EOF
-
-# --- Create tag only after success ---
+EOF_JSON
 
 # --- Bundle determinism (mandatory) ---
 ./scripts/bundle_determinism_check.sh || {
-  RC_BUNDLE=0
-  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc="
+  RC_BUNDLE=$?
+  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc=$RC_BUNDLE"
   exit 2
 }
 
 # --- Tag integrity: if exists, must point to HEAD ---
 HEAD_SHA="$(git rev-parse HEAD)"
-TAG_SHA=""
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   TAG_SHA="$(git rev-list -n 1 "$TAG")"
   if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
@@ -77,11 +84,12 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   fi
 fi
 
-if git rev-parse -q --verify "refs/tags/" >/dev/null; then
-  echo "TAG_STATUS=EXISTS tag="
+# --- Create tag only after success ---
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  echo "TAG_STATUS=EXISTS tag=$TAG"
 else
-  git tag ""
-  echo "TAG_STATUS=CREATED tag="
+  git tag "$TAG"
+  echo "TAG_STATUS=CREATED tag=$TAG"
 fi
 
-echo "RELEASE_STATUS=GO tag="
+echo "RELEASE_STATUS=GO tag=$TAG"
