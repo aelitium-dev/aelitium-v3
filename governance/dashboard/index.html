@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AELITIUM Governance</title>
+<style>
+body { font-family: monospace; background: #111; color: #eee; padding: 40px; }
+h1 { color: #00ffaa; }
+.badge { padding: 6px 12px; background: #222; border: 1px solid #00ffaa; }
+</style>
+</head>
+<body>
+<h1>AELITIUM Governance Dashboard</h1>
+<div class="badge">STATUS: ENTERPRISE CLOSED</div>
+<pre id="content"></pre>
+
+<script>
+fetch("STATUS.md")
+.then(r => r.text())
+.then(t => document.getElementById("content").textContent = t);
+</script>
+
+</body>
+</html>
