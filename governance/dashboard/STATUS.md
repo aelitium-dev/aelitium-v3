@@ -3,9 +3,9 @@
 ## 🔒 Current Phase
 Phase 3 — Enterprise Determinism
 
-Last tag: v3.0.0-rc2
-Last commit: 81cb70f2670e48abb3e1c72a92f44befc865671d
-Generated at: 2026-02-25T13:43:41Z
+Last tag: v3.0.0-rc3
+Last commit: b7d19737106b2fdee141f0ae4655844d2a54f968
+Generated at: 2026-02-25T15:18:43Z
 
 ---
 
