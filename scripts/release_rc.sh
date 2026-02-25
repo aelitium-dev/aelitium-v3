@@ -9,7 +9,7 @@ fi
 TAG="$1"
 INPUT="$2"
 
-./scripts/authority_status.sh
+./scripts/authority_status.sh || exit 2
 
 # hard rule: only rc tags here
 if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
