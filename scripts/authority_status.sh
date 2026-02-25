@@ -24,10 +24,15 @@ if [[ "$TREE" != "0" ]]; then
   exit 2
 fi
 
+# non-interactive ssh for git (no hang)
 GIT_SSH_COMMAND="ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=5 -i $HOME/.ssh/id_ed25519"
 
+# IMPORTANT: disable -e just for remote probe, or bash may exit before printing status
+set +e
 REMOTE_MAIN_SHA="$(GIT_SSH_COMMAND="$GIT_SSH_COMMAND" git ls-remote origin refs/heads/main 2>/dev/null | awk '{print substr($1,1,7)}')"
 RC_REMOTE=$?
+set -e
+
 echo "REMOTE_MAIN=$REMOTE_MAIN_SHA rc=$RC_REMOTE"
 
 if [[ "$RC_REMOTE" -ne 0 || -z "${REMOTE_MAIN_SHA:-}" ]]; then
