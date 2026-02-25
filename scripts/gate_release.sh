@@ -67,6 +67,11 @@ if [[ "$RC_BUNDLE" -ne 0 ]]; then
   exit 2
 fi
 
-git tag "$TAG"
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  echo "TAG_STATUS=EXISTS tag=$TAG"
+else
+  git tag "$TAG"
+  echo "TAG_STATUS=CREATED tag=$TAG"
+fi
 
 echo "RELEASE_STATUS=GO tag=$TAG"
