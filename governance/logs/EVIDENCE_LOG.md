@@ -74,3 +74,14 @@ Policy:
 
 No release without log entry.
 
+
+## 2026-02-25T22:06:15Z — RC11 + Deterministic ZIP (Authority B)
+- machine: B
+- git_commit: ab7eb67
+- authority: GO (REMOTE_MAIN == HEAD)
+- repro: PASS
+- bundle_determinism: PASS (run1 == run2)
+- tag: v3.0.0-rc11 (pushed)
+- zip_determinism: GO
+- zip_sha256: a389d6aa65762ae48889818925ef6b9a95432946c029d46191e1af1565c35060
+- offline_verify: GO
