@@ -27,3 +27,4 @@ HEAD
 .obsidian/
 governance/.obsidian/
  8a7350d (remove obsidian from repo)
+dist/
