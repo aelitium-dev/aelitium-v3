@@ -35,32 +35,32 @@ mkdir -p "$STAGE/offline_verifier" "$STAGE/payload"
 cp -a "$VERIFIER_SCRIPT" "$STAGE/offline_verifier/"
 cp -a "$PAYLOAD_DIR/." "$STAGE/payload/"
 
+# remove junk
 find "$STAGE" -type f \( -name ".DS_Store" -o -name "Thumbs.db" -o -name "*.pyc" -o -name "*.pyo" \) -delete || true
 find "$STAGE" -type d \( -name "__pycache__" -o -name ".pytest_cache" \) -prune -exec rm -rf {} + || true
 
+# normalize timestamps
 find "$STAGE" -print0 | xargs -0 touch -t "$FIXED_TOUCH_TS"
 
+# deterministic per-file manifest
 (
   cd "$STAGE"
   find . -type f -print0 | sort -z | xargs -0 sha256sum
 ) > "$OUTDIR/inputs_manifest.sha256"
-
 INPUTS_MANIFEST_SHA256="$(sha256sum "$OUTDIR/inputs_manifest.sha256" | awk '{print $1}')"
 
-# deterministic file list (relative, no leading ./)
+# deterministic file list (NO python, NO -print0)
 (
   cd "$STAGE"
-  find . -type f -print0 | sort -z | python3 - <<'PY'
-import sys
-data = sys.stdin.buffer.read().split(b"\x00")
-paths = [p.decode("utf-8") for p in data if p]
-paths = [p[2:] if p.startswith("./") else p for p in paths]
-for p in paths:
-    print(p)
-PY
+  find . -type f -print | LC_ALL=C sort | sed 's@^\./@@'
 ) > "$OUTDIR/$LIST_NAME"
 
-# build zip deterministically from the list
+if [[ ! -s "$OUTDIR/$LIST_NAME" ]]; then
+  echo "ZIP_STATUS=NO_GO reason=EMPTY_FILE_LIST"
+  exit 2
+fi
+
+# build zip deterministically from list
 (
   cd "$STAGE"
   export OUTDIR ZIP_NAME LIST_NAME
@@ -84,6 +84,7 @@ with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compressle
         zi.external_attr = (0o644 & 0xFFFF) << 16
         with open(rel, "rb") as f:
             z.writestr(zi, f.read())
+
 print("ZIP_BUILD=OK")
 PY
 )
