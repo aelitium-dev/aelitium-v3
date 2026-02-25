@@ -16,3 +16,8 @@ Clean consolidation of AELITIUM architecture.
 
 ## Status
 Initialized. Awaiting engine reconstruction.
+
+## Entry
+- docs/ENTRYPOINT.md
+- docs/SYSTEM_MAP.md
+- docs/DOCS_SYSTEM.md
