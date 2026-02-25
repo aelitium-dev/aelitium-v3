@@ -62,7 +62,7 @@ EOF
 # --- Bundle determinism (mandatory) ---
 ./scripts/bundle_determinism_check.sh || {
   RC_BUNDLE=0
-  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc="
+  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc=\"
   exit 2
 }
 
