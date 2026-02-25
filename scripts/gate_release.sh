@@ -77,11 +77,11 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   fi
 fi
 
-if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  echo "TAG_STATUS=EXISTS tag=$TAG"
+if git rev-parse -q --verify "refs/tags/" >/dev/null; then
+  echo "TAG_STATUS=EXISTS tag="
 else
-  git tag "$TAG"
-  echo "TAG_STATUS=CREATED tag=$TAG"
+  git tag ""
+  echo "TAG_STATUS=CREATED tag="
 fi
 
-echo "RELEASE_STATUS=GO tag=$TAG"
+echo "RELEASE_STATUS=GO tag="
