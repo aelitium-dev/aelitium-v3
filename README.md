@@ -21,3 +21,6 @@ Initialized. Awaiting engine reconstruction.
 - docs/ENTRYPOINT.md
 - docs/SYSTEM_MAP.md
 - docs/DOCS_SYSTEM.md
+
+## Index (single entry)
+- docs/INDEX.md
