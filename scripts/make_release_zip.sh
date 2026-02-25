@@ -4,6 +4,9 @@ umask 022
 export LC_ALL=C
 export TZ=UTC
 
+ROOT="1000 4 24 27 30 46 100 1000cd "1000 4 24 27 30 46 100 1000dirname "")/.." && pwd)"
+OUTDIR="/dist"
+
 ROOT="1000 4 24 27 30 46 100 1000pwd)"
 OUTDIR="/dist"
 ZIP_NAME="release_output.zip"
