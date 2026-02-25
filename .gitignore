@@ -17,3 +17,8 @@ release_output/
 /aelitium-v3_bundle/
 /aelitium-v3_bundle.tar.gz
 /aelitium-v3_bundle.tar.gz.sha256
+
+# Bundling artifacts
+/aelitium-v3_bundle/
+/aelitium-v3_bundle.tar.gz
+/aelitium-v3_bundle.tar.gz.sha256
