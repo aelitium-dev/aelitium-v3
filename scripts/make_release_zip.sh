@@ -4,7 +4,8 @@ umask 022
 export LC_ALL=C
 export TZ=UTC
 
-OUTDIR="dist"
+ROOT="1000 4 24 27 30 46 100 1000pwd)"
+OUTDIR="/dist"
 ZIP_NAME="release_output.zip"
 META_NAME="release_metadata.json"
 LIST_NAME="zip_file_list.txt"
