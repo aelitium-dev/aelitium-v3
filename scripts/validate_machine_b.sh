@@ -32,12 +32,15 @@ d["canonical_payload"]=d["canonical_payload"].replace("42","43")
 json.dump(d, open(p,"w",encoding="utf-8"), indent=2, ensure_ascii=False)
 PY
 
+# --- TAMPER verify (expected to fail) ---
+set +e
 python3 engine/cli.py verify \
   --manifest release_output/manifest.json \
   --evidence release_output/evidence_pack.tampered.json |& tee ~/machine_b/logs/tamper_verify.txt
 rc_tamper=${PIPESTATUS[0]}
-echo "RC_TAMPER=$rc_tamper" | tee -a ~/machine_b/logs/tamper_verify.txt
+set -e
 
+echo "RC_TAMPER=$rc_tamper" | tee -a ~/machine_b/logs/tamper_verify.txt
 echo "=== SUMMARY ==="
 echo "RC_VERIFY=$rc_verify"
 echo "RC_REPRO=$rc_repro"
