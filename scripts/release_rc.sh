@@ -17,7 +17,7 @@ if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
   exit 2
 fi
 
-./scripts/gate_release.sh "$TAG" "$INPUT"
+./scripts/gate_release.sh "" ""
 
 git push --tags
 echo "RELEASE_RC_STATUS=GO tag=$TAG"
