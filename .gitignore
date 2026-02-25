@@ -12,3 +12,8 @@ output/
 .DS_Store
 test.json
 release_output/
+
+# Bundling artifacts
+/aelitium-v3_bundle/
+/aelitium-v3_bundle.tar.gz
+/aelitium-v3_bundle.tar.gz.sha256
