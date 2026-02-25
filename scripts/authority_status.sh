@@ -7,6 +7,11 @@ echo "HEAD=$(git rev-parse --short HEAD)"
 echo "TREE=$(git status --porcelain=v1 | wc -l | tr -d ' ')"
 echo "REMOTE_MAIN=$(git ls-remote origin refs/heads/main | awk "{print substr(\$1,1,7)}")"
 
+if [[ -z "${REMOTE_MAIN:-}" ]]; then
+  echo "AUTHORITY_STATUS=NO_GO reason=REMOTE_UNREACHABLE"
+  exit 2
+fi
+
 if [[ "${AEL_MACHINE:-}" != "B" ]]; then
   echo "AUTHORITY_STATUS=NO_GO reason=NOT_MACHINE_B"
   exit 2
