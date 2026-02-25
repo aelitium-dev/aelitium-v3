@@ -60,12 +60,11 @@ EOF
 # --- Create tag only after success ---
 
 # --- Bundle determinism (mandatory) ---
-./scripts/bundle_determinism_check.sh
-RC_BUNDLE=$?
-if [[ "$RC_BUNDLE" -ne 0 ]]; then
-  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc=$RC_BUNDLE"
+./scripts/bundle_determinism_check.sh || {
+  RC_BUNDLE=0
+  echo "RELEASE_STATUS=NO_GO reason=NON_DETERMINISTIC_BUNDLE rc="
   exit 2
-fi
+}
 
 # --- Tag integrity: if exists, must point to HEAD ---
 HEAD_SHA="$(git rev-parse HEAD)"
