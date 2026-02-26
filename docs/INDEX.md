@@ -27,4 +27,4 @@
 - engine/repro.py (if present)
 
 ## Governance evidence
-- governance/EVIDENCE_LOG.md
+- governance/logs/EVIDENCE_LOG.md
