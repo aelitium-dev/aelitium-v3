@@ -1,0 +1,23 @@
+# AELITIUM Architecture
+
+Machine A (DEV)
+- Edit
+- Commit
+- Push
+
+Machine B (AUTHORITY)
+- Pull
+- authority_status.sh
+- release_rc.sh
+- Tag creation
+- Evidence logging
+
+Engine
+- Canonicalization
+- Hashing
+- Manifest
+- Evidence
+- Repro
+
+Guarantee:
+Same input → same hash → verifiable offline.
