@@ -85,3 +85,45 @@ No release without log entry.
 - zip_determinism: GO
 - zip_sha256: a389d6aa65762ae48889818925ef6b9a95432946c029d46191e1af1565c35060
 - offline_verify: GO
+
+## 2026-02-26 23:53:11Z — Governance consolidation (CORE + Reference sealing)
+
+- CORE canonical docs created:
+  C:\Users\CATARINA-AELITIUM\AELITIUM_CORE_CLEAN\_CONSOLIDATED\00_CANONICAL\
+  (6 files: CANONICAL_INDEX, SYSTEM_MAP, OPERATOR_GUIDE, PHASES_0_to_4, PRODUCTS_3_OPTIONS, GOVERNANCE_MODEL)
+
+- Reference demo sealed (ARCHIVED_REFERENCE) with inventory + SHA256:
+  C:\Users\CATARINA-AELITIUM\AELITIUM_CORE_CLEAN\_CONSOLIDATED\20_NOTES_HIGH_SIGNAL\ΛELITIUM_TECH_REF\aelitium-demo\
+  Files: ARCHIVE_STAMP.txt, INVENTORY_FILES.csv, INVENTORY_FILES.sha256
+
+- Policy confirmed: official engine = aelitium-v3 only; everything else is reference/archive.
+
+
+---
+
+# Release Entry Template (Canonical)
+
+## YYYY-MM-DDTHH:MM:SSZ — Release vX.Y.Z
+
+Machine A:
+- Determinism: PASS / FAIL
+- Hash run1:
+- Hash run2:
+
+Machine B:
+- Verify: PASS / FAIL
+- Repro: PASS / FAIL
+- Tamper test (expected INVALID): PASS / FAIL
+
+Gate:
+- Result: PASS / FAIL
+- Tag created: yes / no
+
+Git:
+- Tree clean: yes / no
+
+Notes:
+- Any deviation must be documented.
+- If any CRITICAL fails → release invalid.
+
+---
