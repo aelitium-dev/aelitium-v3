@@ -134,3 +134,22 @@ Notes:
 - reason: DIRTY_GIT_TREE
 - action: commit canonical docs/inputs and ignore runtime artifacts, then re-run gate.
 
+
+## 2026-02-27T00:20:21Z — Gate GO v0.1.0 (tag created)
+
+Gate:
+- Result: GO
+- Tag: v0.1.0
+
+Determinism (bundle script):
+- BUNDLE_SHA_RUN1=1daf9b8cc3b9d4700283bf526e4230b53c5899da3036fc6da5e04c36c3978646
+- BUNDLE_SHA_RUN2=1daf9b8cc3b9d4700283bf526e4230b53c5899da3036fc6da5e04c36c3978646
+
+Authority checks (Machine B):
+- Verify: STATUS=VALID rc=0
+- Repro: PASS hash=44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a rc=0
+- Tamper: STATUS=INVALID rc=2 (expected)  [validated in this cycle]
+
+Input:
+- inputs/minimal_input_v1.json sha256=34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413
+
