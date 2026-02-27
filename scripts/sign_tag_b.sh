@@ -54,20 +54,23 @@ python3 scripts/validate_evidence_log.py --tag "$TAG" --log "$LOG" >/dev/null ||
   exit 2
 }
 
-# Require ssh signing verification to be possible on Machine B
-# (Machine B should set: gpg.format=ssh and gpg.ssh.allowedSignersFile)
-if ! git config --global --get gpg.format >/dev/null; then
-  echo "SIGN_STATUS=NO_GO reason=GIT_GPG_FORMAT_NOT_SET"
-  exit 2
-fi
+# Enforce repo-provided allowed signers for ssh signature verification (Machine B local config)
+git config --local gpg.format ssh
+git config --local gpg.ssh.allowedSignersFile "$ALLOW"
 
-# Create *annotated* signed tag (SSH signing)
+# Require ssh-agent + key loaded (fail-closed)
+ssh-add -l >/dev/null 2>&1 || {
+  echo "SIGN_STATUS=NO_GO reason=SSH_AGENT_OR_KEY_MISSING"
+  exit 2
+}
+
+# Create annotated signed tag (SSH signing via git's ssh signing)
 git tag -s -a "$TAG" -m "AELITIUM release $TAG"
 
-# Verify signature locally before pushing
+# Verify tag signature immediately (offline)
 git tag -v "$TAG" >/dev/null
 
-# Push tag to remote (authority action)
+# Push only the tag
 git push origin "refs/tags/$TAG"
 
 echo "SIGN_STATUS=GO tag=$TAG"
