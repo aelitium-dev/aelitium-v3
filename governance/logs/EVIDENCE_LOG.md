@@ -153,3 +153,48 @@ Authority checks (Machine B):
 Input:
 - inputs/minimal_input_v1.json sha256=34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413
 
+## EVIDENCE_ENTRY v1 | tag=v0.1.0
+```json
+{
+  "schema": "evidence_entry_v1",
+  "tag": "v0.1.0",
+  "ts_utc": "2026-02-27T00:20:21Z",
+  "input_sha256": "34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413",
+  "manifest_sha256": "4ac6d98e5b6c629b042d49b4875d6696081b019c9a929c9f8c985c3b9575984b",
+  "evidence_sha256": "237d44c22b8c9b10b19a20c8bccc6808969e994672bcf11d0d0ccf19bf458f4e",
+  "verification_keys_sha256": "4096f8f49e938576a5aa15e587b3f56b052b5c4ec60b4c95a745e84f363414e5",
+  "bundle_sha_run1": "1daf9b8cc3b9d4700283bf526e4230b53c5899da3036fc6da5e04c36c3978646",
+  "bundle_sha_run2": "1daf9b8cc3b9d4700283bf526e4230b53c5899da3036fc6da5e04c36c3978646",
+  "verify_rc": 0,
+  "repro_rc": 0,
+  "tamper_rc": 2,
+  "machine_role": "B",
+  "machine_id": "AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
+  "sync_mode": "remote",
+  "bundle_sha256": null,
+  "x_legacy_source": "2026-02-27 Gate GO section"
+}
+```
+
+## EVIDENCE_ENTRY v1 | tag=v0.1.1-rc1
+```json
+{
+  "schema": "evidence_entry_v1",
+  "tag": "v0.1.1-rc1",
+  "ts_utc": "2026-02-27T16:21:51Z",
+  "input_sha256": "a2ed6bd84dd218b28fb3b808c6e56c9255872fc1fa1dc1821c78846f57400d6e",
+  "manifest_sha256": "4ac6d98e5b6c629b042d49b4875d6696081b019c9a929c9f8c985c3b9575984b",
+  "evidence_sha256": "237d44c22b8c9b10b19a20c8bccc6808969e994672bcf11d0d0ccf19bf458f4e",
+  "verification_keys_sha256": "4096f8f49e938576a5aa15e587b3f56b052b5c4ec60b4c95a745e84f363414e5",
+  "bundle_sha_run1": "f1b0ab2f28dd32b94f8074ae6a4f1fd4311dcd35321786693cf2e0698723689f",
+  "bundle_sha_run2": "f1b0ab2f28dd32b94f8074ae6a4f1fd4311dcd35321786693cf2e0698723689f",
+  "verify_rc": 0,
+  "repro_rc": 0,
+  "tamper_rc": 2,
+  "machine_role": "B",
+  "machine_id": "AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
+  "sync_mode": "remote",
+  "bundle_sha256": null,
+  "x_tag_sig_fpr": "SHA256:/28eDKiHP8hmW/TEyTO9aacmw+7p11pOB3sF09EVuwo"
+}
+```
