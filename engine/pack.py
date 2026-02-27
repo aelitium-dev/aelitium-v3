@@ -2,17 +2,21 @@ import json
 import os
 from canonical import canonicalize_and_hash
 
+EXPECTED_INPUT_KEYS = {"schema_version", "payload"}
+
 
 def _load_input(input_path: str) -> dict:
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Minimal schema validation (fail-closed)
+    # Explicit schema enforcement (fail-closed).
     if not isinstance(data, dict):
         raise ValueError("input must be a JSON object")
-    if data.get("schema_version") != "input_v1":
+    if set(data.keys()) != EXPECTED_INPUT_KEYS:
+        raise ValueError("input must contain exactly: schema_version,payload")
+    if data["schema_version"] != "input_v1":
         raise ValueError("schema_version must be input_v1")
-    payload = data.get("payload")
+    payload = data["payload"]
     if not isinstance(payload, dict):
         raise ValueError("payload must be an object")
 

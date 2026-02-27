@@ -9,6 +9,7 @@ fi
 TAG="$1"
 INPUT="$2"
 OUTDIR="release_output"
+EVIDENCE_LOG_PATH="${AEL_EVIDENCE_LOG_PATH:-governance/logs/EVIDENCE_LOG.md}"
 
 if [[ -z "${TAG:-}" ]]; then
   echo "RELEASE_STATUS=NO_GO reason=EMPTY_TAG"
@@ -19,6 +20,12 @@ if [[ -z "${INPUT:-}" || ! -f "$INPUT" ]]; then
   echo "RELEASE_STATUS=NO_GO reason=INPUT_MISSING input=$INPUT"
   exit 2
 fi
+
+# --- Evidence log enforcement (fail-closed, pre-tag) ---
+python3 scripts/validate_evidence_log.py --tag "$TAG" --log "$EVIDENCE_LOG_PATH" || {
+  echo "RELEASE_STATUS=NO_GO reason=EVIDENCE_INVALID tag=$TAG log=$EVIDENCE_LOG_PATH"
+  exit 2
+}
 
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
@@ -74,22 +81,65 @@ EOF_JSON
   exit 2
 }
 
-# --- Tag integrity: if exists, must point to HEAD ---
-HEAD_SHA="$(git rev-parse HEAD)"
-if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  TAG_SHA="$(git rev-list -n 1 "$TAG")"
-  if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
-    echo "RELEASE_STATUS=NO_GO reason=TAG_POINTS_ELSEWHERE tag=$TAG tag_sha=$TAG_SHA head_sha=$HEAD_SHA"
-    exit 2
-  fi
+# --- Signed tag enforcement (SSH signing, fail-closed) ---
+SIGNINGKEY_PUB="$(git config --global --get user.signingkey || true)"
+ALLOWED_SIGNERS="$(git config --global --get gpg.ssh.allowedSignersFile || true)"
+GPG_FORMAT="$(git config --global --get gpg.format || true)"
+
+if [[ "$GPG_FORMAT" != "ssh" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=GPG_FORMAT_NOT_SSH"
+  exit 2
 fi
 
-# --- Create tag only after success ---
-if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  echo "TAG_STATUS=EXISTS tag=$TAG"
-else
-  git tag "$TAG"
-  echo "TAG_STATUS=CREATED tag=$TAG"
+if [[ -z "$SIGNINGKEY_PUB" || ! -f "$SIGNINGKEY_PUB" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=SIGNINGKEY_PUB_MISSING path=$SIGNINGKEY_PUB"
+  exit 2
 fi
+
+if [[ -z "$ALLOWED_SIGNERS" || ! -f "$ALLOWED_SIGNERS" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=ALLOWED_SIGNERS_MISSING path=$ALLOWED_SIGNERS"
+  exit 2
+fi
+
+if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=SSH_AGENT_NOT_RUNNING hint='eval \"\$(ssh-agent -s)\"; ssh-add ~/.ssh/aelitium_release_signing'"
+  exit 2
+fi
+
+if ! ssh-add -l >/dev/null 2>&1; then
+  echo "RELEASE_STATUS=NO_GO reason=SSH_AGENT_NO_KEYS hint='ssh-add ~/.ssh/aelitium_release_signing'"
+  exit 2
+fi
+
+REQ_KEY="$(awk '{print $1" "$2}' "$SIGNINGKEY_PUB")"
+if ! ssh-add -L 2>/dev/null | awk '{print $1" "$2}' | grep -Fxq "$REQ_KEY"; then
+  echo "RELEASE_STATUS=NO_GO reason=SIGNING_KEY_NOT_LOADED key=$SIGNINGKEY_PUB"
+  exit 2
+fi
+
+if git show-ref --tags --quiet --verify "refs/tags/$TAG"; then
+  echo "RELEASE_STATUS=NO_GO reason=TAG_ALREADY_EXISTS_LOCAL tag=$TAG"
+  exit 2
+fi
+
+if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+  echo "RELEASE_STATUS=NO_GO reason=TAG_ALREADY_EXISTS_REMOTE tag=$TAG"
+  exit 2
+fi
+
+TARGET_COMMIT="$(git rev-parse HEAD)"
+if [[ ! "$TARGET_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "RELEASE_STATUS=NO_GO reason=INVALID_TARGET_COMMIT_SHA"
+  exit 2
+fi
+
+git tag -s -a "$TAG" -m "AELITIUM release $TAG" "$TARGET_COMMIT"
+git tag -v "$TAG" >/dev/null 2>&1 || {
+  echo "RELEASE_STATUS=NO_GO reason=TAG_SIGNATURE_INVALID tag=$TAG"
+  exit 2
+}
+
+git push origin "$TAG"
+echo "TAG_SIGN_STATUS=OK tag=$TAG commit=$TARGET_COMMIT"
 
 echo "RELEASE_STATUS=GO tag=$TAG"

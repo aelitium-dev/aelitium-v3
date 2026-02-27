@@ -7,14 +7,14 @@
 ## Release (Machine B / authority)
 1) Ensure identity context:
    - `echo "DISTRO=$WSL_DISTRO_NAME MACHINE=$AEL_MACHINE"`
+   - `AEL_MACHINE` is informational only; authority is enforced by `scripts/authority_status.sh` via `governance/authority/machine_b.identity.json`.
 2) Sync and verify repo:
    - `git fetch origin`
    - `git reset --hard origin/main`
    - `git status --porcelain=v1` must be empty
 3) Run gate (only authority creates tags):
    - `./scripts/gate_release.sh <tag> tests/fixtures/input_min.json`
-4) Push tag:
-   - `git push --tags`
+4) Gate creates and pushes a signed tag automatically.
 
 ## Naming
 - Tags: v3.0.0-rcN only. No rcX.

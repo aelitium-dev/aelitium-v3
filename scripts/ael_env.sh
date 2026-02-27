@@ -1,5 +1,6 @@
 # Source this in ~/.bashrc for explicit trust context.
-# AEL_MACHINE must be A or B. No implicit fallback.
+# AEL_MACHINE controls prompt color only; authority decisions are made by
+# scripts/authority_status.sh identity policy, not by this env var.
 
 if [[ -z "${AEL_MACHINE:-}" ]]; then
   export AEL_MACHINE="UNKNOWN"

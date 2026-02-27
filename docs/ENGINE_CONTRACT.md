@@ -110,7 +110,7 @@ The engine MUST:
 * Reject placeholders
 * Reject missing fields
 * Reject schema mismatch
-* Reject non-canonical JSON
+* Reject invalid/non-JSON canonical payload
 * Reject environment entropy
 * Never depend on system clock
 * Never depend on external APIs
@@ -121,7 +121,7 @@ The engine MUST:
 
 The deterministic boundary includes:
 
-* Canonical JSON encoding
+* Canonical JSON encoding (semantic re-canonicalization on verify)
 * Stable key ordering
 * Fixed hash algorithm (SHA256)
 * Defined encoding (UTF-8)
