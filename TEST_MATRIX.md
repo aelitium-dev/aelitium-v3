@@ -10,6 +10,8 @@ If any CRITICAL test fails, Phase 4 is blocked.
 - PASS: run1 hash == run2 hash
 
 2) Tamper detection
+
+NOTE: verify uses --manifest and --evidence (not --input).
 - Modify bundle bytes
 - PASS: verify => INVALID
 
