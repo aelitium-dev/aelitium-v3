@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AELITIUM — Deterministic Releases (Mock)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 820px; margin: 40px auto; line-height: 1.4; }
+    code { background: #f3f3f3; padding: 2px 6px; border-radius: 6px; }
+    .box { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <h1>AELITIUM</h1>
+  <p>Deterministic bundle + offline verification + fail-closed release gate.</p>
+
+  <div class="box">
+    <h2>What you get</h2>
+    <ul>
+      <li>2 runs = same hash (determinism)</li>
+      <li>Tamper ⇒ INVALID</li>
+      <li>Machine B verifies Machine A artifacts</li>
+      <li>No release without Evidence Log</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h2>Canonical commands</h2>
+    <p><code>./scripts/bundle_determinism_check.sh inputs/minimal_input_v1.json</code></p>
+    <p><code>python3 engine/cli.py pack --input inputs/minimal_input_v1.json --out artifacts/results/bundle.ael</code></p>
+    <p><code>python3 engine/cli.py verify --manifest bundle.ael/manifest.json --evidence bundle.ael/evidence_pack.json</code></p>
+    <p><code>./scripts/gate_release.sh vX.Y.Z inputs/minimal_input_v1.json</code></p>
+  </div>
+
+  <p><small>This page is a local mock. Source of truth is the repo.</small></p>
+</body>
+</html>
