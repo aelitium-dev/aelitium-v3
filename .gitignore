@@ -28,3 +28,8 @@ HEAD
 governance/.obsidian/
  8a7350d (remove obsidian from repo)
 dist/
+
+# AELITIUM runtime artifacts (generated; not source-of-truth)
+artifacts/results/
+release_output/
+output/
