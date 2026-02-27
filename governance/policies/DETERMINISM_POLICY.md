@@ -4,7 +4,8 @@
 Two consecutive `repro` executions MUST produce identical hashes.
 
 ## Rule 2 — Tamper Detection
-Any modification of canonical_payload MUST result in rc=2.
+Any semantic modification of canonical_payload MUST result in rc=2.
+Text-only reformatting (key order/whitespace) is accepted if canonicalized content is identical.
 
 ## Rule 3 — No Entropy
 Engine MUST NOT:
@@ -14,6 +15,7 @@ Engine MUST NOT:
 - Depend on environment variables
 
 ## Rule 4 — Canonical Boundary
-Only canonical JSON (sorted keys, fixed separators, UTF-8) is valid.
+Verification is based on canonical JSON (sorted keys, fixed separators, UTF-8)
+after semantic re-canonicalization.
 
 Violation of any rule = INVALID release.

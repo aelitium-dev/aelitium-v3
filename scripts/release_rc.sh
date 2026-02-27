@@ -22,5 +22,4 @@ if [[ -z "$INPUT" || ! -f "$INPUT" ]]; then
 fi
 
 ./scripts/gate_release.sh "$TAG" "$INPUT"
-git push --tags
 echo "RELEASE_RC_STATUS=GO tag=$TAG"
