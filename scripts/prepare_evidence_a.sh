@@ -9,6 +9,12 @@ fi
 TAG="$1"
 INPUT="$2"
 LOG="governance/logs/EVIDENCE_LOG.md"
+
+# Validator must exist (fail-closed)
+if [[ ! -f "scripts/validate_evidence_log.py" ]]; then
+  echo "PREP_STATUS=NO_GO reason=VALIDATOR_MISSING path=scripts/validate_evidence_log.py"
+  exit 2
+fi
 OUTDIR="release_output"
 
 # Hard rules
