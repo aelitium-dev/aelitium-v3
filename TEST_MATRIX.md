@@ -1,5 +1,7 @@
 # AELITIUM Test Matrix (CRITICAL)
 
+Canonical test matrix location: `governance/TEST_MATRIX.md`.
+
 These tests are fail-closed.
 If any CRITICAL test fails, Phase 4 is blocked.
 
@@ -26,7 +28,7 @@ NOTE: verify uses --manifest and --evidence (not --input).
 
 5) Evidence mandatory
 - Every release/tag MUST have a log entry
-- PASS: evidence entry exists before/with tag
+- PASS: evidence has machine_role=A (pre-sign) and machine_role=B (authority attestation)
 
 6) Clean tree on release
 - PASS: git status is clean at tagging time
@@ -41,4 +43,3 @@ NOTE: verify uses --manifest and --evidence (not --input).
 
 - Determinism:
   scripts/bundle_determinism_check.sh
-

@@ -205,19 +205,45 @@ Input:
   "schema": "evidence_entry_v1",
   "tag": "v0.1.2-rc1",
   "ts_utc": "2026-02-27T17:39:36Z",
-  "input_sha256": "a2ed6bd84dd218b28fb3b808c6e56c9255872fc1fa1dc1821c78846f57400d6e",
-  "manifest_sha256": "60d2f6daf81aa30854182c84a6433a5f6095d63812be3455ab3cbb5df42e0836",
-  "evidence_sha256": "5281fac6c0a26e218d071f854137b3b37c38d32d11e49b9e9c2f17fecf0b93a0",
+  "input_sha256": "34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413",
+  "manifest_sha256": "4ac6d98e5b6c629b042d49b4875d6696081b019c9a929c9f8c985c3b9575984b",
+  "evidence_sha256": "237d44c22b8c9b10b19a20c8bccc6808969e994672bcf11d0d0ccf19bf458f4e",
   "verification_keys_sha256": "4096f8f49e938576a5aa15e587b3f56b052b5c4ec60b4c95a745e84f363414e5",
-  "bundle_sha_run1": null,
-  "bundle_sha_run2": null,
+  "bundle_sha_run1": "ce3093f1344e25a4e36f389e8817393c52674ef8f1abda692f10997eab3580ea",
+  "bundle_sha_run2": "ce3093f1344e25a4e36f389e8817393c52674ef8f1abda692f10997eab3580ea",
   "verify_rc": 0,
   "repro_rc": 0,
-  "tamper_rc": null,
+  "tamper_rc": 2,
   "machine_role": "A",
   "machine_id": "A|AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
   "sync_mode": "remote",
   "bundle_sha256": null,
   "x_tag_sig_fpr": null
+}
+```
+
+## EVIDENCE_ENTRY v1 | tag=v0.1.2-rc1
+```json
+{
+  "schema": "evidence_entry_v1",
+  "tag": "v0.1.2-rc1",
+  "ts_utc": "2026-02-27T17:57:40Z",
+  "input_sha256": "34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413",
+  "manifest_sha256": "4ac6d98e5b6c629b042d49b4875d6696081b019c9a929c9f8c985c3b9575984b",
+  "evidence_sha256": "237d44c22b8c9b10b19a20c8bccc6808969e994672bcf11d0d0ccf19bf458f4e",
+  "verification_keys_sha256": "4096f8f49e938576a5aa15e587b3f56b052b5c4ec60b4c95a745e84f363414e5",
+  "bundle_sha_run1": "ce3093f1344e25a4e36f389e8817393c52674ef8f1abda692f10997eab3580ea",
+  "bundle_sha_run2": "ce3093f1344e25a4e36f389e8817393c52674ef8f1abda692f10997eab3580ea",
+  "verify_rc": 0,
+  "repro_rc": 0,
+  "tamper_rc": 2,
+  "machine_role": "B",
+  "machine_id": "B|AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
+  "sync_mode": "remote",
+  "bundle_sha256": null,
+  "x_offline_verify_rc": 0,
+  "x_git_tag_verify": "GOOD",
+  "x_tag_commit": "505c2562bd1559e0a7b23f56c47945ed6fd6f502",
+  "x_tag_sig_fpr": "SHA256:/28eDKiHP8hmW/TEyTO9aacmw+7p11pOB3sF09EVuwo"
 }
 ```

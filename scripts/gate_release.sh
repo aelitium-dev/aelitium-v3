@@ -9,6 +9,7 @@ fi
 TAG="$1"
 INPUT="$2"
 OUTDIR="release_output"
+EVIDENCE_LOG_PATH="${AEL_EVIDENCE_LOG_PATH:-governance/logs/EVIDENCE_LOG.md}"
 
 if [[ -z "${TAG:-}" ]]; then
   echo "RELEASE_STATUS=NO_GO reason=EMPTY_TAG"
@@ -19,6 +20,15 @@ if [[ -z "${INPUT:-}" || ! -f "$INPUT" ]]; then
   echo "RELEASE_STATUS=NO_GO reason=INPUT_MISSING input=$INPUT"
   exit 2
 fi
+
+# --- Evidence validation is mandatory (fail-closed) ---
+python3 scripts/validate_evidence_log.py \
+  --tag "$TAG" \
+  --log "$EVIDENCE_LOG_PATH" \
+  --required-machine-role A >/dev/null || {
+  echo "RELEASE_STATUS=NO_GO reason=EVIDENCE_INVALID rc=2 tag=$TAG log=$EVIDENCE_LOG_PATH"
+  exit 2
+}
 
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"

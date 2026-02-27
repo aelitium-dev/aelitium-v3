@@ -52,8 +52,27 @@ if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
   exit 2
 fi
 
-# Run governed pipeline (must NOT create tags)
-./scripts/gate_release.sh "$TAG" "$INPUT"
+# Run governed pipeline (A prepares evidence only; no tag operations here)
+rm -rf "$OUTDIR"
+mkdir -p "$OUTDIR"
+python3 engine/cli.py pack --input "$INPUT" --out "$OUTDIR"
+python3 engine/cli.py verify --manifest "$OUTDIR/manifest.json" --evidence "$OUTDIR/evidence_pack.json" >/dev/null
+python3 engine/cli.py repro --input "$INPUT" >/dev/null
+
+DET_OUT="$(./scripts/test_determinism.sh "$INPUT")"
+RUN1_SHA="$(printf '%s\n' "$DET_OUT" | awk -F= '/^BUNDLE_SHA_RUN1=/{print $2}' | tail -n1)"
+RUN2_SHA="$(printf '%s\n' "$DET_OUT" | awk -F= '/^BUNDLE_SHA_RUN2=/{print $2}' | tail -n1)"
+if [[ -z "${RUN1_SHA:-}" || -z "${RUN2_SHA:-}" ]]; then
+  echo "PREP_STATUS=NO_GO reason=DETERMINISM_HASH_PARSE_FAILED"
+  exit 2
+fi
+
+TAMP_OUT="$(./scripts/test_tamper.sh "$INPUT")"
+TAMPER_RC="$(printf '%s\n' "$TAMP_OUT" | awk -F= '/^TAMPER_RC=/{print $2}' | tail -n1)"
+if [[ "$TAMPER_RC" != "2" ]]; then
+  echo "PREP_STATUS=NO_GO reason=TAMPER_TEST_FAILED rc=${TAMPER_RC:-NA}"
+  exit 2
+fi
 
 # Collect required hashes from release_output
 TS_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -79,11 +98,11 @@ cat >> "$LOG" <<EOF_ENTRY
   "manifest_sha256": "$MANIFEST_SHA",
   "evidence_sha256": "$EVIDENCE_SHA",
   "verification_keys_sha256": "$KEYS_SHA",
-  "bundle_sha_run1": null,
-  "bundle_sha_run2": null,
+  "bundle_sha_run1": "$RUN1_SHA",
+  "bundle_sha_run2": "$RUN2_SHA",
   "verify_rc": 0,
   "repro_rc": 0,
-  "tamper_rc": null,
+  "tamper_rc": 2,
   "machine_role": "A",
   "machine_id": "$MACHINE_ID",
   "sync_mode": "remote",
@@ -93,7 +112,10 @@ cat >> "$LOG" <<EOF_ENTRY
 \`\`\`
 EOF_ENTRY
 
-python3 scripts/validate_evidence_log.py --tag "$TAG" --log "$LOG" >/dev/null
+python3 scripts/validate_evidence_log.py \
+  --tag "$TAG" \
+  --log "$LOG" \
+  --required-machine-role A >/dev/null
 echo "PREP_EVIDENCE=PASS tag=$TAG"
 
 git add "$LOG"
