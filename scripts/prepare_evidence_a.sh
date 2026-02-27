@@ -9,6 +9,7 @@ fi
 TAG="$1"
 INPUT="$2"
 LOG="governance/logs/EVIDENCE_LOG.md"
+OUTDIR="release_output"
 
 # Hard rules
 if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
@@ -35,7 +36,7 @@ if [[ "$LOCAL" != "$REMOTE" ]]; then
   exit 2
 fi
 
-# Tag must NOT exist anywhere
+# Tag must NOT exist anywhere (A never tags)
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   echo "PREP_STATUS=NO_GO reason=TAG_ALREADY_EXISTS_LOCAL tag=$TAG"
   exit 2
@@ -45,19 +46,20 @@ if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
   exit 2
 fi
 
-# Run governed pipeline (NO TAGGING)
+# Run governed pipeline (must NOT create tags)
 ./scripts/gate_release.sh "$TAG" "$INPUT"
 
-# Collect required hashes from release_output (produced by gate_release.sh)
-OUTDIR="release_output"
+# Collect required hashes from release_output
 TS_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-INPUT_SHA="$(sha256sum "$INPUT" | awk '{print $1}')"
-MANIFEST_SHA="$(sha256sum "$OUTDIR/manifest.json" | awk '{print $1}')"
-EVIDENCE_SHA="$(sha256sum "$OUTDIR/evidence_pack.json" | awk '{print $1}')"
-KEYS_SHA="$(sha256sum "$OUTDIR/verification_keys.json" | awk '{print $1}')"
+INPUT_SHA="$(sha256sum "$INPUT" | awk "{print \$1}")"
+MANIFEST_SHA="$(sha256sum "$OUTDIR/manifest.json" | awk "{print \$1}")"
+EVIDENCE_SHA="$(sha256sum "$OUTDIR/evidence_pack.json" | awk "{print \$1}")"
+KEYS_SHA="$(sha256sum "$OUTDIR/verification_keys.json" | awk "{print \$1}")"
 
 # Machine identity (A)
-MACHINE_ID="A|$(hostname 2>/dev/null || echo unknown)|$(tr -d '\n' </etc/machine-id 2>/dev/null || echo unknown)"
+HN="$(hostname 2>/dev/null || echo unknown)"
+MID="$(tr -d '\n' </etc/machine-id 2>/dev/null || echo unknown)"
+MACHINE_ID="A|$HN|$MID"
 
 cat >> "$LOG" <<EOF_ENTRY
 
