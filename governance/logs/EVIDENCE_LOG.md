@@ -127,3 +127,10 @@ Notes:
 - If any CRITICAL fails → release invalid.
 
 ---
+
+## 2026-02-27T00:18:54Z — Gate attempt v0.1.0
+
+- gate_release.sh result: NO_GO
+- reason: DIRTY_GIT_TREE
+- action: commit canonical docs/inputs and ignore runtime artifacts, then re-run gate.
+
