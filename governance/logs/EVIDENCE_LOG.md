@@ -198,3 +198,26 @@ Input:
   "x_tag_sig_fpr": "SHA256:/28eDKiHP8hmW/TEyTO9aacmw+7p11pOB3sF09EVuwo"
 }
 ```
+
+## EVIDENCE_ENTRY v1 | tag=v0.1.2-rc1
+```json
+{
+  "schema": "evidence_entry_v1",
+  "tag": "v0.1.2-rc1",
+  "ts_utc": "2026-02-27T17:39:36Z",
+  "input_sha256": "a2ed6bd84dd218b28fb3b808c6e56c9255872fc1fa1dc1821c78846f57400d6e",
+  "manifest_sha256": "60d2f6daf81aa30854182c84a6433a5f6095d63812be3455ab3cbb5df42e0836",
+  "evidence_sha256": "5281fac6c0a26e218d071f854137b3b37c38d32d11e49b9e9c2f17fecf0b93a0",
+  "verification_keys_sha256": "4096f8f49e938576a5aa15e587b3f56b052b5c4ec60b4c95a745e84f363414e5",
+  "bundle_sha_run1": null,
+  "bundle_sha_run2": null,
+  "verify_rc": 0,
+  "repro_rc": 0,
+  "tamper_rc": null,
+  "machine_role": "A",
+  "machine_id": "A|AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
+  "sync_mode": "remote",
+  "bundle_sha256": null,
+  "x_tag_sig_fpr": null
+}
+```
