@@ -23,3 +23,27 @@ Commands:
 
 Dashboard:
 - governance/dashboard/index.html (local UI, non-authoritative)
+
+---
+
+## A/B Sync (Operational)
+
+Default (Remote):
+Machine A:
+- git push origin main --tags
+
+Machine B:
+- git fetch --all --tags
+- git checkout main
+- git pull --ff-only
+
+Authority (Offline Bundle):
+Machine A:
+- ./scripts/make_bundle_a.sh
+
+Machine B:
+- ./scripts/apply_bundle_b.sh
+
+Evidence:
+If Authority mode is used, record bundle sha256 in EVIDENCE_LOG.md.
+
