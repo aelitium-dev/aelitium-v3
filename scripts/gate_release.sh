@@ -84,12 +84,11 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   fi
 fi
 
-# --- Create tag only after success ---
+# --- Tag creation is AUTHORITY-ONLY (Machine B) ---
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  echo "TAG_STATUS=EXISTS tag=$TAG"
-else
-  git tag "$TAG"
-  echo "TAG_STATUS=CREATED tag=$TAG"
+  echo "RELEASE_STATUS=NO_GO reason=TAG_ALREADY_EXISTS tag=$TAG"
+  exit 2
 fi
 
+echo "TAG_STATUS=SKIPPED reason=AUTHORITY_ONLY tag=$TAG"
 echo "RELEASE_STATUS=GO tag=$TAG"
