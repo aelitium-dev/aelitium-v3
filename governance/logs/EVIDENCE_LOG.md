@@ -265,3 +265,13 @@ Changes included:
 - 9 new test/script files; .gitignore cleaned
 
 Next gate: EPIC-1 validation run → EPIC-2 ZIP determinism → EPIC-3 contract freeze
+
+## 2026-03-03T22:55:00Z — Machine B verification (Gate: EPIC-1 + EPIC-2)
+
+- machine: B (WSL Ubuntu-B)
+- git_commit: eeefd1cbebe5be2bc3fb2f2600ebf0eb7755dc3b
+- working_tree: CLEAN
+- full_flow: DETERMINISM=PASS DIR_VERIFY=PASS ZIP_VERIFY=PASS TAMPER=PASS
+- zip_sha256: 7561e122d8d45583682dbdb2d04020f7496d74f6bc09eb803590145d5e8f5f1d
+- unit_tests: 20/20 PASS
+
