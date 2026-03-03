@@ -15,7 +15,12 @@ Clean consolidation of AELITIUM architecture.
 - tests/       → Determinism & reproducibility validation
 
 ## Status
-Initialized. Awaiting engine reconstruction.
+Foundation complete (v0.2.0 pre-release). Engine implemented, cross-machine validated.
+
+- bundle_schema: `1.1` (ed25519-v1 signatures required)
+- CLI: `aelitium pack | verify | repro` (installable via `pip install .`)
+- Tests: 20/20 PASS on Machine A and Machine B
+- Signing: Ed25519, key via env var `AEL_ED25519_PRIVKEY_B64`
 
 ## Entry
 - docs/ENTRYPOINT.md

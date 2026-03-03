@@ -1,16 +1,17 @@
 # AELITIUM Governance Dashboard
 
 ## 🔒 Current Phase
-Phase 3 — Enterprise Determinism
+Phase 4 — SDK Foundation Complete (pre-release v0.2.0)
 
-Last tag: v3.0.0-rc4
-Last commit: c65683b81b03bb16d827fffa26b89b268da849fc
-Generated at: 2026-02-25T17:05:38Z
+Last commit: b3f4d64a3cf1b3aff20fc41e8d287adfcff714bb
+Updated at: 2026-03-03T23:00:00Z
 
 ---
 
 ## 🧪 Determinism
-Repro hash: 59987e2be6fd92e2f9258f315f056ee1161f02a0090433924073d3fd9ab40abd
+ZIP SHA256 (cross-machine): 7561e122d8d45583682dbdb2d04020f7496d74f6bc09eb803590145d5e8f5f1d
+Tests: 20/20 PASS (Machine A + Machine B)
+bundle_schema: 1.1 (ed25519-v1 signatures)
 
 ---
 
@@ -18,4 +19,5 @@ Repro hash: 59987e2be6fd92e2f9258f315f056ee1161f02a0090433924073d3fd9ab40abd
 - Working tree must be clean
 - Tag must match HEAD
 - Machine B validation required
+- Signing key required (AEL_ED25519_PRIVKEY_B64 or AEL_ED25519_PRIVKEY_PATH)
 
