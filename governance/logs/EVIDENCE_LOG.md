@@ -260,7 +260,7 @@ Input:
 Changes included:
 - ed25519 signing (env-var driven, no keys in repo except test fixture bytes 0x00-0x1F)
 - offline_verify.sh: safe workdir (never mutates input)
-- bundle_schema "1.0" enforced in pack + verify
+- bundle_schema "1.1" enforced in pack + verify (ed25519-v1 signatures required)
 - installable CLI via pyproject.toml
 - 9 new test/script files; .gitignore cleaned
 
