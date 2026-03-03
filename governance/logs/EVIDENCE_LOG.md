@@ -275,5 +275,27 @@ Next gate: EPIC-1 validation run → EPIC-2 ZIP determinism → EPIC-3 contract 
 - zip_sha256: 7561e122d8d45583682dbdb2d04020f7496d74f6bc09eb803590145d5e8f5f1d
 - unit_tests: 20/20 PASS
 
-
+## EVIDENCE_ENTRY v1 | tag=v0.2.0
+```json
+{
+  "schema": "evidence_entry_v1",
+  "tag": "v0.2.0",
+  "ts_utc": "2026-03-04T00:00:00Z",
+  "input_sha256": "34d8739e7ba3cd7dab4327a0c48fce70e642b967969cad1a73f2e1713ef3d413",
+  "manifest_sha256": "3146e7ad3acc761b33730eef8c31bdb15f018a6812533db64799c270144c0b6b",
+  "evidence_sha256": "237d44c22b8c9b10b19a20c8bccc6808969e994672bcf11d0d0ccf19bf458f4e",
+  "verification_keys_sha256": "176a6d9743029f08797ab8167928782dd2952ed5846c66c6b3f93b14e81eafd5",
+  "bundle_sha_run1": "c9a5c580724a8f104d7f886c5fbc56f0644641b46e7ae89f11957f2c36556770",
+  "bundle_sha_run2": "c9a5c580724a8f104d7f886c5fbc56f0644641b46e7ae89f11957f2c36556770",
+  "verify_rc": 0,
+  "repro_rc": 0,
+  "tamper_rc": 2,
+  "machine_role": "A",
+  "machine_id": "A|AELITIUM-DEV|6cf43cdaa0784741ae3e87878fe7e009",
+  "sync_mode": "remote",
+  "bundle_sha256": null,
+  "x_git_commit": "fbe7be7a410676b0137c6dfbf49e8213b5224ede",
+  "x_working_tree": "CLEAN"
+}
+```
 
