@@ -247,3 +247,21 @@ Input:
   "x_tag_sig_fpr": "SHA256:/28eDKiHP8hmW/TEyTO9aacmw+7p11pOB3sF09EVuwo"
 }
 ```
+
+## 2026-03-03T22:30:00Z — Freeze baseline (TASK #1 — no tag, working tree clean)
+
+- machine: A
+- git_commit: 0f8d43e6d9ef11db593247d0cec581118050108e
+- type: baseline_freeze (no release tag — pre-gate checkpoint)
+- working_tree: CLEAN
+- tests: 20/20 PASS
+- full_flow: DETERMINISM=PASS DIR_VERIFY=PASS ZIP_VERIFY=PASS TAMPER=PASS
+
+Changes included:
+- ed25519 signing (env-var driven, no keys in repo except test fixture bytes 0x00-0x1F)
+- offline_verify.sh: safe workdir (never mutates input)
+- bundle_schema "1.0" enforced in pack + verify
+- installable CLI via pyproject.toml
+- 9 new test/script files; .gitignore cleaned
+
+Next gate: EPIC-1 validation run → EPIC-2 ZIP determinism → EPIC-3 contract freeze
