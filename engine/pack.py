@@ -1,6 +1,15 @@
 import json
 import os
-from canonical import canonicalize_and_hash
+from pathlib import Path
+
+if __package__ in (None, ""):
+    from canonical import canonicalize_and_hash
+    from signing import build_verification_material
+else:
+    from .canonical import canonicalize_and_hash
+    from .signing import build_verification_material
+
+BUNDLE_SCHEMA = "1.1"
 
 
 def _load_input(input_path: str) -> dict:
@@ -28,6 +37,7 @@ def pack(input_path: str, output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     manifest = {
+        "bundle_schema": BUNDLE_SCHEMA,
         "schema_version": "1.0",
         "input_schema": data["schema_version"],
         "input_hash": digest,
@@ -40,17 +50,17 @@ def pack(input_path: str, output_dir: str):
         "hash": digest,
     }
 
-    # Real structure (no textual placeholders)
-    verification_keys = {
-        "keyring_format": "none",
-        "keys": [],
-    }
+    manifest_path = Path(output_dir) / "manifest.json"
+    evidence_path = Path(output_dir) / "evidence_pack.json"
+    verification_keys_path = Path(output_dir) / "verification_keys.json"
 
-    with open(os.path.join(output_dir, "manifest.json"), "w", encoding="utf-8") as f:
+    with manifest_path.open("w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
 
-    with open(os.path.join(output_dir, "evidence_pack.json"), "w", encoding="utf-8") as f:
+    with evidence_path.open("w", encoding="utf-8") as f:
         json.dump(evidence, f, indent=2, ensure_ascii=False)
 
-    with open(os.path.join(output_dir, "verification_keys.json"), "w", encoding="utf-8") as f:
+    verification_keys = build_verification_material(manifest_path.read_bytes())
+
+    with verification_keys_path.open("w", encoding="utf-8") as f:
         json.dump(verification_keys, f, indent=2, ensure_ascii=False)

@@ -1,10 +1,14 @@
 import json
 import os
-import shutil
 import sys
 import tempfile
-from pack import pack
-from verify import verify
+
+if __package__ in (None, ""):
+    from pack import pack
+    from verify import verify
+else:
+    from .pack import pack
+    from .verify import verify
 
 RC_VALID = 0
 RC_INVALID = 2

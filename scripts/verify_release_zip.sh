@@ -32,5 +32,8 @@ with zipfile.ZipFile("$ZIP","r") as z:
 print("EXTRACT=OK")
 PY
 
-bash "$tmp/offline_verifier/offline_verify.sh" "$tmp/payload"
+(
+  cd "$tmp"
+  bash ./offline_verifier/offline_verify.sh ./payload
+)
 echo "VERIFY_ZIP_STATUS=GO"

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aelitium"
+version = "0.1.0"
+description = "Deterministic evidence bundle engine"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["cryptography>=41"]
+
+[project.scripts]
+aelitium = "engine.cli:main"
+
+[tool.setuptools]
+packages = ["engine"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+engine = ["schemas/*.json"]

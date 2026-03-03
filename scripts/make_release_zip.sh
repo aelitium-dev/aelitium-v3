@@ -5,16 +5,17 @@ export LC_ALL=C
 export TZ=UTC
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUTDIR="$ROOT/dist"
-ZIP_NAME="release_output.zip"
-META_NAME="release_metadata.json"
-LIST_NAME="zip_file_list.txt"
+OUTDIR="${AEL_ZIP_OUTDIR:-$ROOT/dist}"
+ZIP_NAME="${AEL_ZIP_NAME:-release_output.zip}"
+META_NAME="${AEL_ZIP_META_NAME:-release_metadata.json}"
+LIST_NAME="${AEL_ZIP_LIST_NAME:-zip_file_list.txt}"
 
 FIXED_TOUCH_TS="200001010000.00"
 CREATED_UTC_FIXED="2000-01-01T00:00:00Z"
 
-PAYLOAD_DIR="$ROOT/release_output"
-VERIFIER_SCRIPT="$ROOT/scripts/offline_verify.sh"
+PAYLOAD_DIR="${AEL_ZIP_PAYLOAD_DIR:-$ROOT/release_output}"
+VERIFIER_SCRIPT="${AEL_ZIP_VERIFIER_SCRIPT:-$ROOT/scripts/offline_verify.sh}"
+ENGINE_DIR="${AEL_ZIP_ENGINE_DIR:-$ROOT/engine}"
 
 if [[ ! -d "$PAYLOAD_DIR" ]]; then
   echo "ZIP_STATUS=NO_GO reason=PAYLOAD_DIR_MISSING dir=$PAYLOAD_DIR"
@@ -24,6 +25,10 @@ if [[ ! -f "$VERIFIER_SCRIPT" ]]; then
   echo "ZIP_STATUS=NO_GO reason=VERIFIER_MISSING path=$VERIFIER_SCRIPT"
   exit 2
 fi
+if [[ ! -d "$ENGINE_DIR" ]]; then
+  echo "ZIP_STATUS=NO_GO reason=ENGINE_DIR_MISSING dir=$ENGINE_DIR"
+  exit 2
+fi
 
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
@@ -31,8 +36,9 @@ mkdir -p "$OUTDIR"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
-mkdir -p "$STAGE/offline_verifier" "$STAGE/payload"
+mkdir -p "$STAGE/offline_verifier/engine" "$STAGE/payload"
 cp -a "$VERIFIER_SCRIPT" "$STAGE/offline_verifier/"
+cp -a "$ENGINE_DIR/." "$STAGE/offline_verifier/engine/"
 cp -a "$PAYLOAD_DIR/." "$STAGE/payload/"
 
 # remove junk
@@ -81,6 +87,10 @@ if not files:
 with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for rel in files:
         zi = zipfile.ZipInfo(rel, date_time=fixed_dt)
+        zi.compress_type = zipfile.ZIP_DEFLATED
+        zi.create_system = 3
+        zi.extra = b""
+        zi.comment = b""
         zi.external_attr = (0o644 & 0xFFFF) << 16
         with open(rel, "rb") as f:
             z.writestr(zi, f.read())

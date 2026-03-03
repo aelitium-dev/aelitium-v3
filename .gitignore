@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+build/
 
 # Local outputs
 output/
@@ -11,13 +13,7 @@ output/
 # OS
 .DS_Store
 test.json
-release_output/
 HEAD
-
-# Bundling artifacts
-/aelitium-v3_bundle/
-/aelitium-v3_bundle.tar.gz
-/aelitium-v3_bundle.tar.gz.sha256
 
 # Bundling artifacts
 /aelitium-v3_bundle/
@@ -26,7 +22,6 @@ HEAD
 
 .obsidian/
 governance/.obsidian/
- 8a7350d (remove obsidian from repo)
 dist/
 
 # AELITIUM runtime artifacts (generated; not source-of-truth)
