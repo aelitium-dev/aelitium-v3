@@ -36,18 +36,32 @@ aelitium pack --input input.json --out ./output/
 
 ### Behavior
 
-1. Validate schema version
-2. Normalize input (canonical JSON)
+1. Validate schema version (`input_v1`)
+2. Normalize input (canonical JSON — sorted keys, no whitespace, UTF-8)
 3. Compute SHA256 of normalized payload
-4. Generate:
+4. Sign `manifest.json` bytes with Ed25519 key (loaded from env var)
+5. Generate:
 
-   * `manifest.json`
-   * `evidence_pack.json`
-   * `verification_keys.json` (public material only)
+   * `manifest.json` — includes `bundle_schema: "1.1"`, input hash, canonicalization spec
+   * `evidence_pack.json` — canonical payload + hash
+   * `verification_keys.json` — `keyring_format: "ed25519-v1"`, public key, signature
+
+### Signing (required)
+
+`pack` requires a signing key at runtime:
+
+```bash
+export AEL_ED25519_PRIVKEY_B64=<base64-encoded 32-byte Ed25519 seed>
+# or
+export AEL_ED25519_PRIVKEY_PATH=/path/to/key.b64
+# optional
+export AEL_ED25519_KEY_ID=my-key-id
+```
 
 ### Determinism Rule
 
-Running twice with same input MUST produce identical hashes.
+Running twice with same input and same key MUST produce identical hashes.
+(Signature bytes vary per run — only hash fields are determinism-checked.)
 
 ---
 
@@ -65,10 +79,11 @@ aelitium verify --manifest manifest.json --evidence evidence_pack.json
 
 ### Behavior
 
-* Recompute hashes
-* Validate signatures
-* Validate schema version
-* Confirm structural invariants
+1. Enforce `manifest.json` and `evidence_pack.json` are in the same directory
+2. Enforce `bundle_schema: "1.1"` in manifest
+3. Recompute SHA256 of `canonical_payload` — must match `manifest.input_hash` and `evidence.hash`
+4. Validate Ed25519 signature of `manifest.json` bytes using public key in `verification_keys.json`
+5. Enforce `verification_keys.json` present with `keyring_format: "ed25519-v1"`, 1 key, 1 signature
 
 ### Exit Codes
 
