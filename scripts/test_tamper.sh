@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=./use_test_signing_key.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/use_test_signing_key.sh"
+
 if [[ $# -lt 1 ]]; then
   echo "usage: test_tamper.sh <input.json>"
   exit 2

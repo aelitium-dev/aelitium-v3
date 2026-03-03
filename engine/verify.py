@@ -1,10 +1,17 @@
 import json
 import os
 import sys
-from canonical import sha256_hash
+
+if __package__ in (None, ""):
+    from canonical import sha256_hash
+    from signing import verify_manifest_signature
+else:
+    from .canonical import sha256_hash
+    from .signing import verify_manifest_signature
 
 RC_VALID = 0
 RC_INVALID = 2
+BUNDLE_SCHEMA = "1.1"
 
 
 def _read_json(path: str):
@@ -12,12 +19,25 @@ def _read_json(path: str):
         return json.load(f)
 
 
+def _read_bytes(path: str) -> bytes:
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def verify(manifest_path: str, evidence_path: str) -> int:
     try:
-        manifest = _read_json(manifest_path)
+        manifest_dir = os.path.dirname(os.path.abspath(manifest_path))
+        evidence_dir = os.path.dirname(os.path.abspath(evidence_path))
+        if manifest_dir != evidence_dir:
+            return RC_INVALID
+
+        manifest_bytes = _read_bytes(manifest_path)
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
         evidence = _read_json(evidence_path)
 
         # Manifest invariants (fail-closed)
+        if manifest.get("bundle_schema") != BUNDLE_SCHEMA:
+            return RC_INVALID
         if manifest.get("schema_version") != "1.0":
             return RC_INVALID
         if manifest.get("hash_alg") != "sha256":
@@ -38,17 +58,17 @@ def verify(manifest_path: str, evidence_path: str) -> int:
         if recomputed != evidence_hash:
             return RC_INVALID
 
-        # Optional but expected: verification_keys.json beside manifest/evidence
-        # If present, enforce minimal structure.
-        base_dir = os.path.dirname(os.path.abspath(manifest_path))
-        vk_path = os.path.join(base_dir, "verification_keys.json")
-        if os.path.exists(vk_path):
-            vk = _read_json(vk_path)
-            if vk.get("keyring_format") != "none":
-                return RC_INVALID
-            keys = vk.get("keys")
-            if not isinstance(keys, list) or len(keys) != 0:
-                return RC_INVALID
+        # verification_keys.json is mandatory and must carry a valid
+        # signature over the exact manifest bytes written on disk.
+        vk_path = os.path.join(manifest_dir, "verification_keys.json")
+        if not os.path.exists(vk_path):
+            return RC_INVALID
+
+        vk = _read_json(vk_path)
+        try:
+            verify_manifest_signature(manifest_bytes, vk)
+        except ValueError:
+            return RC_INVALID
 
         return RC_VALID
 

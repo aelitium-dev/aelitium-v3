@@ -1,8 +1,16 @@
 import argparse
 import sys
-from pack import pack
-from verify import verify, RC_VALID
-from repro import repro
+
+if __package__ in (None, ""):
+    from pack import pack
+    from repro import repro
+    from signing import SigningConfigError
+    from verify import RC_VALID, verify
+else:
+    from .pack import pack
+    from .repro import repro
+    from .signing import SigningConfigError
+    from .verify import RC_VALID, verify
 
 
 def main() -> int:
@@ -22,20 +30,24 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if args.command == "pack":
-        pack(args.input, args.out)
-        return 0
-
-    if args.command == "verify":
-        rc = verify(args.manifest, args.evidence)
-        if rc == RC_VALID:
-            print("STATUS=VALID rc=0")
+    try:
+        if args.command == "pack":
+            pack(args.input, args.out)
             return 0
-        print("STATUS=INVALID rc=2")
-        return 2
 
-    if args.command == "repro":
-        return repro(args.input)
+        if args.command == "verify":
+            rc = verify(args.manifest, args.evidence)
+            if rc == RC_VALID:
+                print("STATUS=VALID rc=0")
+                return 0
+            print("STATUS=INVALID rc=2")
+            return 2
+
+        if args.command == "repro":
+            return repro(args.input)
+    except SigningConfigError as exc:
+        print(f"STATUS=INVALID rc=2 reason={exc}")
+        return 2
 
     return 2
 
