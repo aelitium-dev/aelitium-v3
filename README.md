@@ -1,6 +1,8 @@
 # AELITIUM
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+![tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 **Verifiable AI infrastructure.**
 
