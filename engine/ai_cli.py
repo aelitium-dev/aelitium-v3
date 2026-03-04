@@ -16,6 +16,14 @@ else:
     from engine.ai_canonical import canonicalize_ai_output
 
 
+def _out(args, text_lines: list[str], json_obj: dict) -> None:
+    if getattr(args, "json", False):
+        print(json.dumps(json_obj, sort_keys=True))
+    else:
+        for line in text_lines:
+            print(line)
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
     schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
@@ -23,12 +31,13 @@ def cmd_validate(args: argparse.Namespace) -> int:
     try:
         jsonschema.validate(instance=obj, schema=schema)
     except Exception as e:
-        print("STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION")
-        # linha curta e estável para logs
-        print(f"DETAIL={type(e).__name__}")
+        _out(args,
+             [f"STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION", f"DETAIL={type(e).__name__}"],
+             {"status": "INVALID", "rc": 2, "reason": "SCHEMA_VIOLATION",
+              "detail": type(e).__name__})
         return 2
 
-    print("STATUS=VALID rc=0")
+    _out(args, ["STATUS=VALID rc=0"], {"status": "VALID", "rc": 0})
     return 0
 
 def cmd_canonicalize(args: argparse.Namespace) -> int:
@@ -84,8 +93,9 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if actual_hash != manifest["ai_hash_sha256"]:
         return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
 
-    print("STATUS=VALID rc=0")
-    print(f"AI_HASH_SHA256={actual_hash}")
+    _out(args,
+         ["STATUS=VALID rc=0", f"AI_HASH_SHA256={actual_hash}"],
+         {"status": "VALID", "rc": 0, "ai_hash_sha256": actual_hash})
     return 0
 
 
@@ -159,9 +169,10 @@ def cmd_verify_receipt(args: argparse.Namespace) -> int:
         return fail("SIGNATURE_ERROR", type(e).__name__)
 
     h = receipt["subject_hash_sha256"]
-    print("STATUS=VALID rc=0")
-    print(f"SUBJECT_HASH_SHA256={h}")
-    print(f"RECEIPT_ID={receipt['receipt_id']}")
+    rid = receipt["receipt_id"]
+    _out(args,
+         ["STATUS=VALID rc=0", f"SUBJECT_HASH_SHA256={h}", f"RECEIPT_ID={rid}"],
+         {"status": "VALID", "rc": 0, "subject_hash_sha256": h, "receipt_id": rid})
     return 0
 
 
@@ -178,8 +189,9 @@ def cmd_pack(args: argparse.Namespace) -> int:
     (outdir / "ai_canonical.json").write_text(res.canonical_json + "\n", encoding="utf-8")
     (outdir / "ai_manifest.json").write_text(json.dumps(res.manifest, sort_keys=True) + "\n", encoding="utf-8")
 
-    print("STATUS=OK rc=0")
-    print(f"AI_HASH_SHA256={res.ai_hash_sha256}")
+    _out(args,
+         ["STATUS=OK rc=0", f"AI_HASH_SHA256={res.ai_hash_sha256}"],
+         {"status": "OK", "rc": 0, "ai_hash_sha256": res.ai_hash_sha256})
     return 0
 
 def main() -> int:
@@ -189,21 +201,25 @@ def main() -> int:
     v = sub.add_parser("validate", help="Validate ai_output_v1 minimal contract")
     v.add_argument("--schema", default="engine/schemas/ai_output_v1.json")
     v.add_argument("--input", required=True)
+    v.add_argument("--json", action="store_true", help="Output as JSON")
     v.set_defaults(fn=cmd_validate)
 
     pck = sub.add_parser("pack", help="Write canonical + manifest artifacts")
     pck.add_argument("--input", required=True)
     pck.add_argument("--out", required=True)
+    pck.add_argument("--json", action="store_true", help="Output as JSON")
     pck.set_defaults(fn=cmd_pack)
 
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
+    ve.add_argument("--json", action="store_true", help="Output as JSON")
     ve.set_defaults(fn=cmd_verify)
 
     vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
     vr.add_argument("--receipt", required=True, help="Path to receipt_v1 JSON file")
     vr.add_argument("--hash", default=None, help="Expected subject_hash_sha256 (64 hex)")
     vr.add_argument("--pubkey", default=None, help="Path to authority public key (base64)")
+    vr.add_argument("--json", action="store_true", help="Output as JSON")
     vr.set_defaults(fn=cmd_verify_receipt)
 
     c = sub.add_parser("canonicalize", help="Canonicalize AI output and print hash")
