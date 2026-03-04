@@ -89,6 +89,82 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify_receipt(args: argparse.Namespace) -> int:
+    """
+    Offline receipt verification.
+    Checks: receipt JSON valid, required fields, subject_hash matches --hash,
+    Ed25519 signature over canonical receipt (signature="") is valid.
+    Authority public key from --pubkey file (base64) or AEL_AUTHORITY_PUBKEY_B64 env.
+    """
+    import base64
+    import hashlib
+    import os
+    import re
+
+    def fail(reason: str, detail: str = "") -> int:
+        print(f"STATUS=INVALID rc=2 reason={reason}")
+        if detail:
+            print(f"DETAIL={detail}")
+        return 2
+
+    # --- load receipt ---
+    try:
+        receipt = json.loads(Path(args.receipt).read_text(encoding="utf-8"))
+    except Exception as e:
+        return fail("RECEIPT_NOT_JSON", type(e).__name__)
+
+    for field in ("schema_version", "receipt_id", "ts_signed_utc",
+                  "subject_hash_sha256", "subject_type",
+                  "authority_fingerprint", "authority_signature"):
+        if field not in receipt:
+            return fail("RECEIPT_MISSING_FIELD", field)
+
+    # --- hash match ---
+    if args.hash and receipt["subject_hash_sha256"] != args.hash:
+        return fail("HASH_MISMATCH",
+                    f"receipt={receipt['subject_hash_sha256'][:16]}... arg={args.hash[:16]}...")
+
+    # --- load authority public key ---
+    pubkey_b64 = None
+    if args.pubkey:
+        try:
+            pubkey_b64 = Path(args.pubkey).read_text(encoding="utf-8").strip()
+        except Exception as e:
+            return fail("PUBKEY_FILE_ERROR", str(e))
+    else:
+        pubkey_b64 = os.environ.get("AEL_AUTHORITY_PUBKEY_B64")
+
+    if not pubkey_b64:
+        return fail("NO_PUBKEY", "provide --pubkey or AEL_AUTHORITY_PUBKEY_B64")
+
+    # --- verify signature ---
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+        from cryptography.exceptions import InvalidSignature
+        if __package__:
+            from .canonical import canonical_json
+        else:
+            from engine.canonical import canonical_json
+
+        pub_bytes = base64.b64decode(pubkey_b64)
+        pub = Ed25519PublicKey.from_public_bytes(pub_bytes)
+        sig_bytes = base64.b64decode(receipt["authority_signature"])
+
+        unsigned = {**receipt, "authority_signature": ""}
+        canon = canonical_json(unsigned)
+        pub.verify(sig_bytes, canon.encode("utf-8"))
+    except InvalidSignature:
+        return fail("SIGNATURE_INVALID")
+    except Exception as e:
+        return fail("SIGNATURE_ERROR", type(e).__name__)
+
+    h = receipt["subject_hash_sha256"]
+    print("STATUS=VALID rc=0")
+    print(f"SUBJECT_HASH_SHA256={h}")
+    print(f"RECEIPT_ID={receipt['receipt_id']}")
+    return 0
+
+
 def cmd_pack(args: argparse.Namespace) -> int:
     # import lazy: não rebenta validate/canonicalize se pack tiver bugs
     from engine.ai_pack import ai_pack_from_obj
@@ -123,6 +199,12 @@ def main() -> int:
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
     ve.set_defaults(fn=cmd_verify)
+
+    vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
+    vr.add_argument("--receipt", required=True, help="Path to receipt_v1 JSON file")
+    vr.add_argument("--hash", default=None, help="Expected subject_hash_sha256 (64 hex)")
+    vr.add_argument("--pubkey", default=None, help="Path to authority public key (base64)")
+    vr.set_defaults(fn=cmd_verify_receipt)
 
     c = sub.add_parser("canonicalize", help="Canonicalize AI output and print hash")
     c.add_argument("--input", required=True)
