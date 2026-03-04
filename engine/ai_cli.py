@@ -42,6 +42,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     v = sub.add_parser("validate", help="Validate ai_output_v1 minimal contract")
+    v.add_argument("--schema", default="engine/schemas/ai_output_v1.json")
     v.add_argument("--input", required=True)
     v.set_defaults(fn=cmd_validate)
 
