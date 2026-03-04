@@ -26,5 +26,16 @@ dist/
 
 # AELITIUM runtime artifacts (generated; not source-of-truth)
 artifacts/results/
+artifacts/handoff_kit/
 release_output/
 output/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets / credentials — never commit
+.env
+*.pem
+*.key
