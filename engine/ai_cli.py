@@ -3,7 +3,17 @@ import argparse
 import json
 from pathlib import Path
 
-from .ai_canonical import canonicalize_ai_output
+# Support both:
+#  - running as a module (python -m engine.ai_cli)
+#  - running as a script   (python engine/ai_cli.py)
+if __package__:
+    from .ai_canonical import canonicalize_ai_output
+else:
+    import sys
+    from pathlib import Path as _Path
+    sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+    from engine.ai_canonical import canonicalize_ai_output
+
 
 def cmd_validate(args: argparse.Namespace) -> int:
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
