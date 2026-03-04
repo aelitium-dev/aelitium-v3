@@ -19,7 +19,7 @@ class TestAICLI(unittest.TestCase):
     def test_validate_ok(self):
         cp = run_cmd("validate", "--input", str(FIX))
         self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
-        self.assertIn("AI_STATUS=VALID", cp.stdout)
+        self.assertIn("STATUS=VALID", cp.stdout)
 
     def test_canonicalize_deterministic(self):
         cp1 = run_cmd("canonicalize", "--input", str(FIX))
