@@ -1,7 +1,9 @@
 # AELITIUM AI Integrity — 5-minute demo
 
-> Cryptographic integrity for AI outputs.
-> Pack → Verify → Detect tampering. Offline. No SaaS.
+> **Verifiable AI infrastructure.**
+> Aelitium generates cryptographic evidence for AI outputs so that anyone can verify integrity later — even offline.
+>
+> Pack → Verify → Detect tampering. No SaaS. No network required.
 
 ---
 
