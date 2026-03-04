@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import jsonschema
 from pathlib import Path
 
 # Support both:
@@ -17,16 +18,17 @@ else:
 
 def cmd_validate(args: argparse.Namespace) -> int:
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    if obj.get("schema_version") != "ai_output_v1":
-        print("AI_STATUS=INVALID reason=BAD_SCHEMA_VERSION")
+    schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
+
+    try:
+        jsonschema.validate(instance=obj, schema=schema)
+    except Exception as e:
+        print("STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION")
+        # linha curta e estável para logs
+        print(f"DETAIL={type(e).__name__}")
         return 2
-    # minimal required fields (schema-level validation can be added later)
-    required = ["schema_version", "model", "prompt", "output", "ts_utc"]
-    missing = [k for k in required if k not in obj]
-    if missing:
-        print("AI_STATUS=INVALID reason=MISSING_FIELDS missing=" + ",".join(missing))
-        return 2
-    print("AI_STATUS=VALID rc=0")
+
+    print("STATUS=VALID rc=0")
     return 0
 
 def cmd_canonicalize(args: argparse.Namespace) -> int:
