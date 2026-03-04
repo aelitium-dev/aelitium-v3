@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
@@ -16,8 +17,10 @@ def ai_pack_from_obj(obj: Dict[str, Any]) -> AIPackResult:
     # canonical JSON (sorted keys, no whitespace)
     canon = canonical_json(obj)
     h = sha256_hash(canon)  # expects str
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     manifest = {
         "schema": "ai_pack_manifest_v1",
+        "ts_utc": ts,
         "input_schema": obj.get("schema_version", None),
         "canonicalization": "json_sorted_keys_no_whitespace_utf8",
         "ai_hash_sha256": h,
