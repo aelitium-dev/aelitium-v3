@@ -40,6 +40,55 @@ def cmd_canonicalize(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify(args: argparse.Namespace) -> int:
+    import hashlib
+    import re
+
+    outdir = Path(args.out)
+    canon_path = outdir / "ai_canonical.json"
+    manifest_path = outdir / "ai_manifest.json"
+
+    def fail(reason: str, detail: str = "") -> int:
+        print(f"STATUS=INVALID rc=2 reason={reason}")
+        if detail:
+            print(f"DETAIL={detail}")
+        return 2
+
+    if not canon_path.exists():
+        return fail("MISSING_CANONICAL", "ai_canonical.json not found")
+    if not manifest_path.exists():
+        return fail("MISSING_MANIFEST", "ai_manifest.json not found")
+
+    try:
+        canon_text = canon_path.read_text(encoding="utf-8")
+        json.loads(canon_text)
+    except Exception as e:
+        return fail("CANONICAL_NOT_JSON", type(e).__name__)
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return fail("MANIFEST_NOT_JSON", type(e).__name__)
+
+    for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
+        if field not in manifest:
+            return fail("MANIFEST_MISSING_FIELD", field)
+
+    if manifest["schema"] != "ai_pack_manifest_v1":
+        return fail("MANIFEST_BAD_SCHEMA", manifest["schema"])
+
+    if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
+        return fail("MANIFEST_BAD_TS_UTC", manifest["ts_utc"])
+
+    actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
+    if actual_hash != manifest["ai_hash_sha256"]:
+        return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
+
+    print("STATUS=VALID rc=0")
+    print(f"AI_HASH_SHA256={actual_hash}")
+    return 0
+
+
 def cmd_pack(args: argparse.Namespace) -> int:
     # import lazy: não rebenta validate/canonicalize se pack tiver bugs
     from engine.ai_pack import ai_pack_from_obj
@@ -70,6 +119,10 @@ def main() -> int:
     pck.add_argument("--input", required=True)
     pck.add_argument("--out", required=True)
     pck.set_defaults(fn=cmd_pack)
+
+    ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
+    ve.add_argument("--out", required=True)
+    ve.set_defaults(fn=cmd_verify)
 
     c = sub.add_parser("canonicalize", help="Canonicalize AI output and print hash")
     c.add_argument("--input", required=True)
