@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Output v1",
+  "type": "object",
+  "required": ["schema_version", "model", "prompt", "output", "ts_utc"],
+  "properties": {
+    "schema_version": { "const": "ai_output_v1" },
+    "ts_utc": { "type": "string" },
+    "model": { "type": "string" },
+    "prompt": { "type": "string" },
+    "output": { "type": "string" },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": false
+}
