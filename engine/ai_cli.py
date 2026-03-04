@@ -39,6 +39,24 @@ def cmd_canonicalize(args: argparse.Namespace) -> int:
     print(f"AI_CANON_SHA256={h}")
     return 0
 
+
+def cmd_pack(args: argparse.Namespace) -> int:
+    # import lazy: não rebenta validate/canonicalize se pack tiver bugs
+    from engine.ai_pack import ai_pack_from_obj
+
+    obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    outdir = Path(args.out)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    res = ai_pack_from_obj(obj)
+
+    (outdir / "ai_canonical.json").write_text(res.canonical_json + "\n", encoding="utf-8")
+    (outdir / "ai_manifest.json").write_text(json.dumps(res.manifest, sort_keys=True) + "\n", encoding="utf-8")
+
+    print("STATUS=OK rc=0")
+    print(f"AI_HASH_SHA256={res.ai_hash_sha256}")
+    return 0
+
 def main() -> int:
     ap = argparse.ArgumentParser(prog="aelitium-ai")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -47,6 +65,11 @@ def main() -> int:
     v.add_argument("--schema", default="engine/schemas/ai_output_v1.json")
     v.add_argument("--input", required=True)
     v.set_defaults(fn=cmd_validate)
+
+    pck = sub.add_parser("pack", help="Write canonical + manifest artifacts")
+    pck.add_argument("--input", required=True)
+    pck.add_argument("--out", required=True)
+    pck.set_defaults(fn=cmd_pack)
 
     c = sub.add_parser("canonicalize", help="Canonicalize AI output and print hash")
     c.add_argument("--input", required=True)
