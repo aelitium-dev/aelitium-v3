@@ -1,5 +1,7 @@
 # AELITIUM
 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 **Verifiable AI infrastructure.**
 
 Cryptographic integrity for AI outputs and software releases.
