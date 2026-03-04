@@ -12,8 +12,16 @@
 ```bash
 git clone https://github.com/aelitium-dev/aelitium-v3.git
 cd aelitium-v3
-pip install -e ".[dev]" 2>/dev/null || pip install -e .
+
+# create and activate a virtual environment (required on Debian/Ubuntu 22.04+)
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install -e .
 ```
+
+> **Alternative (no install):** all commands below can also be run as
+> `python3 -m engine.ai_cli <subcommand>` from the project root — no venv needed.
 
 ---
 
