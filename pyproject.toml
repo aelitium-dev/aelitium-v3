@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 dependencies = ["cryptography>=41"]
 
 [project.scripts]
+aelitium-ai = "engine.ai_cli:main"
 aelitium = "engine.cli:main"
 
 [tool.setuptools]
