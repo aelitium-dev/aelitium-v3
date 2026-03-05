@@ -1,0 +1,8 @@
+{
+  "schema_version": "ai_output_v1",
+  "ts_utc": "2026-01-01T00:00:00Z",
+  "model": "gpt-4o",
+  "prompt": "What is the capital of France?",
+  "output": "The capital of France is Paris.",
+  "metadata": { "run_id": "example-001" }
+}
