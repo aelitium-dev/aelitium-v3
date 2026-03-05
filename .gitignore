@@ -43,4 +43,5 @@ env/
 # Internal (keep private)
 governance/
 founder/
+artifacts/governance/
 
