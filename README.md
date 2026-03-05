@@ -1,13 +1,14 @@
 # AELITIUM
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-86%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-**Verifiable AI infrastructure.**
+**Detect tampering in AI outputs. Offline. No SaaS.**
 
-Cryptographic integrity for AI outputs and software releases.
-Pack, verify, and detect tampering — offline, no SaaS, pipeline-friendly.
+Pack any AI response into a cryptographic evidence bundle.
+Verify integrity on any machine, any time — with a single command.
+Exit codes `0`/`2` make it CI/CD-friendly.
 
 ---
 
@@ -51,12 +52,15 @@ cd aelitium-v3
 
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
+
+aelitium-ai pack --input examples/ai_output_min.json --out ./evidence
+aelitium-ai verify --out ./evidence
 ```
 
 **Or run without installing** (from project root):
 
 ```bash
-python3 -m engine.ai_cli pack --input my_output.json --out ./evidence
+python3 -m engine.ai_cli pack --input examples/ai_output_min.json --out ./evidence
 python3 -m engine.ai_cli verify --out ./evidence
 ```
 
@@ -89,6 +93,9 @@ Any JSON matching `ai_output_v1`:
 | `canonicalize --input <file>` | Print deterministic hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + signed manifest |
 | `verify --out <dir>` | Verify integrity of a pack output dir |
+| `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
+
+All commands accept `--json` for machine-readable output.
 
 ### `aelitium` (P1 — release bundles)
 
@@ -104,7 +111,7 @@ Any JSON matching `ai_output_v1`:
 
 ```bash
 python3 -m unittest discover -s tests -q
-# Ran 76 tests ... OK
+# Ran 86 tests ... OK
 ```
 
 All tests pass on two independent machines (A + B) with identical hashes.
@@ -114,6 +121,7 @@ All tests pass on two independent machines (A + B) with identical hashes.
 ## Documentation
 
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
+- [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
 - [P3 architecture](docs/RELEASE_AUTHORITY_SERVICE.md) — authority-as-a-service design
 - [Release process](docs/RELEASE_PROCESS.md)
