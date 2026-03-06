@@ -120,11 +120,11 @@ All tests pass on two independent machines (A + B) with identical hashes.
 
 ## Documentation
 
+- [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
 - [P3 architecture](docs/RELEASE_AUTHORITY_SERVICE.md) — authority-as-a-service design
-- [Release process](docs/RELEASE_PROCESS.md)
 
 ---
 
