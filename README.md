@@ -118,9 +118,23 @@ All tests pass on two independent machines (A + B) with identical hashes.
 
 ---
 
+## Reproducibility
+
+Run the end-to-end reproducibility check from a clean environment:
+
+```bash
+bash scripts/verify_repro.sh
+```
+
+This script creates a fresh virtual environment, installs the project, runs the test suite, packs the example twice, and confirms the resulting hashes match.
+
+---
+
 ## Documentation
 
+- [Why AELITIUM](docs/WHY_AELITIUM.md) — problem statement, positioning, and what this is for
 - [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
+- [Security model](docs/SECURITY_MODEL.md) — threats addressed, guarantees, limitations
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
