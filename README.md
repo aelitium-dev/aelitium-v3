@@ -4,43 +4,71 @@
 ![tests](https://img.shields.io/badge/tests-86%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-**Detect tampering in AI outputs. Offline. No SaaS.**
+## Provable AI outputs.
 
-Pack any AI response into a cryptographic evidence bundle.
-Verify integrity on any machine, any time — with a single command.
-Exit codes `0`/`2` make it CI/CD-friendly.
+AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine.
+
+It allows engineers to **prove what a model actually said** — even long after the original system is gone.
 
 ---
 
-## What it does
+## Why this exists
 
-```bash
-# Pack an AI output into a cryptographic evidence bundle
-aelitium-ai pack --input my_output.json --out ./evidence
-# STATUS=OK rc=0
-# AI_HASH_SHA256=583eb45e...
+AI outputs are usually stored in logs or databases.
 
-# Verify integrity (any machine, any time)
-aelitium-ai verify --out ./evidence
-# STATUS=VALID rc=0
+Those records can be edited, overwritten, selectively deleted, or disputed later.
 
-# Tamper with the output — detected immediately
-aelitium-ai verify --out ./evidence
-# STATUS=INVALID rc=2 reason=HASH_MISMATCH
-# DETAIL=expected=583eb45e... got=3a4ac67e...
+When AI outputs influence decisions — finance, healthcare, support automation, legal workflows — teams eventually face the question:
+
+> *"Can you prove what the model actually said?"*
+
+AELITIUM provides a deterministic, cryptographic evidence bundle that allows anyone to verify the output independently.
+
+---
+
+## How it works
+
+```
+AI output (JSON)
+      ↓
+aelitium-ai pack      ← deterministic SHA-256 hash + manifest
+      ↓
+evidence bundle       ← canonical JSON + ai_manifest.json
+      ↓
+aelitium-ai verify    ← STATUS=VALID / STATUS=INVALID
 ```
 
-Exit codes `0`/`2` — designed for CI/CD pipelines.
+The bundle contains a canonicalized payload, a deterministic SHA-256 hash, and a manifest with schema, timestamp, and canonicalization method. Anyone with the bundle can verify its integrity — no network required.
 
 ---
 
-## Products
+## 5-minute demo
 
-| Product | Status | Description |
-|---------|--------|-------------|
-| **P1 — Deterministic Release SDK** | ✅ v0.2.0 | Offline bundle engine with Ed25519 signing and A/B authority gate |
-| **P2 — AI Output Integrity Layer** | ✅ MVP | Pack/verify/tamper-detect any AI output with deterministic hash |
-| **P3 — Release Authority as a Service** | 🚧 design | Hosted signing node — delegate Machine B to AELITIUM |
+**Pack an AI output into an evidence bundle:**
+
+```bash
+aelitium-ai pack --input examples/ai_output_min.json --out ./evidence
+# STATUS=OK rc=0
+# AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
+```
+
+**Verify the bundle:**
+
+```bash
+aelitium-ai verify --out ./evidence
+# STATUS=VALID rc=0
+# AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
+```
+
+**Detect tampering:**
+
+```bash
+# modify anything in ./evidence/ai_canonical.json or ai_manifest.json, then:
+aelitium-ai verify --out ./evidence
+# STATUS=INVALID rc=2 reason=HASH_MISMATCH
+```
+
+All commands accept `--json` for structured output.
 
 ---
 
@@ -66,20 +94,24 @@ python3 -m engine.ai_cli verify --out ./evidence
 
 ---
 
-## AI output format
+## Reproducibility
 
-Any JSON matching `ai_output_v1`:
+AELITIUM is designed to be deterministic. The same AI output always produces the same hash, on any machine.
 
-```json
-{
-  "schema_version": "ai_output_v1",
-  "ts_utc": "2026-03-04T12:00:00Z",
-  "model": "gpt-4o",
-  "prompt": "Summarise Q1 risks.",
-  "output": "Revenue risk is concentrated in...",
-  "metadata": { "run_id": "prod-001" }
-}
+Run the full reproducibility check from a clean environment:
+
+```bash
+bash scripts/verify_repro.sh
 ```
+
+This script creates a fresh virtual environment, installs the project, runs the test suite, packs the example twice, and confirms the resulting hashes match.
+
+```
+=== RESULT: PASS ===
+AI_HASH_SHA256=8b647717...
+```
+
+All tests also pass on two independent machines (A + B) with identical hashes.
 
 ---
 
@@ -91,42 +123,11 @@ Any JSON matching `ai_output_v1`:
 |---------|-------------|
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
 | `canonicalize --input <file>` | Print deterministic hash |
-| `pack --input <file> --out <dir>` | Generate canonical JSON + signed manifest |
+| `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify --out <dir>` | Verify integrity of a pack output dir |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 
-All commands accept `--json` for machine-readable output.
-
-### `aelitium` (P1 — release bundles)
-
-| Command | Description |
-|---------|-------------|
-| `pack` | Create deterministic evidence bundle |
-| `verify` | Verify bundle integrity |
-| `repro` | Reproducibility check (two-run determinism) |
-
----
-
-## Test suite
-
-```bash
-python3 -m unittest discover -s tests -q
-# Ran 86 tests ... OK
-```
-
-All tests pass on two independent machines (A + B) with identical hashes.
-
----
-
-## Reproducibility
-
-Run the end-to-end reproducibility check from a clean environment:
-
-```bash
-bash scripts/verify_repro.sh
-```
-
-This script creates a fresh virtual environment, installs the project, runs the test suite, packs the example twice, and confirms the resulting hashes match.
+Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 
 ---
 
@@ -135,10 +136,10 @@ This script creates a fresh virtual environment, installs the project, runs the 
 - [Why AELITIUM](docs/WHY_AELITIUM.md) — problem statement, positioning, and what this is for
 - [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
 - [Security model](docs/SECURITY_MODEL.md) — threats addressed, guarantees, limitations
+- [Trust boundary](docs/TRUST_BOUNDARY.md) — what AELITIUM proves and what it does not
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
-- [P3 architecture](docs/RELEASE_AUTHORITY_SERVICE.md) — authority-as-a-service design
 
 ---
 
@@ -148,4 +149,27 @@ This script creates a fresh virtual environment, installs the project, runs the 
 - **Offline-first** — verification never requires network access
 - **Fail-closed** — any verification error returns `rc=2`; no silent failures
 - **Auditable** — every pack includes a manifest with schema, timestamp, and hash
-- **Pipeline-friendly** — all output parseable (`STATUS=`, `AI_HASH_SHA256=`)
+- **Pipeline-friendly** — all output parseable (`STATUS=`, `AI_HASH_SHA256=`, `--json`)
+
+---
+
+## Trust boundary
+
+AELITIUM provides **tamper-evidence**, not truth guarantees.
+
+**What AELITIUM proves:**
+- the bundle contents have not changed since packing
+- the canonicalized payload matches the recorded hash
+
+**What AELITIUM does not prove:**
+- that the model output was correct or safe
+- that the system that packed the bundle was trustworthy
+- that the model actually produced the output
+
+Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md). See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for the full analysis.
+
+---
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

@@ -1,0 +1,99 @@
+# AELITIUM — Trust Boundary
+
+## What AELITIUM proves
+
+AELITIUM provides **tamper-evidence** for AI outputs. When you pack an output and later verify it, a `STATUS=VALID` result means exactly one thing:
+
+> The contents of the evidence bundle have not changed since they were packed.
+
+Specifically:
+- `ai_canonical.json` is intact
+- The SHA-256 hash in `ai_manifest.json` matches the recomputed hash of the canonical JSON
+- No bytes were modified, added, or removed
+
+This is a cryptographic guarantee, not a policy. It holds regardless of who controls the storage system, as long as the stored `ai_hash_sha256` is trusted.
+
+---
+
+## What AELITIUM does not prove
+
+### The model actually produced the output
+
+AELITIUM is not a model output capture system. It packs whatever JSON you give it. If the packing step is in a compromised process, the bundle will faithfully record the compromised output.
+
+**Mitigation:** pack immediately after generation, in the same trust boundary as the model call. See [INTEGRATION_PYTHON.md](INTEGRATION_PYTHON.md) for fail-closed pipeline patterns.
+
+### The output is correct or safe
+
+AELITIUM proves integrity, not quality. A tamper-evident record of a hallucination is still a hallucination.
+
+**Mitigation:** combine AELITIUM with model evaluation and guardrails. These are orthogonal concerns.
+
+### The stored hash hasn't been substituted
+
+If an attacker controls both the evidence bundle and the location where `ai_hash_sha256` is stored, they can substitute a different valid bundle and hash consistently.
+
+**Mitigation:** store hashes in a system the attacker cannot modify — a separate append-only database, an immutable log, or a signed receipt from a P3 authority (see below).
+
+---
+
+## Levels of provenance
+
+| Level | What it provides | How |
+|-------|-----------------|-----|
+| **Hash only** (P2) | Tamper-evidence, given a trusted stored hash | `aelitium-ai pack` + store hash in separate DB |
+| **Authority receipt** (P3) | Tamper-evidence + timestamp attestation by a signing authority | `POST /v1/sign` → `receipt_v1` with Ed25519 signature |
+| **Hardware attestation** (future) | Binding to a specific execution environment | TEE / HSM / remote attestation |
+
+Each level answers a stronger question:
+
+- **P2**: *"Has this output been modified since it was packed?"*
+- **P3**: *"Did a trusted authority see this hash at this time?"*
+- **Hardware**: *"Was this output produced in this specific environment?"*
+
+---
+
+## Canonical threat model
+
+| Threat | P2 (hash) | P3 (signed receipt) |
+|--------|-----------|---------------------|
+| Output tampered in storage | ✅ detected | ✅ detected |
+| Manifest hash field altered | ✅ detected | ✅ detected |
+| Both bundle and stored hash replaced consistently | ❌ not detected | ✅ detected (signature covers hash) |
+| Bundle packed before/after the real generation | ❌ not detected | ✅ timestamp in receipt |
+| Packing process compromised | ❌ not detected | ❌ not detected |
+| Model or prompt compromised before generation | ❌ out of scope | ❌ out of scope |
+
+---
+
+## Practical guidance
+
+### When P2 (hash only) is sufficient
+
+- Internal audit trails where the hash DB is access-controlled separately from the evidence storage
+- Pipelines where tamper-detection is needed but non-repudiation is not
+- Debugging and reproducibility verification
+
+### When P3 (signed receipt) adds value
+
+- Third-party audits where the auditor needs independent attestation
+- Regulatory contexts requiring a trusted timestamp from a named authority
+- Dispute resolution where the chain of custody must be externally verifiable
+
+### When neither is sufficient
+
+- Proving that a model with specific parameters generated the output (requires model-level attestation)
+- Proving the output is factually correct (requires evaluation, not integrity)
+- Preventing adversarial prompt injection before generation
+
+---
+
+## Summary
+
+AELITIUM is best understood as an **evidence preservation layer**, not a trust oracle.
+
+It answers: *"Is what you have now what was recorded then?"*
+
+It does not answer: *"Should you trust what was recorded?"*
+
+For the latter, you need provenance — which is the direction of P3 and beyond.
