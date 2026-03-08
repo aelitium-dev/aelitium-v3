@@ -47,7 +47,7 @@ Save it as `my_output.json`.
 ## Step 2 — Pack (generate evidence)
 
 ```bash
-aelitium-ai pack --input my_output.json --out ./evidence
+aelitium pack --input my_output.json --out ./evidence
 ```
 
 Output:
@@ -69,7 +69,7 @@ Two files are written to `./evidence/`:
 ## Step 3 — Verify (any machine, any time)
 
 ```bash
-aelitium-ai verify --out ./evidence
+aelitium verify --out ./evidence
 ```
 
 Output:
@@ -91,7 +91,7 @@ Edit one word in `evidence/ai_canonical.json` and verify again:
 # simulate tamper
 sed -i 's/Revenue risk/Revenue opportunity/' evidence/ai_canonical.json
 
-aelitium-ai verify --out ./evidence
+aelitium verify --out ./evidence
 ```
 
 Output:
@@ -108,7 +108,7 @@ Any modification — one character, one word — is caught. Exit code `2` for sc
 ## Step 5 — Validate schema
 
 ```bash
-aelitium-ai validate --input my_output.json
+aelitium validate --input my_output.json
 ```
 
 Output:

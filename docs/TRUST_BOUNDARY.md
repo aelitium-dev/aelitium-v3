@@ -41,7 +41,7 @@ If an attacker controls both the evidence bundle and the location where `ai_hash
 
 | Level | What it provides | How |
 |-------|-----------------|-----|
-| **Hash only** (P2) | Tamper-evidence, given a trusted stored hash | `aelitium-ai pack` + store hash in separate DB |
+| **Hash only** (P2) | Tamper-evidence, given a trusted stored hash | `aelitium pack` + store hash in separate DB |
 | **Authority receipt** (P3) | Tamper-evidence + timestamp attestation by a signing authority | `POST /v1/sign` → `receipt_v1` with Ed25519 signature |
 | **Hardware attestation** (future) | Binding to a specific execution environment | TEE / HSM / remote attestation |
 
