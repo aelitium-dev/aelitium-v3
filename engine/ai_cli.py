@@ -195,7 +195,7 @@ def cmd_pack(args: argparse.Namespace) -> int:
     return 0
 
 def main() -> int:
-    ap = argparse.ArgumentParser(prog="aelitium-ai")
+    ap = argparse.ArgumentParser(prog="aelitium")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     v = sub.add_parser("validate", help="Validate ai_output_v1 minimal contract")

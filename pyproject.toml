@@ -5,17 +5,33 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aelitium"
 version = "0.2.0"
-description = "Deterministic evidence bundle engine"
+description = "Tamper-evident evidence bundles for AI outputs"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Security :: Cryptography",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
   "cryptography>=41",
   "jsonschema>=4.18",
 ]
 
+[project.urls]
+Homepage = "https://github.com/aelitium-dev/aelitium-v3"
+Documentation = "https://github.com/aelitium-dev/aelitium-v3/tree/main/docs"
+Issues = "https://github.com/aelitium-dev/aelitium-v3/issues"
+
 [project.scripts]
+aelitium = "engine.ai_cli:main"
 aelitium-ai = "engine.ai_cli:main"
-aelitium = "engine.cli:main"
 
 [tool.setuptools]
 packages = ["engine"]
