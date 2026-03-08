@@ -26,45 +26,33 @@ AELITIUM provides a deterministic, cryptographic evidence bundle that allows any
 
 ---
 
-## How it works
+## Install
 
+```bash
+pip install aelitium
 ```
-AI output (JSON)
-      ↓
-aelitium-ai pack      ← deterministic SHA-256 hash + manifest
-      ↓
-evidence bundle       ← canonical JSON + ai_manifest.json
-      ↓
-aelitium-ai verify    ← STATUS=VALID / STATUS=INVALID
-```
-
-The bundle contains a canonicalized payload, a deterministic SHA-256 hash, and a manifest with schema, timestamp, and canonicalization method. Anyone with the bundle can verify its integrity — no network required.
 
 ---
 
-## 5-minute demo
-
-**Pack an AI output into an evidence bundle:**
+## 30-second demo
 
 ```bash
-aelitium-ai pack --input examples/ai_output_min.json --out ./evidence
+# Pack an AI output into a tamper-evident evidence bundle
+aelitium pack --input examples/ai_output_min.json --out ./evidence
 # STATUS=OK rc=0
 # AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
-```
 
-**Verify the bundle:**
-
-```bash
-aelitium-ai verify --out ./evidence
+# Verify the bundle (offline, any machine)
+aelitium verify --out ./evidence
 # STATUS=VALID rc=0
 # AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
 ```
 
-**Detect tampering:**
+The hash is deterministic — if you run the demo with the same file, you will see the exact same value.
 
 ```bash
-# modify anything in ./evidence/ai_canonical.json or ai_manifest.json, then:
-aelitium-ai verify --out ./evidence
+# Tamper with the bundle, then verify:
+aelitium verify --out ./evidence
 # STATUS=INVALID rc=2 reason=HASH_MISMATCH
 ```
 
@@ -72,25 +60,19 @@ All commands accept `--json` for structured output.
 
 ---
 
-## Quick start
+## How it works
 
-```bash
-git clone https://github.com/aelitium-dev/aelitium-v3.git
-cd aelitium-v3
-
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
-
-aelitium-ai pack --input examples/ai_output_min.json --out ./evidence
-aelitium-ai verify --out ./evidence
+```
+AI output (JSON)
+      ↓
+aelitium pack      ← deterministic SHA-256 hash + manifest
+      ↓
+evidence bundle    ← canonical JSON + ai_manifest.json
+      ↓
+aelitium verify   ← STATUS=VALID / STATUS=INVALID
 ```
 
-**Or run without installing** (from project root):
-
-```bash
-python3 -m engine.ai_cli pack --input examples/ai_output_min.json --out ./evidence
-python3 -m engine.ai_cli verify --out ./evidence
-```
+The bundle contains a canonicalized payload, a deterministic SHA-256 hash, and a manifest with schema, timestamp, and canonicalization method. Anyone with the bundle can verify its integrity — no network required.
 
 ---
 
