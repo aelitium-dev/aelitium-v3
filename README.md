@@ -99,7 +99,7 @@ All tests also pass on two independent machines (A + B) with identical hashes.
 
 ## CLI reference
 
-### `aelitium-ai` (P2 — AI integrity)
+### `aelitium`
 
 | Command | Description |
 |---------|-------------|

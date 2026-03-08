@@ -74,7 +74,7 @@ Verify integrity and authenticity offline.
 ### Syntax
 
 ```bash
-aelitium verify --manifest manifest.json --evidence evidence_pack.json
+aelitium verify --out <dir>
 ```
 
 ### Behavior

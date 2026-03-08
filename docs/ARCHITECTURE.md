@@ -139,7 +139,7 @@ POST /v1/sign  { subject_hash_sha256, subject_type }
 Receipts are verifiable offline against the authority's public key:
 
 ```bash
-aelitium-ai verify-receipt --receipt receipt.json --pubkey authority.b64
+aelitium verify-receipt --receipt receipt.json --pubkey authority.b64
 # STATUS=VALID rc=0
 ```
 

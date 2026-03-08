@@ -46,7 +46,7 @@ Hash stored alongside the output
 Later, anyone can recompute the hash and check:
 
 ```bash
-aelitium-ai verify --out ./evidence
+aelitium verify --out ./evidence
 # STATUS=VALID rc=0   ← output is intact
 # STATUS=INVALID rc=2 reason=HASH_MISMATCH  ← output was modified
 ```

@@ -11,7 +11,7 @@ LLM call
   ↓
 build ai_output_v1
   ↓
-aelitium-ai pack --json      ← fail-closed: exception if rc != 0
+aelitium pack --json      ← fail-closed: exception if rc != 0
   ↓
 store (ai_hash_sha256, evidence_uri)
   ↓
@@ -34,7 +34,7 @@ from pathlib import Path
 
 
 class AelitiumError(RuntimeError):
-    """Raised when aelitium-ai returns a non-zero exit code."""
+    """Raised when aelitium returns a non-zero exit code."""
 
 
 def build_ai_output(model: str, prompt: str, output: str,
@@ -74,7 +74,7 @@ def pack_ai_output(ai_output: dict, evidence_dir: Path,
 
     if result.returncode != 0:
         raise AelitiumError(
-            f"aelitium-ai pack failed (rc={result.returncode}): {result.stderr}"
+            f"aelitium pack failed (rc={result.returncode}): {result.stderr}"
         )
 
     return json.loads(result.stdout.strip())
