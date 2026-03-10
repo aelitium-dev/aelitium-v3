@@ -6,6 +6,32 @@ Format: `[version] — date — description`
 
 ---
 
+## [unreleased] — 2026-03-10
+
+### Capture Layer — OpenAI adapter
+
+- `engine/capture/openai.py` — `capture_chat_completion()`: intercepts OpenAI
+  chat calls and packs request+response into a tamper-evident bundle automatically.
+  Captures `request_hash` and `response_hash` at call time, closing the trust gap.
+- `engine/capture/__init__.py` — capture layer package
+- 14 tests: happy path (10) + determinism EPIC (4)
+  - same request → same request_hash ✅
+  - same response → same response_hash ✅
+  - different output → different hash ✅
+  - tampered canonical → INVALID ✅
+- Validated on Machine A and Machine B: 100 tests PASS, repro PASS
+
+### Docs & compliance
+
+- `docs/EVIDENCE_BUNDLE_SPEC.md` — complete bundle format spec (structure,
+  verification algorithm, schema evolution, relation to SBOM/OTel/Sigstore)
+- `docs/INTEGRATION_CAPTURE.md` — capture adapter usage guide
+- `docs/TEST_MATRIX.md` — full breakdown of all 100 tests
+- `README.md` — compliance alignment section (EU AI Act Art.12, SOC2 CC7,
+  ISO 42001, NIST AI RMF)
+
+---
+
 ## [0.2.0] — 2026-03-04
 
 ### P2 — AI Output Integrity Layer (new)
