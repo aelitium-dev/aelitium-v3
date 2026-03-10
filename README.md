@@ -118,7 +118,7 @@ Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, trust gap explanation
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
-- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — complete specification of the bundle format, verification algorithm, and schema evolution
+- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — open draft standard for verifiable AI output bundles; AELITIUM is the reference implementation
 
 ---
 
