@@ -15,7 +15,7 @@ try:
 except ImportError:
     pass
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "capture_chat_completion",
