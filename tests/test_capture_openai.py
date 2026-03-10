@@ -98,3 +98,79 @@ class TestCaptureOpenAI(unittest.TestCase):
             model=self.model,
             messages=self.messages,
         )
+
+
+class TestCaptureDeterminism(unittest.TestCase):
+    """
+    EPIC: capture determinism
+    Proves the capture adapter maintains reproducibility and
+    that any tamper produces INVALID.
+    """
+
+    def setUp(self):
+        self.model = "gpt-4o"
+        self.messages = [{"content": "What is 2+2?", "role": "user"}]
+        self.content = "2+2 equals 4."
+
+    def _capture(self, out_dir: str) -> str:
+        client = _make_mock_client(model=self.model, content=self.content)
+        result = capture_chat_completion(client, self.model, self.messages, out_dir)
+        return result.ai_hash_sha256
+
+    def test_same_payload_same_request_hash(self):
+        """Same model+messages always produce the same request_hash."""
+        import tempfile, json
+        tmp1 = tempfile.mkdtemp()
+        tmp2 = tempfile.mkdtemp()
+        self._capture(tmp1)
+        self._capture(tmp2)
+        c1 = json.loads((Path(tmp1) / "ai_canonical.json").read_text())
+        c2 = json.loads((Path(tmp2) / "ai_canonical.json").read_text())
+        self.assertEqual(c1["metadata"]["request_hash"], c2["metadata"]["request_hash"])
+
+    def test_same_payload_same_response_hash(self):
+        """Same model+content always produce the same response_hash."""
+        import tempfile, json
+        tmp1 = tempfile.mkdtemp()
+        tmp2 = tempfile.mkdtemp()
+        self._capture(tmp1)
+        self._capture(tmp2)
+        c1 = json.loads((Path(tmp1) / "ai_canonical.json").read_text())
+        c2 = json.loads((Path(tmp2) / "ai_canonical.json").read_text())
+        self.assertEqual(c1["metadata"]["response_hash"], c2["metadata"]["response_hash"])
+
+    def test_different_content_different_response_hash(self):
+        """Different model output produces a different response_hash."""
+        import tempfile, json
+        tmp1 = tempfile.mkdtemp()
+        tmp2 = tempfile.mkdtemp()
+
+        client_a = _make_mock_client(model=self.model, content="The answer is 4.")
+        client_b = _make_mock_client(model=self.model, content="It is four.")
+        capture_chat_completion(client_a, self.model, self.messages, tmp1)
+        capture_chat_completion(client_b, self.model, self.messages, tmp2)
+
+        c1 = json.loads((Path(tmp1) / "ai_canonical.json").read_text())
+        c2 = json.loads((Path(tmp2) / "ai_canonical.json").read_text())
+        self.assertNotEqual(c1["metadata"]["response_hash"], c2["metadata"]["response_hash"])
+
+    def test_tampered_canonical_fails_verify(self):
+        """Modifying ai_canonical.json after packing makes the bundle INVALID."""
+        import hashlib, json, tempfile
+        tmp = tempfile.mkdtemp()
+        self._capture(tmp)
+
+        canon_path = Path(tmp) / "ai_canonical.json"
+        manifest_path = Path(tmp) / "ai_manifest.json"
+
+        # Tamper: change the output in the canonical file
+        obj = json.loads(canon_path.read_text())
+        obj["output"] = "TAMPERED OUTPUT"
+        canon_path.write_text(json.dumps(obj, sort_keys=True, separators=(",", ":")))
+
+        # Reproduce the verify logic: hash must not match manifest
+        canon_text = canon_path.read_text(encoding="utf-8")
+        actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
+        manifest = json.loads(manifest_path.read_text())
+        self.assertNotEqual(actual_hash, manifest["ai_hash_sha256"],
+                            "Tampered bundle should fail hash check")
