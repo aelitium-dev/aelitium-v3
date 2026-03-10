@@ -1,7 +1,7 @@
 # AELITIUM — Test Matrix
 
 Last updated: 2026-03-10
-Total: **129 tests, all PASS**
+Total: **146 tests, all PASS**
 
 ---
 
@@ -43,6 +43,7 @@ No API keys required. All external calls are mocked.
 | Bundle contract | `test_bundle_contract.py` | 5 | Bundle schema contract |
 | Signature | `test_signature.py` | 4 | Ed25519 sign/verify |
 | Evidence log validator | `test_validate_evidence_log.py` | 11 | Governance log format (EVIDENCE_ENTRY v1) |
+| verify-bundle CLI | `test_ai_cli_verify_bundle.py` | 17 | verify-bundle: hash, binding_hash recompute, signature, tamper |
 
 ### Capture layer
 

@@ -222,7 +222,7 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
 
     try:
         canon_text = canon_path.read_text(encoding="utf-8")
-        json.loads(canon_text)
+        canon_obj = json.loads(canon_text)
     except Exception as e:
         return fail("CANONICAL_NOT_JSON", type(e).__name__)
 
@@ -262,13 +262,25 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
     else:
         signature = "NONE"
 
-    # Binding hash check
-    binding_hash = manifest.get("binding_hash")
-    if binding_hash:
-        if re.match(r"^[0-9a-f]{64}$", binding_hash):
-            binding = binding_hash
-        else:
-            return fail("BINDING_HASH_INVALID", f"malformed: {binding_hash[:16]}...")
+    # Binding hash: recompute from request_hash + response_hash in canonical metadata
+    manifest_binding = manifest.get("binding_hash")
+    if manifest_binding:
+        meta = canon_obj.get("metadata", {})
+        request_hash = meta.get("request_hash")
+        response_hash = meta.get("response_hash")
+        if not request_hash or not response_hash:
+            return fail("BINDING_HASH_MISSING_SOURCES",
+                        "manifest has binding_hash but canonical metadata lacks request_hash/response_hash")
+        # Recompute using the same algorithm as the capture adapters
+        payload = json.dumps(
+            {"request_hash": request_hash, "response_hash": response_hash},
+            sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        )
+        computed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        if computed != manifest_binding:
+            return fail("BINDING_HASH_MISMATCH",
+                        f"expected={manifest_binding[:16]}... computed={computed[:16]}...")
+        binding = manifest_binding
     else:
         binding = "NONE"
 
