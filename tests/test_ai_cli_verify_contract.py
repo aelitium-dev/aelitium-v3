@@ -42,10 +42,10 @@ class TestVerifyContract(unittest.TestCase):
         r = _verify(self.outdir)
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_valid_stdout_exactly_two_lines(self):
+    def test_valid_stdout_exactly_three_lines(self):
         r = _verify(self.outdir)
         lines = [l for l in r.stdout.strip().splitlines() if l]
-        self.assertEqual(len(lines), 2, f"Expected 2 lines, got: {lines}")
+        self.assertEqual(len(lines), 3, f"Expected 3 lines, got: {lines}")
 
     def test_valid_first_line(self):
         r = _verify(self.outdir)
@@ -56,6 +56,12 @@ class TestVerifyContract(unittest.TestCase):
         r = _verify(self.outdir)
         lines = [l for l in r.stdout.strip().splitlines() if l]
         self.assertRegex(lines[1], HASH_RE)
+
+    def test_valid_third_line_is_signature_none(self):
+        # Bundles produced by `pack` have no signing key → SIGNATURE=NONE
+        r = _verify(self.outdir)
+        lines = [l for l in r.stdout.strip().splitlines() if l]
+        self.assertEqual(lines[2], "SIGNATURE=NONE")
 
     def test_valid_hash_matches_pack_hash(self):
         with tempfile.TemporaryDirectory() as d:
@@ -120,6 +126,136 @@ class TestVerifyContract(unittest.TestCase):
         r = _verify(self.outdir)
         self.assertNotIn("Traceback", r.stdout)
         self.assertNotIn("Traceback", r.stderr)
+
+    # --- JSON output includes signature field ---
+
+    def test_json_output_includes_signature_none(self):
+        r = subprocess.run(
+            CLI + ["verify", "--out", str(self.outdir), "--json"],
+            capture_output=True, text=True, cwd=ROOT,
+        )
+        self.assertEqual(r.returncode, 0)
+        obj = json.loads(r.stdout.strip())
+        self.assertIn("signature", obj)
+        self.assertEqual(obj["signature"], "NONE")
+
+
+class TestVerifySignatureEnforcement(unittest.TestCase):
+    """Sprint 1.1: signature enforcement in aelitium verify."""
+
+    def _make_signed_bundle(self, outdir: Path) -> str:
+        """Create a bundle signed with a fresh Ed25519 key. Returns key b64."""
+        import base64
+        import os
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from types import SimpleNamespace
+        from engine.capture.openai import capture_chat_completion
+
+        key = Ed25519PrivateKey.generate()
+        key_b64 = base64.b64encode(key.private_bytes_raw()).decode()
+
+        response = SimpleNamespace(
+            id="resp_test",
+            created=1710000000,
+            model="gpt-4o-mini",
+            choices=[SimpleNamespace(
+                finish_reason="stop",
+                message=SimpleNamespace(content="test output"),
+            )],
+            usage=None,
+        )
+
+        class FakeClient:
+            class chat:
+                class completions:
+                    @staticmethod
+                    def create(model, messages, **kwargs):
+                        return response
+
+        old_key = os.environ.get("AEL_ED25519_PRIVKEY_B64")
+        os.environ["AEL_ED25519_PRIVKEY_B64"] = key_b64
+        try:
+            capture_chat_completion(
+                FakeClient(), "gpt-4o-mini",
+                [{"role": "user", "content": "hello"}],
+                outdir,
+            )
+        finally:
+            if old_key is None:
+                os.environ.pop("AEL_ED25519_PRIVKEY_B64", None)
+            else:
+                os.environ["AEL_ED25519_PRIVKEY_B64"] = old_key
+
+        return key_b64
+
+    def test_signed_bundle_verify_returns_signature_valid(self):
+        """Signed bundle: verify --json returns signature=VALID."""
+        with tempfile.TemporaryDirectory() as d:
+            outdir = Path(d)
+            self._make_signed_bundle(outdir)
+
+            r = subprocess.run(
+                CLI + ["verify", "--out", str(outdir), "--json"],
+                capture_output=True, text=True, cwd=ROOT,
+            )
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            obj = json.loads(r.stdout.strip())
+            self.assertEqual(obj["status"], "VALID")
+            self.assertEqual(obj["signature"], "VALID")
+
+    def test_unsigned_bundle_verify_returns_signature_none(self):
+        """Bundle without verification_keys.json: verify returns signature=NONE."""
+        with tempfile.TemporaryDirectory() as d:
+            outdir = Path(d)
+            _pack(outdir)
+            self.assertFalse((outdir / "verification_keys.json").exists())
+
+            r = subprocess.run(
+                CLI + ["verify", "--out", str(outdir), "--json"],
+                capture_output=True, text=True, cwd=ROOT,
+            )
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            obj = json.loads(r.stdout.strip())
+            self.assertEqual(obj["signature"], "NONE")
+
+    def test_tampered_verification_keys_gives_signature_invalid(self):
+        """Adultered verification_keys.json: verify must return SIGNATURE_INVALID."""
+        with tempfile.TemporaryDirectory() as d:
+            outdir = Path(d)
+            self._make_signed_bundle(outdir)
+
+            vk_path = outdir / "verification_keys.json"
+            vk = json.loads(vk_path.read_text())
+            # Tamper: replace signature with zeros
+            vk["signatures"][0]["sig_b64"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            vk_path.write_text(json.dumps(vk, sort_keys=True) + "\n")
+
+            r = subprocess.run(
+                CLI + ["verify", "--out", str(outdir)],
+                capture_output=True, text=True, cwd=ROOT,
+            )
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("STATUS=INVALID", r.stdout)
+            self.assertIn("SIGNATURE_INVALID", r.stdout)
+
+    def test_tampered_manifest_with_valid_keys_gives_signature_invalid(self):
+        """Manifest tampered after signing: signature no longer matches bytes."""
+        with tempfile.TemporaryDirectory() as d:
+            outdir = Path(d)
+            self._make_signed_bundle(outdir)
+
+            # Tamper manifest (re-write with different ts)
+            manifest_path = outdir / "ai_manifest.json"
+            m = json.loads(manifest_path.read_text())
+            m["ts_utc"] = "2099-01-01T00:00:00Z"
+            manifest_path.write_text(json.dumps(m, sort_keys=True) + "\n")
+
+            r = subprocess.run(
+                CLI + ["verify", "--out", str(outdir)],
+                capture_output=True, text=True, cwd=ROOT,
+            )
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("SIGNATURE_INVALID", r.stdout)
 
 
 if __name__ == "__main__":

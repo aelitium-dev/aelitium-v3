@@ -22,6 +22,39 @@ The hash is the cryptographic ID of the output. Store it anywhere — DB, log, t
 
 ---
 
+## OpenAI capture adapter (minimal)
+
+```python
+from openai import OpenAI
+
+from engine.capture_openai import pack_openai_chat_completion
+
+client = OpenAI()
+prompt = "What is the capital of France?"
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": prompt}],
+)
+
+result = pack_openai_chat_completion(
+    response,
+    prompt=prompt,
+    out_dir="./evidence",
+    metadata={"source": "openai-sdk"},
+)
+
+print(result.ai_hash_sha256)
+```
+
+Verify later:
+
+```bash
+aelitium verify --out ./evidence
+```
+
+---
+
 ## Drop-in helper
 
 ```python

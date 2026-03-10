@@ -134,3 +134,88 @@ python -m unittest tests/test_capture_openai.py -v
 export OPENAI_API_KEY=sk-...
 python examples/capture_openai.py
 ```
+
+---
+
+## New in v0.2: Provider metadata
+
+Every capture bundle now includes:
+
+| Field | Description |
+|---|---|
+| `metadata.binding_hash` | Single proof linking request↔response |
+| `metadata.response_id` | Provider's response ID (e.g. OpenAI `id`) |
+| `metadata.provider_created_at` | Unix timestamp from provider |
+| `metadata.finish_reason` | e.g. `stop`, `end_turn` |
+| `metadata.usage` | Token usage: prompt, completion, total |
+| `metadata.captured_at_utc` | Local capture timestamp (ISO8601) |
+
+The `binding_hash` is the critical new field: it is a single SHA256 over
+`canonical({"request_hash": ..., "response_hash": ...})`. Without it,
+a request_hash and response_hash could be mixed from different calls.
+
+## Operator signing (optional)
+
+Set environment variables to sign every bundle at capture time:
+
+```bash
+export AEL_ED25519_PRIVKEY_B64=<your-32-byte-key-base64>
+```
+
+When set, every `capture_chat_completion()` call writes `verification_keys.json`
+alongside the bundle. The `CaptureResult.signed` field is `True`.
+
+## Chain of custody (EvidenceLog)
+
+```python
+from engine.capture.log import EvidenceLog
+
+log = EvidenceLog("./evidence_log")
+
+result = capture_chat_completion(client, model, messages, "./evidence/run-1")
+log.append(result.bundle_dir, result.ai_hash_sha256)
+
+# Later: verify chain
+log2 = EvidenceLog("./evidence_log")
+assert log2.verify_chain(), "Chain tampered!"
+```
+
+## Compliance export
+
+```python
+from engine.compliance import export_eu_ai_act_art12
+
+record = export_eu_ai_act_art12("./evidence/run-1")
+# record["log_entry"] contains fields for EU AI Act Art. 12 audit
+```
+
+Or via CLI:
+```bash
+aelitium export --bundle ./evidence/run-1 --format eu-ai-act-art12 --json
+```
+
+## Standalone verification
+
+No aelitium installation required:
+
+```bash
+python scripts/aelitium_verify_standalone.py --bundle ./evidence/run-1
+```
+
+## Streaming
+
+```python
+from engine.capture.openai import capture_chat_completion_stream
+
+result = capture_chat_completion_stream(client, model, messages, "./evidence/stream-1")
+print(result.ai_hash_sha256)  # hash of full accumulated content
+```
+
+## Anthropic
+
+```python
+from engine.capture.anthropic import capture_message
+
+result = capture_message(anthropic_client, "claude-3-5-sonnet-20241022", messages, "./evidence/run-1")
+print(result.ai_hash_sha256)
+```

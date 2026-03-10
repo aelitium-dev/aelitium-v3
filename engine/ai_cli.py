@@ -93,9 +93,26 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if actual_hash != manifest["ai_hash_sha256"]:
         return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
 
+    # Signature enforcement: if verification_keys.json is present, it MUST be valid.
+    vk_path = outdir / "verification_keys.json"
+    if vk_path.exists():
+        try:
+            if __package__:
+                from .signing import verify_manifest_signature
+            else:
+                from engine.signing import verify_manifest_signature
+            vk = json.loads(vk_path.read_text(encoding="utf-8"))
+            manifest_bytes = manifest_path.read_bytes()
+            verify_manifest_signature(manifest_bytes, vk)
+            signature = "VALID"
+        except Exception as exc:
+            return fail("SIGNATURE_INVALID", str(exc))
+    else:
+        signature = "NONE"
+
     _out(args,
-         ["STATUS=VALID rc=0", f"AI_HASH_SHA256={actual_hash}"],
-         {"status": "VALID", "rc": 0, "ai_hash_sha256": actual_hash})
+         ["STATUS=VALID rc=0", f"AI_HASH_SHA256={actual_hash}", f"SIGNATURE={signature}"],
+         {"status": "VALID", "rc": 0, "ai_hash_sha256": actual_hash, "signature": signature})
     return 0
 
 
@@ -176,6 +193,23 @@ def cmd_verify_receipt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export(args: argparse.Namespace) -> int:
+    from pathlib import Path
+    from engine.compliance import export_eu_ai_act_art12
+
+    bundle_dir = Path(args.bundle)
+    if not bundle_dir.exists():
+        print(f"ERROR: bundle dir not found: {bundle_dir}")
+        return 2
+
+    result = export_eu_ai_act_art12(bundle_dir)
+
+    _out(args,
+         [f"STATUS=OK format={args.format} bundle={args.bundle}"],
+         result)
+    return 0
+
+
 def cmd_pack(args: argparse.Namespace) -> int:
     # import lazy: não rebenta validate/canonicalize se pack tiver bugs
     from engine.ai_pack import ai_pack_from_obj
@@ -226,6 +260,12 @@ def main() -> int:
     c.add_argument("--input", required=True)
     c.add_argument("--print", action="store_true", help="Print canonical JSON")
     c.set_defaults(fn=cmd_canonicalize)
+
+    exp = sub.add_parser("export", help="Export bundle in compliance format")
+    exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")
+    exp.add_argument("--format", default="eu-ai-act-art12", choices=["eu-ai-act-art12"])
+    exp.add_argument("--json", action="store_true")
+    exp.set_defaults(fn=cmd_export)
 
     args = ap.parse_args()
     return int(args.fn(args))
