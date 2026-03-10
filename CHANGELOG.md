@@ -68,3 +68,19 @@ Format: `[version] — date — description`
 - Initial engine rebuild after WSL incident
 - Canonical JSON + SHA-256 core
 - Basic pack/verify/repro pipeline
+
+## [0.2.1] - 2026-03-10
+### Added
+- OpenAI capture adapter
+- Anthropic capture adapter
+- Signed binding evidence
+- Evidence log support
+- Compliance export
+- Standalone verifier
+
+### Verified
+- 129 tests passing
+- reproducibility check passing
+- signed release tags on Machine B
+- PyPI publication successful
+- clean install of aelitium==0.2.1 successful
