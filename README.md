@@ -1,8 +1,12 @@
 # AELITIUM
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-86%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-100%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
+
+```bash
+pip install aelitium
+```
 
 ## Provable AI outputs.
 
