@@ -30,33 +30,24 @@ AELITIUM provides a deterministic, cryptographic evidence bundle that allows any
 
 ---
 
-## Install
-
-```bash
-pip install aelitium
-```
-
----
-
 ## 30-second demo
 
 ```bash
-# Pack an AI output into a tamper-evident evidence bundle
-aelitium pack --input examples/ai_output_min.json --out ./evidence
-# STATUS=OK rc=0
-# AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
+pip install aelitium
 
-# Verify the bundle (offline, any machine)
-aelitium verify --out ./evidence
+aelitium pack --input output.json --out ./bundle
+# STATUS=OK rc=0
+# AI_HASH_SHA256=8b647717...
+
+aelitium verify --out ./bundle
 # STATUS=VALID rc=0
-# AI_HASH_SHA256=8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
 ```
 
-The hash is deterministic — if you run the demo with the same file, you will see the exact same value.
+The hash is deterministic — same input produces the same hash on any machine.
 
 ```bash
 # Tamper with the bundle, then verify:
-aelitium verify --out ./evidence
+aelitium verify --out ./bundle
 # STATUS=INVALID rc=2 reason=HASH_MISMATCH
 ```
 
