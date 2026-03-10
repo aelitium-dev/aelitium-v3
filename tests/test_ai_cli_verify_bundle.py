@@ -205,7 +205,12 @@ class TestVerifyBundleCapture(unittest.TestCase):
         )
         r = _verify_bundle(self.outdir)
         self.assertEqual(r.returncode, 2)
-        self.assertIn("BINDING_HASH_MISMATCH", r.stdout)
+        # If the bundle was signed, signature check fires before binding_hash check.
+        # Both are correct failure modes for this tampering.
+        self.assertTrue(
+            "BINDING_HASH_MISMATCH" in r.stdout or "SIGNATURE_INVALID" in r.stdout,
+            f"Expected BINDING_HASH_MISMATCH or SIGNATURE_INVALID, got: {r.stdout!r}",
+        )
 
 
 class TestVerifyBundleMissing(unittest.TestCase):
