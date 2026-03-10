@@ -1,16 +1,20 @@
-# AELITIUM Evidence Bundle Specification
+# Evidence Bundle Specification
 
-Version: 1.1
-Status: Stable
-Last updated: 2026-03-10
+**Version:** 1.1
+**Status:** Draft Standard
+**Last updated:** 2026-03-10
+
+> This specification is intended to be implemented by any tool that produces or verifies AI output evidence bundles. It is not specific to AELITIUM. AELITIUM is the reference implementation.
+>
+> Feedback and alternative implementations are welcome.
 
 ---
 
 ## Overview
 
-An **evidence bundle** is the fundamental unit of AI output integrity in AELITIUM.
+An **evidence bundle** is a self-contained, verifiable artefact that proves an AI output payload has not been altered since it was created.
 
-It is a self-contained, verifiable artefact that proves a payload has not been altered since it was created. Verification requires no network access, no external service, and no trust in the original infrastructure.
+Verification requires no network access, no external service, and no trust in the original infrastructure. Any conforming implementation can verify any conforming bundle.
 
 This is analogous to what Docker images did for software environments, or what SBOM documents did for software supply chains — except applied to AI outputs.
 
@@ -181,9 +185,11 @@ Schema version is stored in `ai_manifest.json` → `schema`. Verifiers must reje
 
 | Implementation | Language | Status |
 |---------------|----------|--------|
-| `aelitium` (this repo) | Python 3.10+ | Stable, PyPI |
+| `aelitium` | Python 3.10+ | Reference implementation — [PyPI](https://pypi.org/project/aelitium/) |
 
-Third-party implementations are welcome. The specification is the canonical reference.
+To register a third-party implementation, open a pull request adding a row to this table.
+
+The specification is the canonical reference. Implementations must pass the [verification algorithm](#verification-algorithm) and produce the [canonical reference hash](#canonical-reference-hash) from the demo input.
 
 ---
 
