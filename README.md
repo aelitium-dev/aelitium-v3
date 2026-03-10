@@ -122,6 +122,7 @@ Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
+- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — complete specification of the bundle format, verification algorithm, and schema evolution
 
 ---
 
@@ -149,6 +150,21 @@ AELITIUM provides **tamper-evidence**, not truth guarantees.
 - that the model actually produced the output
 
 Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md). See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for the full analysis.
+
+---
+
+## Compliance alignment
+
+AELITIUM provides tamper-evident evidence bundles that support the following regulatory and audit requirements:
+
+| Framework | Requirement | How AELITIUM helps |
+|-----------|-------------|-------------------|
+| **EU AI Act — Article 12** | Logging and traceability of high-risk AI system outputs | Evidence bundles provide immutable, verifiable records of AI outputs with deterministic hashes |
+| **SOC 2 — CC7** | System monitoring and integrity controls | Independent offline verification confirms records have not been altered after creation |
+| **ISO 42001** | AI management system auditability | Canonical bundles with schema versioning support third-party audits without infrastructure access |
+| **NIST AI RMF — MG 2.2** | Traceability of AI decisions and outputs | Each bundle contains a complete, reproducible record: payload, hash, timestamp, and optional signature |
+
+AELITIUM does not replace logging infrastructure. It adds **cryptographic integrity** on top of any existing pipeline — offline, without a server, without a blockchain.
 
 ---
 
