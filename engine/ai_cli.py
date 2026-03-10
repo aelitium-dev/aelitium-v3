@@ -193,6 +193,97 @@ def cmd_verify_receipt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify_bundle(args: argparse.Namespace) -> int:
+    """
+    Verify an evidence bundle directory.
+
+    Checks: canonical JSON hash, manifest integrity, Ed25519 signature (if present),
+    and binding_hash (if present in manifest).
+
+    Usage: aelitium verify-bundle <bundle_dir>
+    """
+    import hashlib
+    import re
+
+    outdir = Path(args.bundle)
+    canon_path = outdir / "ai_canonical.json"
+    manifest_path = outdir / "ai_manifest.json"
+
+    def fail(reason: str, detail: str = "") -> int:
+        print(f"STATUS=INVALID rc=2 reason={reason}")
+        if detail:
+            print(f"DETAIL={detail}")
+        return 2
+
+    if not canon_path.exists():
+        return fail("MISSING_CANONICAL", "ai_canonical.json not found")
+    if not manifest_path.exists():
+        return fail("MISSING_MANIFEST", "ai_manifest.json not found")
+
+    try:
+        canon_text = canon_path.read_text(encoding="utf-8")
+        json.loads(canon_text)
+    except Exception as e:
+        return fail("CANONICAL_NOT_JSON", type(e).__name__)
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return fail("MANIFEST_NOT_JSON", type(e).__name__)
+
+    for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
+        if field not in manifest:
+            return fail("MANIFEST_MISSING_FIELD", field)
+
+    if manifest["schema"] != "ai_pack_manifest_v1":
+        return fail("MANIFEST_BAD_SCHEMA", manifest["schema"])
+
+    if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
+        return fail("MANIFEST_BAD_TS_UTC", manifest["ts_utc"])
+
+    actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
+    if actual_hash != manifest["ai_hash_sha256"]:
+        return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
+
+    # Signature enforcement
+    vk_path = outdir / "verification_keys.json"
+    if vk_path.exists():
+        try:
+            if __package__:
+                from .signing import verify_manifest_signature
+            else:
+                from engine.signing import verify_manifest_signature
+            vk = json.loads(vk_path.read_text(encoding="utf-8"))
+            manifest_bytes = manifest_path.read_bytes()
+            verify_manifest_signature(manifest_bytes, vk)
+            signature = "VALID"
+        except Exception as exc:
+            return fail("SIGNATURE_INVALID", str(exc))
+    else:
+        signature = "NONE"
+
+    # Binding hash check
+    binding_hash = manifest.get("binding_hash")
+    if binding_hash:
+        if re.match(r"^[0-9a-f]{64}$", binding_hash):
+            binding = binding_hash
+        else:
+            return fail("BINDING_HASH_INVALID", f"malformed: {binding_hash[:16]}...")
+    else:
+        binding = "NONE"
+
+    _out(args,
+         ["STATUS=VALID rc=0",
+          f"AI_HASH_SHA256={actual_hash}",
+          f"SIGNATURE={signature}",
+          f"BINDING_HASH={binding}"],
+         {"status": "VALID", "rc": 0,
+          "ai_hash_sha256": actual_hash,
+          "signature": signature,
+          "binding_hash": binding})
+    return 0
+
+
 def cmd_export(args: argparse.Namespace) -> int:
     from pathlib import Path
     from engine.compliance import export_eu_ai_act_art12
@@ -260,6 +351,11 @@ def main() -> int:
     c.add_argument("--input", required=True)
     c.add_argument("--print", action="store_true", help="Print canonical JSON")
     c.set_defaults(fn=cmd_canonicalize)
+
+    vb = sub.add_parser("verify-bundle", help="Verify evidence bundle (hash + signature + binding hash)")
+    vb.add_argument("bundle", help="Path to evidence bundle directory")
+    vb.add_argument("--json", action="store_true", help="Output as JSON")
+    vb.set_defaults(fn=cmd_verify_bundle)
 
     exp = sub.add_parser("export", help="Export bundle in compliance format")
     exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")

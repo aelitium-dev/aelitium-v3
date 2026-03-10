@@ -1,7 +1,7 @@
 # AELITIUM
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-100%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-129%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 ```bash
@@ -102,7 +102,9 @@ All tests also pass on two independent machines (A + B) with identical hashes.
 | `canonicalize --input <file>` | Print deterministic hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify --out <dir>` | Verify integrity of a pack output dir |
+| `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
+| `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
 
 Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 
