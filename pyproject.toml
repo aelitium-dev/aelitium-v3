@@ -34,7 +34,7 @@ aelitium = "engine.ai_cli:main"
 aelitium-ai = "engine.ai_cli:main"
 
 [tool.setuptools]
-packages = ["engine"]
+packages = ["engine", "engine.capture", "aelitium"]
 include-package-data = true
 
 [tool.setuptools.package-data]

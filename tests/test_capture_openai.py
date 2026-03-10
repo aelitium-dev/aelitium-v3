@@ -99,6 +99,54 @@ class TestCaptureOpenAI(unittest.TestCase):
             messages=self.messages,
         )
 
+    def test_binding_hash_present(self):
+        result = capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        self.assertIn("binding_hash", canon["metadata"])
+        self.assertEqual(len(canon["metadata"]["binding_hash"]), 64)
+
+    def test_captured_at_utc_present(self):
+        result = capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        self.assertIn("captured_at_utc", canon["metadata"])
+
+    def test_binding_hash_in_manifest(self):
+        result = capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        manifest = json.loads((Path(self.tmp) / "ai_manifest.json").read_text())
+        self.assertIn("binding_hash", manifest)
+        self.assertEqual(len(manifest["binding_hash"]), 64)
+
+    def test_content_list_extraction(self):
+        """Content as list of dicts with type=text."""
+        content_list = [{"type": "text", "text": "Hello from list"}]
+        client2 = MagicMock()
+        resp2 = MagicMock()
+        resp2.model = "gpt-4o"
+        resp2.choices[0].message.content = content_list
+        client2.chat.completions.create.return_value = resp2
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp2:
+            result2 = capture_chat_completion(client2, self.model, self.messages, tmp2)
+            canon = json.loads((Path(tmp2) / "ai_canonical.json").read_text())
+            self.assertEqual(canon["output"], "Hello from list")
+
+    def test_content_none_raises(self):
+        """content=None should raise ValueError."""
+        from types import SimpleNamespace
+        resp = SimpleNamespace(
+            model="gpt-4o",
+            choices=[SimpleNamespace(message=SimpleNamespace(content=None), finish_reason="stop")],
+            id="test-id",
+            created=1234567890,
+            usage=None,
+        )
+        client3 = MagicMock()
+        client3.chat.completions.create.return_value = resp
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp3:
+            with self.assertRaises(ValueError):
+                capture_chat_completion(client3, self.model, self.messages, tmp3)
+
 
 class TestCaptureDeterminism(unittest.TestCase):
     """
