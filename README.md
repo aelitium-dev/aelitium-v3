@@ -121,6 +121,7 @@ Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 - [Trust boundary](docs/TRUST_BOUNDARY.md) — what AELITIUM proves and what it does not
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
+- [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, trust gap explanation
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
 - [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — complete specification of the bundle format, verification algorithm, and schema evolution
 
