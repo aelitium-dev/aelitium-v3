@@ -35,7 +35,7 @@ AELITIUM provides a deterministic, cryptographic evidence bundle that allows any
 ```bash
 pip install aelitium
 
-aelitium pack --input output.json --out ./bundle
+aelitium pack --input examples/ai_output_min.json --out ./bundle
 # STATUS=OK rc=0
 # AI_HASH_SHA256=8b647717...
 
