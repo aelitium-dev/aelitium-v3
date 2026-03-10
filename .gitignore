@@ -41,7 +41,8 @@ env/
 *.key
 
 # Internal (keep private)
-governance/
+governance/.obsidian/
+governance/authority/
 founder/
 artifacts/governance/
 
