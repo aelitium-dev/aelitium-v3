@@ -65,6 +65,34 @@ The bundle contains a canonicalized payload, a deterministic SHA-256 hash, and a
 
 ---
 
+## Capture adapter (OpenAI / Anthropic)
+
+No manual JSON. The capture adapter intercepts the API call, records request and response hashes at call time, and writes the bundle automatically.
+
+```python
+from openai import OpenAI
+from engine.capture.openai import capture_chat_completion
+
+client = OpenAI()
+result = capture_chat_completion(
+    client, "gpt-4o",
+    [{"role": "user", "content": "What is the capital of France?"}],
+    out_dir="./evidence",
+)
+print(result.ai_hash_sha256)  # deterministic proof of this exact call
+```
+
+```bash
+aelitium verify-bundle ./evidence
+# STATUS=VALID rc=0
+# AI_HASH_SHA256=...
+# BINDING_HASH=...   ← cryptographic link between request and response
+```
+
+See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, streaming, and signing.
+
+---
+
 ## Reproducibility
 
 AELITIUM is designed to be deterministic. The same AI output always produces the same hash, on any machine.
