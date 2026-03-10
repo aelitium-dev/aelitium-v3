@@ -1,32 +1,12 @@
 # AELITIUM
 
+> Can you prove what your AI model actually said?
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![tests](https://img.shields.io/badge/tests-146%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-```bash
-pip install aelitium
-```
-
-## Provable AI outputs.
-
-AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine.
-
-It allows engineers to **prove what a model actually said** — even long after the original system is gone.
-
----
-
-## Why this exists
-
-AI outputs are usually stored in logs or databases.
-
-Those records can be edited, overwritten, selectively deleted, or disputed later.
-
-When AI outputs influence decisions — finance, healthcare, support automation, legal workflows — teams eventually face the question:
-
-> *"Can you prove what the model actually said?"*
-
-AELITIUM provides a deterministic, cryptographic evidence bundle that allows anyone to verify the output independently.
+AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine — offline, no server required.
 
 ---
 
@@ -43,15 +23,29 @@ aelitium verify --out ./bundle
 # STATUS=VALID rc=0
 ```
 
-The hash is deterministic — same input produces the same hash on any machine.
-
 ```bash
 # Tamper with the bundle, then verify:
 aelitium verify --out ./bundle
 # STATUS=INVALID rc=2 reason=HASH_MISMATCH
 ```
 
+Store the hash. Verify the bundle later — on any machine, any time, without contacting AELITIUM or any server.
+
 All commands accept `--json` for structured output.
+
+---
+
+## Why this exists
+
+AI outputs are usually stored in logs or databases.
+
+Those records can be edited, overwritten, selectively deleted, or disputed later.
+
+When AI outputs influence decisions — finance, healthcare, support automation, legal workflows — teams eventually face the question:
+
+> *"Can you prove what the model actually said?"*
+
+AELITIUM provides a deterministic, cryptographic evidence bundle that allows anyone to verify the output independently.
 
 ---
 
