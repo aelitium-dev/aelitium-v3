@@ -45,3 +45,7 @@ governance/
 founder/
 artifacts/governance/
 
+# Test artifacts (manual smoke tests — never commit)
+evidence_signed_test/
+evidence_*/
+
