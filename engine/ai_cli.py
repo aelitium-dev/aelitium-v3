@@ -296,6 +296,94 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compare(args: argparse.Namespace) -> int:
+    """
+    Compare two evidence bundles to detect AI model behavior change.
+
+    Given two bundles A and B (both produced by the capture adapter):
+    - UNCHANGED:      request_hash same, response_hash same
+    - CHANGED:        request_hash same, response_hash different
+    - NOT_COMPARABLE: request_hash differs, or bundles lack capture metadata
+    - INVALID_BUNDLE: one or both bundles cannot be read
+
+    Usage: aelitium compare <bundle_a> <bundle_b>
+    """
+    def _read_bundle(path: Path):
+        canon_path = path / "ai_canonical.json"
+        manifest_path = path / "ai_manifest.json"
+        if not canon_path.exists() or not manifest_path.exists():
+            return None, None
+        try:
+            canon = json.loads(canon_path.read_text(encoding="utf-8"))
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            return canon, manifest
+        except Exception:
+            return None, None
+
+    def _hashes(canon, manifest):
+        meta = canon.get("metadata", {})
+        return {
+            "request_hash": meta.get("request_hash"),
+            "response_hash": meta.get("response_hash"),
+            "binding_hash": manifest.get("binding_hash"),
+        }
+
+    path_a = Path(args.bundle_a)
+    path_b = Path(args.bundle_b)
+
+    canon_a, manifest_a = _read_bundle(path_a)
+    canon_b, manifest_b = _read_bundle(path_b)
+
+    if canon_a is None or canon_b is None:
+        _out(args,
+             ["STATUS=INVALID_BUNDLE rc=2",
+              "DETAIL=One or both bundles could not be read"],
+             {"status": "INVALID_BUNDLE", "rc": 2,
+              "detail": "One or both bundles could not be read"})
+        return 2
+
+    h_a = _hashes(canon_a, manifest_a)
+    h_b = _hashes(canon_b, manifest_b)
+
+    if not h_a["request_hash"] or not h_b["request_hash"]:
+        _out(args,
+             ["STATUS=NOT_COMPARABLE rc=1",
+              "DETAIL=Bundles do not contain capture metadata (request_hash missing)"],
+             {"status": "NOT_COMPARABLE", "rc": 1,
+              "detail": "Bundles do not contain capture metadata (request_hash missing)"})
+        return 1
+
+    req = "SAME" if h_a["request_hash"] == h_b["request_hash"] else "DIFFERENT"
+    resp = "SAME" if h_a["response_hash"] == h_b["response_hash"] else "DIFFERENT"
+    bind = "SAME" if h_a["binding_hash"] == h_b["binding_hash"] else "DIFFERENT"
+
+    if req == "DIFFERENT":
+        status = "NOT_COMPARABLE"
+        rc = 1
+        interpretation = "Requests differ — bundles are not comparable"
+    elif resp == "SAME":
+        status = "UNCHANGED"
+        rc = 0
+        interpretation = "Same request produced the same response"
+    else:
+        status = "CHANGED"
+        rc = 2
+        interpretation = "Same request produced a different response"
+
+    _out(args,
+         [f"STATUS={status} rc={rc}",
+          f"REQUEST_HASH={req}",
+          f"RESPONSE_HASH={resp}",
+          f"BINDING_HASH={bind}",
+          f"INTERPRETATION={interpretation}"],
+         {"status": status, "rc": rc,
+          "request_hash": req,
+          "response_hash": resp,
+          "binding_hash": bind,
+          "interpretation": interpretation})
+    return rc
+
+
 def cmd_export(args: argparse.Namespace) -> int:
     from pathlib import Path
     from engine.compliance import export_eu_ai_act_art12
@@ -368,6 +456,12 @@ def main() -> int:
     vb.add_argument("bundle", help="Path to evidence bundle directory")
     vb.add_argument("--json", action="store_true", help="Output as JSON")
     vb.set_defaults(fn=cmd_verify_bundle)
+
+    cmp = sub.add_parser("compare", help="Compare two bundles to detect AI model behavior change")
+    cmp.add_argument("bundle_a", help="Path to first evidence bundle directory")
+    cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
+    cmp.add_argument("--json", action="store_true", help="Output as JSON")
+    cmp.set_defaults(fn=cmd_compare)
 
     exp = sub.add_parser("export", help="Export bundle in compliance format")
     exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")

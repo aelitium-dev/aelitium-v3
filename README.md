@@ -93,6 +93,23 @@ See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, streaming, and s
 
 ---
 
+## Detect when the model changed
+
+Prove when the same AI request started producing different answers.
+
+```bash
+# Bundle from last week (model v1)
+aelitium compare ./bundle_last_week ./bundle_today
+# STATUS=CHANGED rc=2
+# REQUEST_HASH=SAME
+# RESPONSE_HASH=DIFFERENT
+# INTERPRETATION=Same request produced a different response
+```
+
+This is AI provider accountability: if the request did not change but the response did, the change came from the model, not your code.
+
+---
+
 ## Reproducibility
 
 AELITIUM is designed to be deterministic. The same AI output always produces the same hash, on any machine.
@@ -125,6 +142,7 @@ All tests also pass on two independent machines (A + B) with identical hashes.
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify --out <dir>` | Verify integrity of a pack output dir |
 | `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
+| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 | `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
 
