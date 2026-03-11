@@ -6,6 +6,29 @@ Format: `[version] — date — description`
 
 ---
 
+## [0.2.2] — 2026-03-11
+
+### Added
+- `aelitium compare <bundle_a> <bundle_b>` — detect AI model behavior change between two capture bundles
+  - Returns `UNCHANGED` / `CHANGED` / `NOT_COMPARABLE` / `INVALID_BUNDLE`
+  - Exit codes: 0 / 2 / 1 / 2 (CI/CD friendly)
+  - `--json` output includes full hash values for both bundles and timestamps
+- `aelitium verify-bundle <dir>` — dedicated verify command with binding_hash recompute and signature enforcement
+- Optional dependencies: `pip install aelitium[openai]`, `aelitium[anthropic]`, `aelitium[all]`
+- `docs/MODEL_BEHAVIOR_CHANGE.md` — guide for detecting AI provider behavior change
+- `docs/MARKET_FEEDBACK.md` — market feedback log
+
+### Fixed
+- `docs/INTEGRATION_PYTHON.md` — corrected import path (`engine.capture.openai`, not `engine.capture_openai`)
+- `aelitium/__init__.py` — `capture_anthropic_message` now raises `ImportError` with install hint if `anthropic` not installed
+- Removed duplicate `aelitium-ai` CLI entrypoint from `pyproject.toml`
+- `compare` output now shows actual hash values (first 16 chars) and timestamps for debugging
+
+### Tests
+- 158 tests, all PASS (added 12 for `compare`, 17 for `verify-bundle`)
+
+---
+
 ## [unreleased] — 2026-03-10
 
 ### Capture Layer — OpenAI adapter

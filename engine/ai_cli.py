@@ -326,6 +326,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
             "request_hash": meta.get("request_hash"),
             "response_hash": meta.get("response_hash"),
             "binding_hash": manifest.get("binding_hash"),
+            "ts_utc": canon.get("ts_utc") or manifest.get("ts_utc"),
         }
 
     path_a = Path(args.bundle_a)
@@ -348,9 +349,11 @@ def cmd_compare(args: argparse.Namespace) -> int:
     if not h_a["request_hash"] or not h_b["request_hash"]:
         _out(args,
              ["STATUS=NOT_COMPARABLE rc=1",
-              "DETAIL=Bundles do not contain capture metadata (request_hash missing)"],
+              "DETAIL=Bundles do not contain capture metadata (request_hash missing)",
+              "HINT=Use the capture adapter (engine.capture.openai / engine.capture.anthropic) instead of aelitium pack"],
              {"status": "NOT_COMPARABLE", "rc": 1,
-              "detail": "Bundles do not contain capture metadata (request_hash missing)"})
+              "detail": "Bundles do not contain capture metadata (request_hash missing)",
+              "hint": "Use the capture adapter instead of aelitium pack"})
         return 1
 
     req = "SAME" if h_a["request_hash"] == h_b["request_hash"] else "DIFFERENT"
@@ -370,16 +373,29 @@ def cmd_compare(args: argparse.Namespace) -> int:
         rc = 2
         interpretation = "Same request produced a different response"
 
-    _out(args,
-         [f"STATUS={status} rc={rc}",
-          f"REQUEST_HASH={req}",
-          f"RESPONSE_HASH={resp}",
-          f"BINDING_HASH={bind}",
-          f"INTERPRETATION={interpretation}"],
+    # Build text lines — show actual hash values for debugging
+    def _short(h): return h[:16] + "..." if h else "N/A"
+    lines = [
+        f"STATUS={status} rc={rc}",
+        f"REQUEST_HASH={req}  a={_short(h_a['request_hash'])} b={_short(h_b['request_hash'])}",
+        f"RESPONSE_HASH={resp}  a={_short(h_a['response_hash'])} b={_short(h_b['response_hash'])}",
+        f"BINDING_HASH={bind}",
+        f"TS_UTC_A={h_a['ts_utc'] or 'N/A'}",
+        f"TS_UTC_B={h_b['ts_utc'] or 'N/A'}",
+        f"INTERPRETATION={interpretation}",
+    ]
+
+    _out(args, lines,
          {"status": status, "rc": rc,
           "request_hash": req,
           "response_hash": resp,
           "binding_hash": bind,
+          "request_hash_a": h_a["request_hash"],
+          "request_hash_b": h_b["request_hash"],
+          "response_hash_a": h_a["response_hash"],
+          "response_hash_b": h_b["response_hash"],
+          "ts_utc_a": h_a["ts_utc"],
+          "ts_utc_b": h_b["ts_utc"],
           "interpretation": interpretation})
     return rc
 

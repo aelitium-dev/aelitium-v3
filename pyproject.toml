@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aelitium"
-version = "0.2.1"
+version = "0.2.2"
 description = "Tamper-evident evidence bundles for AI outputs"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,6 +24,11 @@ dependencies = [
   "jsonschema>=4.18",
 ]
 
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+anthropic = ["anthropic>=0.25"]
+all = ["openai>=1.0", "anthropic>=0.25"]
+
 [project.urls]
 Homepage = "https://github.com/aelitium-dev/aelitium-v3"
 Documentation = "https://github.com/aelitium-dev/aelitium-v3/tree/main/docs"
@@ -31,7 +36,6 @@ Issues = "https://github.com/aelitium-dev/aelitium-v3/issues"
 
 [project.scripts]
 aelitium = "engine.ai_cli:main"
-aelitium-ai = "engine.ai_cli:main"
 
 [tool.setuptools]
 packages = ["engine", "engine.capture", "aelitium"]
