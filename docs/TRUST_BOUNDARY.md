@@ -53,6 +53,19 @@ Each level answers a stronger question:
 
 ---
 
+## Integrity vs completeness
+
+These are different properties:
+
+- **Integrity**: captured events have not been altered after capture. AELITIUM provides this.
+- **Completeness**: all events that should have been captured were captured. AELITIUM does not provide this.
+
+If a logging agent selectively omits events before they reach the capture layer, no cryptographic mechanism can detect the omission — there is nothing to hash. This is a well-known property of tamper-evident logs in distributed systems: proving nothing was omitted is harder than proving nothing was altered.
+
+**Implication for agent systems:** if the agent controls its own logging, it can omit entries without detection. An observer-based capture pattern — where an independent process intercepts LLM calls, rather than the agent calling the capture function — provides stronger completeness guarantees. This is the architectural direction for `aelitium.capture` in multi-agent deployments.
+
+---
+
 ## Canonical threat model
 
 | Threat | P2 (hash) | P3 (signed receipt) |
@@ -62,6 +75,7 @@ Each level answers a stronger question:
 | Both bundle and stored hash replaced consistently | ❌ not detected | ✅ detected (signature covers hash) |
 | Bundle packed before/after the real generation | ❌ not detected | ✅ timestamp in receipt |
 | Packing process compromised | ❌ not detected | ❌ not detected |
+| Agent omits events before capture | ❌ not detected | ❌ not detected |
 | Model or prompt compromised before generation | ❌ out of scope | ❌ out of scope |
 
 ---

@@ -181,13 +181,16 @@ AELITIUM provides **tamper-evidence**, not truth guarantees.
 **What AELITIUM proves:**
 - the bundle contents have not changed since packing
 - the canonicalized payload matches the recorded hash
+- (with capture adapter) the request hash matches the exact API payload sent
 
 **What AELITIUM does not prove:**
 - that the model output was correct or safe
 - that the system that packed the bundle was trustworthy
-- that the model actually produced the output
+- that the model actually produced the output (without capture adapter)
 
-Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md). See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for the full analysis.
+**Integrity ≠ completeness.** AELITIUM proves that captured events were not altered. It does not guarantee that all events were captured. Capture completeness depends on the integration layer — SDK wrapper, proxy, or observer. If the agent controls its own logging, an observer-based capture pattern provides stronger guarantees. See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for the full analysis.
+
+Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md).
 
 ---
 
