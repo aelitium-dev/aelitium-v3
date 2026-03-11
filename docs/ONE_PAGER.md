@@ -32,28 +32,34 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 
 ---
 
-## 3 commands
+## Key commands
 
 ```bash
 pip install aelitium
 
-# Option A: pack a JSON output manually
-aelitium pack --input output.json --out ./evidence
-aelitium verify --out ./evidence
-# STATUS=VALID rc=0
-# AI_HASH_SHA256=8b6477...
-
-# Option B: capture directly from OpenAI
+# Option A: capture directly from OpenAI (strongest — trust chain starts at call time)
 from engine.capture.openai import capture_chat_completion
 result = capture_chat_completion(client, "gpt-4o", messages, "./evidence")
 # result.ai_hash_sha256  →  same hash, every time, any machine
+
+# Option B: pack a JSON output manually
+aelitium pack --input output.json --out ./evidence
+
+# Verify bundle integrity (offline)
+aelitium verify-bundle ./evidence
+# STATUS=VALID | BINDING_HASH=OK | SIGNATURE=NONE
+
+# Detect if model behavior changed between two captures
+aelitium compare ./evidence_run1 ./evidence_run2
+# STATUS=UNCHANGED rc=0   (same request → same response)
+# STATUS=CHANGED    rc=2  (same request → different response — model changed)
 ```
 
 Tamper detection:
 
 ```bash
 # modify the bundle, then verify:
-aelitium verify --out ./evidence
+aelitium verify-bundle ./evidence
 # STATUS=INVALID rc=2 reason=HASH_MISMATCH
 ```
 
@@ -89,11 +95,12 @@ Without the capture adapter, the chain starts at **pack time** — when the user
 
 ## Current state
 
-- `pip install aelitium` — published to PyPI
-- OpenAI capture adapter — synchronous, minimal, production-ready happy path
-- 100 tests, all passing
+- `pip install aelitium` — published to PyPI (v0.2.2)
+- OpenAI + Anthropic capture adapters — synchronous, minimal, production-ready
+- 158 tests, all passing
 - Determinism verified on two independent machines
 - Offline verification — no network, no SaaS, no blockchain
+- `compare` command for detecting AI provider model drift
 
 ---
 

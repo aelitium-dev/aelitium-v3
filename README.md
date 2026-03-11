@@ -3,7 +3,7 @@
 > Can you prove what your AI model actually said?
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-146%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-158%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine — offline, no server required.
