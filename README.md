@@ -108,6 +108,14 @@ aelitium compare ./bundle_last_week ./bundle_today
 
 This is AI provider accountability: if the request did not change but the response did, the change came from the model, not your code.
 
+Run the full example:
+
+```bash
+python examples/model_drift_detector.py
+# STATUS=UNCHANGED rc=0   (model stable)
+# STATUS=CHANGED    rc=2  (model changed — not your code)
+```
+
 ---
 
 ## Reproducibility
