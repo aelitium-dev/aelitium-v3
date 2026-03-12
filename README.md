@@ -106,7 +106,7 @@ aelitium compare ./bundle_last_week ./bundle_today
 # INTERPRETATION=Same request produced a different response
 ```
 
-This is AI provider accountability: if the request did not change but the response did, the change came from the model, not your code.
+This is tamper-evident logging for model behavior: if the request hash is identical but the response hash differs, the change came from the model — not your code.
 
 Run the full example:
 
