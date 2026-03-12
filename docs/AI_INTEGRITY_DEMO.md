@@ -146,5 +146,5 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 
 ```bash
 python3 -m unittest discover -s tests -q
-# Ran 76 tests in ~24s ... OK
+# Ran 158 tests in ~42s ... OK
 ```

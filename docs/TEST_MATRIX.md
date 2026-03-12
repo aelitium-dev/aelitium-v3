@@ -44,6 +44,7 @@ No API keys required. All external calls are mocked.
 | Signature | `test_signature.py` | 4 | Ed25519 sign/verify |
 | Evidence log validator | `test_validate_evidence_log.py` | 11 | Governance log format (EVIDENCE_ENTRY v1) |
 | verify-bundle CLI | `test_ai_cli_verify_bundle.py` | 17 | verify-bundle: hash, binding_hash recompute, signature, tamper |
+| compare CLI | `test_ai_cli_compare.py` | 12 | compare: UNCHANGED/CHANGED/NOT_COMPARABLE/INVALID_BUNDLE, exit codes |
 
 ### Capture layer
 

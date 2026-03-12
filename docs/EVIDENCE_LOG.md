@@ -30,7 +30,7 @@ Status: **COMPLETE**
 
 | Check | Machine A | Machine B |
 |-------|-----------|-----------|
-| Total test suite (100 tests) | PASS | PASS |
+| Total test suite (158 tests) | PASS | PASS |
 | Capture adapter tests (14/14) | PASS | PASS |
 | `verify_repro.sh` | PASS | PASS |
 | Working tree clean | ✅ | ✅ |

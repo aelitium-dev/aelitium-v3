@@ -21,7 +21,7 @@ Run the full test suite:
 
 ```bash
 python3 -m unittest discover -s tests -q
-# Ran 76 tests ... OK
+# Ran 158 tests in ~42s ... OK
 ```
 
 All tests must pass before submitting a pull request.
@@ -48,7 +48,7 @@ All tests must pass before submitting a pull request.
 
 Examples:
 ```
-product2: add aelitium-ai verify + 10 contract tests
+feat: add verify-bundle command with binding_hash recompute
 engine: fix canonical hash for non-ASCII output
 docs: update 5-minute demo prerequisites
 ```
