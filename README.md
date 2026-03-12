@@ -112,9 +112,16 @@ Run the full example:
 
 ```bash
 python examples/model_drift_detector.py
-# STATUS=UNCHANGED rc=0   (model stable)
-# STATUS=CHANGED    rc=2  (model changed — not your code)
 ```
+
+If the model silently changed behavior between runs:
+
+```
+STATUS=CHANGED rc=2
+INTERPRETATION=Same request produced a different response
+```
+
+That means the change came from the model — not your code.
 
 ---
 
