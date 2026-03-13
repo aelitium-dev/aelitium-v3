@@ -400,6 +400,112 @@ def cmd_compare(args: argparse.Namespace) -> int:
     return rc
 
 
+def cmd_scan(args: argparse.Namespace) -> int:
+    """
+    Scan Python files for LLM call sites and check capture adapter coverage.
+
+    Exits 0 if all detected call sites are instrumented.
+    Exits 2 if any call sites are missing capture adapters.
+
+    Usage: aelitium scan <path>
+    """
+    import re
+    from pathlib import Path as _Path
+
+    # Patterns that indicate a direct LLM API call (not inside capture adapters)
+    LLM_CALL_PATTERNS = [
+        (r"\.chat\.completions\.create\s*\(", "openai"),
+        (r"ChatCompletion\.create\s*\(", "openai-legacy"),
+        (r"\.messages\.create\s*\(", "anthropic"),
+        (r"litellm\.completion\s*\(", "litellm"),
+        (r"litellm\.acompletion\s*\(", "litellm"),
+        (r"\bllm\.predict\s*\(", "langchain"),
+        (r"\bllm\.invoke\s*\(", "langchain"),
+        (r"\bchain\.run\s*\(", "langchain"),
+        (r"\bchain\.invoke\s*\(", "langchain"),
+    ]
+
+    # Patterns that indicate AELITIUM capture adapter usage in the same file
+    CAPTURE_PATTERNS = [
+        r"capture_chat_completion\s*\(",
+        r"capture_message\s*\(",
+        r"capture_anthropic_message\s*\(",
+        r"capture_chat_completion_stream\s*\(",
+    ]
+
+    scan_root = _Path(args.path)
+    if not scan_root.exists():
+        print(f"ERROR: path not found: {args.path}")
+        return 2
+
+    instrumented = []
+    uninstrumented = []
+
+    for py_file in sorted(scan_root.rglob("*.py")):
+        # Skip aelitium's own capture engine and test files
+        rel = py_file.relative_to(scan_root)
+        parts = rel.parts
+        if any(p in ("engine", "aelitium", ".venv", "venv", "__pycache__") for p in parts):
+            continue
+
+        try:
+            content = py_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        has_capture = any(re.search(p, content) for p in CAPTURE_PATTERNS)
+
+        for i, line in enumerate(content.splitlines(), 1):
+            for pattern, provider in LLM_CALL_PATTERNS:
+                if re.search(pattern, line):
+                    entry = {
+                        "file": str(rel),
+                        "line": i,
+                        "provider": provider,
+                        "instrumented": has_capture,
+                    }
+                    if has_capture:
+                        instrumented.append(entry)
+                    else:
+                        uninstrumented.append(entry)
+
+    total = len(instrumented) + len(uninstrumented)
+    status = "OK" if not uninstrumented else "INCOMPLETE"
+    rc = 0 if not uninstrumented else 2
+
+    if getattr(args, "json", False):
+        print(json.dumps({
+            "status": status,
+            "rc": rc,
+            "total": total,
+            "instrumented": len(instrumented),
+            "uninstrumented": len(uninstrumented),
+            "sites": instrumented + uninstrumented,
+        }, sort_keys=True))
+        return rc
+
+    print(f"LLM call sites detected: {total}")
+    if total == 0:
+        print("No LLM call sites found.")
+        print(f"STATUS={status} rc={rc}")
+        return rc
+
+    if instrumented:
+        print(f"\nInstrumented with capture adapter: {len(instrumented)}")
+        for s in instrumented:
+            print(f"  \u2713 {s['provider']} \u2014 {s['file']}:{s['line']}")
+
+    if uninstrumented:
+        print(f"\nMissing evidence capture: {len(uninstrumented)}")
+        for s in uninstrumented:
+            print(f"  \u26a0 {s['provider']} \u2014 {s['file']}:{s['line']}")
+        print("\nHINT: Wrap uninstrumented calls with the AELITIUM capture adapter.")
+        print("  from engine.capture.openai import capture_chat_completion")
+
+    print(f"\nSTATUS={status} rc={rc}")
+    return rc
+
+
 def cmd_export(args: argparse.Namespace) -> int:
     from pathlib import Path
     from engine.compliance import export_eu_ai_act_art12
@@ -478,6 +584,11 @@ def main() -> int:
     cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
     cmp.add_argument("--json", action="store_true", help="Output as JSON")
     cmp.set_defaults(fn=cmd_compare)
+
+    sc = sub.add_parser("scan", help="Scan Python files for uninstrumented LLM call sites")
+    sc.add_argument("path", help="Directory to scan recursively")
+    sc.add_argument("--json", action="store_true", help="Output as JSON")
+    sc.set_defaults(fn=cmd_scan)
 
     exp = sub.add_parser("export", help="Export bundle in compliance format")
     exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")

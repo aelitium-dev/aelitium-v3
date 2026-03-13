@@ -5,7 +5,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from engine.capture.anthropic import capture_message, CaptureResult
+try:
+    from engine.capture.anthropic import capture_message, CaptureResult
+    _ANTHROPIC_AVAILABLE = True
+except ImportError:
+    _ANTHROPIC_AVAILABLE = False
+
+anthropic_required = unittest.skipUnless(
+    _ANTHROPIC_AVAILABLE,
+    "anthropic package not installed — skipping (install with: pip install aelitium[anthropic])"
+)
 
 
 def _make_mock_anthropic_client(model="claude-3-5-sonnet-20241022", content="Hello from Claude"):
@@ -21,6 +30,7 @@ def _make_mock_anthropic_client(model="claude-3-5-sonnet-20241022", content="Hel
     return client, response
 
 
+@anthropic_required
 class TestCaptureAnthropic(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()

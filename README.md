@@ -3,7 +3,7 @@
 > Can you prove what your AI model actually said?
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-158%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-171%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine — offline, no server required.
@@ -30,6 +30,15 @@ aelitium verify --out ./bundle
 ```
 
 Store the hash. Verify the bundle later — on any machine, any time, without contacting AELITIUM or any server.
+
+```bash
+# Find uninstrumented LLM calls in your codebase:
+aelitium scan ./src
+# LLM call sites detected: 4
+# Missing evidence capture:
+#   ⚠ openai — worker.py:42
+#   ⚠ anthropic — agent.py:17
+```
 
 All commands accept `--json` for structured output.
 
@@ -160,6 +169,7 @@ All tests also pass on two independent machines (A + B) with identical hashes.
 | `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 | `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
+| `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 
 Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 

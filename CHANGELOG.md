@@ -6,6 +6,26 @@ Format: `[version] — date — description`
 
 ---
 
+## [0.2.3] — 2026-03-13
+
+### Added
+- `aelitium scan <path>` — scan Python files for uninstrumented LLM call sites
+  - Detects OpenAI, Anthropic, LiteLLM, LangChain call patterns
+  - Reports instrumented vs missing capture adapter per file:line
+  - Exit codes: 0 = all instrumented, 2 = gaps found (CI/CD friendly)
+  - `--json` output for pipeline integration
+
+### Fixed
+- `engine/capture/anthropic.py` — now imports `anthropic` at module level, so
+  `from aelitium import capture_anthropic_message` raises `ImportError` with install
+  hint when `anthropic` is not installed (previously raised `TypeError`)
+- `tests/test_capture_anthropic.py` — skips gracefully when `anthropic` not installed
+
+### Tests
+- 171 tests, all PASS (added 13 for `scan`, skip guard for 6 Anthropic tests)
+
+---
+
 ## [0.2.2] — 2026-03-11
 
 ### Added

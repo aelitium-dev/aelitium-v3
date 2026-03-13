@@ -7,6 +7,7 @@ Scope:
 - messages.create (synchronous, non-streaming)
 """
 
+import anthropic as _anthropic_sdk  # noqa: F401 — validates install at import time
 import json
 from datetime import datetime, timezone
 from pathlib import Path

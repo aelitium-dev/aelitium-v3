@@ -26,7 +26,7 @@ except ImportError:
         )
     __all_anthropic__ = []
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = [
     "capture_chat_completion",
