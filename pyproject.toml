@@ -38,7 +38,7 @@ Issues = "https://github.com/aelitium-dev/aelitium-v3/issues"
 aelitium = "engine.ai_cli:main"
 
 [tool.setuptools]
-packages = ["engine", "engine.capture", "aelitium"]
+packages = ["engine", "engine.capture", "engine.schemas", "aelitium"]
 include-package-data = true
 
 [tool.setuptools.package-data]
