@@ -31,7 +31,7 @@ except ImportError:
     capture_anthropic = capture_anthropic_message
     __all_anthropic__ = []
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 __all__ = [
     "capture_openai",
