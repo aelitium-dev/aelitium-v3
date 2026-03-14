@@ -50,3 +50,12 @@ artifacts/governance/
 evidence_signed_test/
 evidence_*/
 
+
+# Strategy — never public
+docs/COMPETITIVE_INTEL.md
+docs/OUTREACH.md
+docs/MARKET_FEEDBACK.md
+docs/ENGINEERING_TASKS.md
+docs/PHASE4_PLAN.md
+docs/PHASE4_7DAY_LOOP.md
+docs/PRODUCTS_3_OPTIONS.md
