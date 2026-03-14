@@ -6,6 +6,24 @@ Format: `[version] — date — description`
 
 ---
 
+## [0.2.4] — 2026-03-14
+
+### Added
+- `aelitium scan --ci` — CI-friendly `AELITIUM_SCAN_*` key=value output
+- `aelitium scan` now shows `Coverage: N/M (%)` in normal output
+- `scan --json` now includes `coverage_pct` field
+- `from aelitium import capture_openai` — short convenience alias for `capture_chat_completion`
+- `from aelitium import capture_anthropic` — short alias for `capture_anthropic_message`
+
+### Changed
+- README restructured: drift detection demo at the top, scan with coverage metric, simplified capture adapter example using `capture_openai`
+- Tagline updated to: "Detect when LLM behavior silently changes — verifiable, offline, no server."
+
+### Tests
+- 177 tests, all PASS (added 6 for `--ci` and coverage metric)
+
+---
+
 ## [0.2.3] — 2026-03-13
 
 ### Added

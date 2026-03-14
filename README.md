@@ -1,12 +1,20 @@
 # AELITIUM
 
-> Can you prove what your AI model actually said?
+> Detect when LLM behavior silently changes — verifiable, offline, no server.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-171%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-177%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be verified anywhere, on any machine — offline, no server required.
+---
+
+## The problem
+
+You run the same prompt in production. One week later, the output is different.
+
+The model changed — but your logs just show two JSON blobs. There's no proof of *when* it changed, or *which* call started returning different results.
+
+AELITIUM gives you cryptographic evidence for every LLM call — request hash, response hash, tamper-evident bundle — so you can prove exactly when behavior changed, and that your records haven't been altered.
 
 ---
 
@@ -14,76 +22,61 @@ AELITIUM turns AI outputs into **tamper-evident evidence bundles** that can be v
 
 ```bash
 pip install aelitium
-
-aelitium pack --input examples/ai_output_min.json --out ./bundle
-# STATUS=OK rc=0
-# AI_HASH_SHA256=8b647717...
-
-aelitium verify --out ./bundle
-# STATUS=VALID rc=0
 ```
 
 ```bash
-# Tamper with the bundle, then verify:
-aelitium verify --out ./bundle
-# STATUS=INVALID rc=2 reason=HASH_MISMATCH
+# Capture two runs of the same request:
+aelitium compare ./bundle_last_week ./bundle_today
+# STATUS=CHANGED rc=2
+# REQUEST_HASH=SAME
+# RESPONSE_HASH=DIFFERENT
+# INTERPRETATION=Same request produced a different response
 ```
 
-Store the hash. Verify the bundle later — on any machine, any time, without contacting AELITIUM or any server.
+Same request. Different output. That means the change came from the model — not your code.
 
 ```bash
-# Find uninstrumented LLM calls in your codebase:
+# Scan your codebase for unprotected LLM calls:
 aelitium scan ./src
 # LLM call sites detected: 4
 # Missing evidence capture:
 #   ⚠ openai — worker.py:42
 #   ⚠ anthropic — agent.py:17
+# Coverage: 2/4 (50%)
+# STATUS=INCOMPLETE rc=2
 ```
 
 All commands accept `--json` for structured output.
 
 ---
 
-## Why this exists
-
-AI outputs are usually stored in logs or databases.
-
-Those records can be edited, overwritten, selectively deleted, or disputed later.
-
-When AI outputs influence decisions — finance, healthcare, support automation, legal workflows — teams eventually face the question:
-
-> *"Can you prove what the model actually said?"*
-
-AELITIUM provides a deterministic, cryptographic evidence bundle that allows anyone to verify the output independently.
-
----
-
 ## How it works
 
 ```
-AI output (JSON)
+API call (OpenAI / Anthropic)
       ↓
-aelitium pack      ← deterministic SHA-256 hash + manifest
+capture adapter   ← records request_hash + response_hash at call time
       ↓
-evidence bundle    ← canonical JSON + ai_manifest.json
+evidence bundle   ← canonical JSON + ai_manifest.json + binding_hash
       ↓
-aelitium verify   ← STATUS=VALID / STATUS=INVALID
+aelitium verify-bundle   ← STATUS=VALID / STATUS=INVALID
+aelitium compare         ← UNCHANGED / CHANGED / NOT_COMPARABLE
 ```
 
-The bundle contains a canonicalized payload, a deterministic SHA-256 hash, and a manifest with schema, timestamp, and canonicalization method. Anyone with the bundle can verify its integrity — no network required.
+Each bundle contains a deterministic SHA-256 hash of the payload, a manifest with timestamp and schema, and a cryptographic `binding_hash` linking the exact request to the exact response. Anyone with the bundle can verify it — no network required.
 
 ---
 
 ## Capture adapter (OpenAI / Anthropic)
 
-No manual JSON. The capture adapter intercepts the API call, records request and response hashes at call time, and writes the bundle automatically.
+No manual JSON. The capture adapter intercepts the API call and writes the bundle automatically.
 
 ```python
 from openai import OpenAI
-from engine.capture.openai import capture_chat_completion
+from aelitium import capture_openai
 
 client = OpenAI()
-result = capture_chat_completion(
+result = capture_openai(
     client, "gpt-4o",
     [{"role": "user", "content": "What is the capital of France?"}],
     out_dir="./evidence",
@@ -104,54 +97,74 @@ See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, streaming, and s
 
 ## Detect when the model changed
 
-Prove when the same AI request started producing different answers.
-
 ```bash
-# Bundle from last week (model v1)
 aelitium compare ./bundle_last_week ./bundle_today
 # STATUS=CHANGED rc=2
-# REQUEST_HASH=SAME
-# RESPONSE_HASH=DIFFERENT
+# REQUEST_HASH=SAME    a=3f4a8c1d... b=3f4a8c1d...
+# RESPONSE_HASH=DIFFERENT  a=9b2e7f1a... b=c41d8e3b...
 # INTERPRETATION=Same request produced a different response
 ```
 
-This is tamper-evident logging for model behavior: if the request hash is identical but the response hash differs, the change came from the model — not your code.
+If `REQUEST_HASH=SAME` and `RESPONSE_HASH=DIFFERENT`, the change came from the model — not your code.
 
-Run the full example:
+Run the full example (requires OpenAI API key):
 
 ```bash
 python examples/model_drift_detector.py
 ```
 
-If the model silently changed behavior between runs:
+---
 
-```
-STATUS=CHANGED rc=2
-INTERPRETATION=Same request produced a different response
+## Scan for unprotected LLM calls
+
+Find every LLM call in your codebase that isn't wrapped in a capture adapter:
+
+```bash
+aelitium scan ./src
+
+# LLM call sites detected: 12
+# Instrumented with capture adapter: 9
+#   ✓ openai — api/worker.py:14
+#   ✓ openai — api/worker.py:38
+# Missing evidence capture: 3
+#   ⚠ openai — jobs/batch.py:22
+#   ⚠ anthropic — agents/classifier.py:11
+#   ⚠ litellm — utils/fallback.py:7
+# Coverage: 9/12 (75%)
+# STATUS=INCOMPLETE rc=2
 ```
 
-That means the change came from the model — not your code.
+Add to CI/CD to enforce evidence coverage:
+
+```yaml
+- name: Check LLM evidence coverage
+  run: aelitium scan ./src
+```
+
+For CI-friendly key=value output:
+
+```bash
+aelitium scan ./src --ci
+# AELITIUM_SCAN_STATUS=INCOMPLETE
+# AELITIUM_SCAN_TOTAL=12
+# AELITIUM_SCAN_INSTRUMENTED=9
+# AELITIUM_SCAN_MISSING=3
+# AELITIUM_SCAN_COVERAGE=75
+```
 
 ---
 
 ## Reproducibility
 
-AELITIUM is designed to be deterministic. The same AI output always produces the same hash, on any machine.
-
-Run the full reproducibility check from a clean environment:
+The same AI output always produces the same hash, on any machine:
 
 ```bash
 bash scripts/verify_repro.sh
+# === RESULT: PASS ===
+# AI_HASH_SHA256=8b647717...
 ```
 
-This script creates a fresh virtual environment, installs the project, runs the test suite, packs the example twice, and confirms the resulting hashes match.
-
-```
-=== RESULT: PASS ===
-AI_HASH_SHA256=8b647717...
-```
-
-All tests also pass on two independent machines (A + B) with identical hashes.
+Validated on two independent machines (A + B) with identical hashes.
 
 ---
 
@@ -161,15 +174,15 @@ All tests also pass on two independent machines (A + B) with identical hashes.
 
 | Command | Description |
 |---------|-------------|
-| `validate --input <file>` | Validate against `ai_output_v1` schema |
-| `canonicalize --input <file>` | Print deterministic hash |
+| `scan <path>` | Scan Python files for uninstrumented LLM call sites |
+| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
+| `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify --out <dir>` | Verify integrity of a pack output dir |
-| `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
-| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
+| `validate --input <file>` | Validate against `ai_output_v1` schema |
+| `canonicalize --input <file>` | Print deterministic hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 | `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
-| `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 
 Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 

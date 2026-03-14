@@ -169,6 +169,80 @@ class TestScanMixed(unittest.TestCase):
             self.assertGreater(data["uninstrumented"], 0)
 
 
+class TestScanCoverage(unittest.TestCase):
+    def test_coverage_shown_in_normal_output(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "app.py", """
+                from engine.capture.openai import capture_chat_completion
+                capture_chat_completion(client, m, msgs, "./out")
+                client.chat.completions.create(model=m, messages=msgs)
+            """)
+            _write(d, "bad.py", """
+                client.chat.completions.create(model="gpt-4o", messages=msgs)
+            """)
+            r = _run(["scan", d])
+            self.assertIn("Coverage:", r.stdout)
+
+    def test_coverage_pct_in_json_output(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "app.py", """
+                from engine.capture.openai import capture_chat_completion
+                capture_chat_completion(client, m, msgs, "./out")
+                client.chat.completions.create(model=m, messages=msgs)
+            """)
+            _write(d, "bad.py", """
+                client.chat.completions.create(model="gpt-4o", messages=msgs)
+            """)
+            r = _run(["scan", d, "--json"])
+            data = json.loads(r.stdout)
+            self.assertIn("coverage_pct", data)
+            self.assertIsInstance(data["coverage_pct"], int)
+
+    def test_full_coverage_is_100(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "app.py", """
+                from engine.capture.openai import capture_chat_completion
+                capture_chat_completion(client, m, msgs, "./out")
+                client.chat.completions.create(model=m, messages=msgs)
+            """)
+            r = _run(["scan", d, "--json"])
+            data = json.loads(r.stdout)
+            self.assertEqual(data["coverage_pct"], 100)
+
+
+class TestScanCI(unittest.TestCase):
+    def test_ci_flag_outputs_kv_format(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "worker.py", """
+                client.chat.completions.create(model="gpt-4o", messages=msgs)
+            """)
+            r = _run(["scan", d, "--ci"])
+            self.assertIn("AELITIUM_SCAN_STATUS=", r.stdout)
+            self.assertIn("AELITIUM_SCAN_TOTAL=", r.stdout)
+            self.assertIn("AELITIUM_SCAN_MISSING=", r.stdout)
+            self.assertIn("AELITIUM_SCAN_COVERAGE=", r.stdout)
+
+    def test_ci_flag_incomplete_exits_2(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "worker.py", """
+                client.chat.completions.create(model="gpt-4o", messages=msgs)
+            """)
+            r = _run(["scan", d, "--ci"])
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("AELITIUM_SCAN_STATUS=INCOMPLETE", r.stdout)
+
+    def test_ci_flag_ok_exits_0(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "app.py", """
+                from engine.capture.openai import capture_chat_completion
+                capture_chat_completion(client, m, msgs, "./out")
+                client.chat.completions.create(model=m, messages=msgs)
+            """)
+            r = _run(["scan", d, "--ci"])
+            self.assertEqual(r.returncode, 0)
+            self.assertIn("AELITIUM_SCAN_STATUS=OK", r.stdout)
+
+
 class TestScanErrors(unittest.TestCase):
     def test_nonexistent_path_exits_2(self):
         r = _run(["scan", "/nonexistent/path/aelitium_test_xyz"])

@@ -1,7 +1,7 @@
 # AELITIUM — Test Matrix
 
-Last updated: 2026-03-10
-Total: **171 tests, all PASS**
+Last updated: 2026-03-14
+Total: **177 tests, all PASS**
 
 ---
 
@@ -45,6 +45,7 @@ No API keys required. All external calls are mocked.
 | Evidence log validator | `test_validate_evidence_log.py` | 11 | Governance log format (EVIDENCE_ENTRY v1) |
 | verify-bundle CLI | `test_ai_cli_verify_bundle.py` | 17 | verify-bundle: hash, binding_hash recompute, signature, tamper |
 | compare CLI | `test_ai_cli_compare.py` | 12 | compare: UNCHANGED/CHANGED/NOT_COMPARABLE/INVALID_BUNDLE, exit codes |
+| scan CLI | `test_ai_cli_scan.py` | 19 | scan: uninstrumented detection, coverage metric, --ci output, exit codes |
 
 ### Capture layer
 

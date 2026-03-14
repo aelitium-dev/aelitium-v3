@@ -472,6 +472,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
     total = len(instrumented) + len(uninstrumented)
     status = "OK" if not uninstrumented else "INCOMPLETE"
     rc = 0 if not uninstrumented else 2
+    coverage_pct = int(len(instrumented) * 100 / total) if total > 0 else 100
 
     if getattr(args, "json", False):
         print(json.dumps({
@@ -480,8 +481,17 @@ def cmd_scan(args: argparse.Namespace) -> int:
             "total": total,
             "instrumented": len(instrumented),
             "uninstrumented": len(uninstrumented),
+            "coverage_pct": coverage_pct,
             "sites": instrumented + uninstrumented,
         }, sort_keys=True))
+        return rc
+
+    if getattr(args, "ci", False):
+        print(f"AELITIUM_SCAN_STATUS={status}")
+        print(f"AELITIUM_SCAN_TOTAL={total}")
+        print(f"AELITIUM_SCAN_INSTRUMENTED={len(instrumented)}")
+        print(f"AELITIUM_SCAN_MISSING={len(uninstrumented)}")
+        print(f"AELITIUM_SCAN_COVERAGE={coverage_pct}")
         return rc
 
     print(f"LLM call sites detected: {total}")
@@ -500,9 +510,10 @@ def cmd_scan(args: argparse.Namespace) -> int:
         for s in uninstrumented:
             print(f"  \u26a0 {s['provider']} \u2014 {s['file']}:{s['line']}")
         print("\nHINT: Wrap uninstrumented calls with the AELITIUM capture adapter.")
-        print("  from engine.capture.openai import capture_chat_completion")
+        print("  from aelitium import capture_openai")
 
-    print(f"\nSTATUS={status} rc={rc}")
+    print(f"\nCoverage: {len(instrumented)}/{total} ({coverage_pct}%)")
+    print(f"STATUS={status} rc={rc}")
     return rc
 
 
@@ -588,7 +599,15 @@ def main() -> int:
     sc = sub.add_parser("scan", help="Scan Python files for uninstrumented LLM call sites")
     sc.add_argument("path", help="Directory to scan recursively")
     sc.add_argument("--json", action="store_true", help="Output as JSON")
+    sc.add_argument("--ci", action="store_true", help="CI-friendly AELITIUM_SCAN_* key=value output")
     sc.set_defaults(fn=cmd_scan)
+
+    # `aelitium check` — alias for scan, more intuitive for new users
+    ck = sub.add_parser("check", help="Alias for scan — check LLM calls for missing evidence capture")
+    ck.add_argument("path", help="Directory to scan recursively")
+    ck.add_argument("--json", action="store_true", help="Output as JSON")
+    ck.add_argument("--ci", action="store_true", help="CI-friendly AELITIUM_SCAN_* key=value output")
+    ck.set_defaults(fn=cmd_scan)
 
     exp = sub.add_parser("export", help="Export bundle in compliance format")
     exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")
