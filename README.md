@@ -6,6 +6,15 @@
 ![tests](https://img.shields.io/badge/tests-177%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
+```bash
+pip install aelitium
+aelitium compare ./bundle_last_week ./bundle_today
+# STATUS=CHANGED
+# REQUEST_HASH=SAME
+# RESPONSE_HASH=DIFFERENT
+# INTERPRETATION=Same request produced a different response
+```
+
 ---
 
 ## The problem
@@ -165,6 +174,33 @@ bash scripts/verify_repro.sh
 ```
 
 Validated on two independent machines (A + B) with identical hashes.
+
+---
+
+## How this differs from observability tools
+
+Tools like Langfuse or Helicone help you **debug LLM calls**.
+
+AELITIUM helps you **prove what the model actually said**.
+
+Logs can be edited. Evidence bundles cannot.
+
+| Tool | What it does |
+|------|-------------|
+| Langfuse, Helicone, LangSmith | observability — traces, metrics, dashboards |
+| AELITIUM | verification — cryptographic proof the record wasn't altered |
+
+These are complementary, not competing. AELITIUM adds a tamper-evident layer on top of any existing pipeline.
+
+---
+
+## When teams use AELITIUM
+
+- Detect when an LLM provider silently changes behavior between runs
+- Prove AI outputs weren't modified after the fact
+- Investigate incidents involving AI agents ("what exactly did the model say?")
+- Produce verifiable records for compliance or audits (EU AI Act Art.12, SOC 2)
+- Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
 
 ---
 
