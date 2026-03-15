@@ -8,6 +8,13 @@
 
 LLM outputs can change silently. AELITIUM proves what the model actually returned.
 
+## When you need this
+
+You sent the same prompt to an LLM last week.  
+Today the output is different.
+
+Can you prove exactly when it changed?
+
 ```bash
 git clone https://github.com/aelitium-dev/aelitium-v3
 cd aelitium-v3
