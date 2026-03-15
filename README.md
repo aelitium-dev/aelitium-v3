@@ -40,13 +40,6 @@ cd aelitium-v3 && pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
-```
-STATUS=CHANGED
-REQUEST_HASH=SAME
-RESPONSE_HASH=DIFFERENT
-INTERPRETATION=Same request produced a different response
-```
-
 Same request. Different output. That means the change came from the model — not your code.
 
 ```bash
