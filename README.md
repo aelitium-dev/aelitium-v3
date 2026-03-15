@@ -1,18 +1,23 @@
 # AELITIUM
 
-> Detect when LLM behavior silently changes — verifiable, offline, no server.
+> Git-style verification for LLM outputs.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![tests](https://img.shields.io/badge/tests-177%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
+LLM outputs can change silently. AELITIUM proves what the model actually returned.
+
 ```bash
 pip install aelitium
-aelitium compare ./bundle_last_week ./bundle_today
-# STATUS=CHANGED
-# REQUEST_HASH=SAME
-# RESPONSE_HASH=DIFFERENT
-# INTERPRETATION=Same request produced a different response
+bash examples/drift_demo/run_demo.sh  # no API key required
+```
+
+```
+STATUS=CHANGED
+REQUEST_HASH=SAME       ← same model + messages
+RESPONSE_HASH=DIFFERENT ← model returned something different
+INTERPRETATION=Same request produced a different response
 ```
 
 ---
@@ -27,11 +32,12 @@ AELITIUM gives you cryptographic evidence for every LLM call — request hash, r
 
 ---
 
-## 30-second demo
+## Try it offline
 
 ```bash
-pip install aelitium
-bash examples/drift_demo/run_demo.sh
+git clone https://github.com/aelitium-dev/aelitium-v3
+cd aelitium-v3 && pip install -e .
+bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
 ```
@@ -115,7 +121,13 @@ aelitium compare ./bundle_last_week ./bundle_today
 
 If `REQUEST_HASH=SAME` and `RESPONSE_HASH=DIFFERENT`, the change came from the model — not your code.
 
-Run the full example (requires OpenAI API key):
+Run offline (no API key):
+
+```bash
+bash examples/drift_demo/run_demo.sh
+```
+
+Or with a real OpenAI key:
 
 ```bash
 python examples/model_drift_detector.py
