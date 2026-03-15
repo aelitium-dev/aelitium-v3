@@ -9,7 +9,9 @@
 LLM outputs can change silently. AELITIUM proves what the model actually returned.
 
 ```bash
-pip install aelitium
+git clone https://github.com/aelitium-dev/aelitium-v3
+cd aelitium-v3
+pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
