@@ -31,15 +31,14 @@ AELITIUM gives you cryptographic evidence for every LLM call — request hash, r
 
 ```bash
 pip install aelitium
+bash examples/drift_demo/run_demo.sh
 ```
 
-```bash
-# Capture two runs of the same request:
-aelitium compare ./bundle_last_week ./bundle_today
-# STATUS=CHANGED rc=2
-# REQUEST_HASH=SAME
-# RESPONSE_HASH=DIFFERENT
-# INTERPRETATION=Same request produced a different response
+```
+STATUS=CHANGED
+REQUEST_HASH=SAME
+RESPONSE_HASH=DIFFERENT
+INTERPRETATION=Same request produced a different response
 ```
 
 Same request. Different output. That means the change came from the model — not your code.
