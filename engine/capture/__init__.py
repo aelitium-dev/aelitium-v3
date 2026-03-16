@@ -8,6 +8,7 @@ Usage:
     from engine.capture.openai import capture_chat_completion
     from engine.capture.openai import capture_chat_completion_stream
     from engine.capture.anthropic import capture_message
+    from engine.capture.litellm import capture_completion
     from engine.capture.log import EvidenceLog
 """
 from .openai import capture_chat_completion, capture_chat_completion_stream, CaptureResult
