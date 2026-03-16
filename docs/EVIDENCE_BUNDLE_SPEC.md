@@ -216,6 +216,121 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 
 ---
 
+## Reference semantics
+
+### Bundle identifier
+
+```
+bundle_id = binding_hash
+```
+
+The `binding_hash` is the canonical identifier of an AELITIUM evidence bundle. It is the deterministic commitment over the canonical request–response pair:
+
+```
+binding_hash = sha256(canonical({"request_hash": ..., "response_hash": ...}))
+```
+
+External systems **SHOULD** reference bundles using `binding_hash` as the identifier.
+
+**Required properties:**
+
+- Two valid bundles describing the same canonical request and response **MUST** produce the same `binding_hash`
+- The bundle identifier **MUST** equal `binding_hash` — not `request_hash`, not `response_hash`, not `ai_hash_sha256`
+- The identifier is deterministic, globally unique, offline-derivable, and provider-independent
+
+**Why `binding_hash` and not the other hashes:**
+
+| Field | What it identifies |
+|-------|-------------------|
+| `request_hash` | The input only |
+| `response_hash` | The output only |
+| `binding_hash` | The request ↔ response relationship — the evidence object itself |
+
+The neutral artifact is the *pairing*, not either side independently.
+
+### Verification determinism
+
+A conforming implementation verifying an AELITIUM evidence bundle **MUST produce the same verification result** as any other conforming implementation given the same bundle and canonicalization rules.
+
+Verification **MUST depend only on the normative fields defined in this specification**:
+
+```
+request_hash
+response_hash
+binding_hash
+canonical_request
+canonical_response
+```
+
+Non-normative metadata fields (e.g. `ts_utc`, `provider_metadata`, `captured_at_utc`) **MUST NOT affect verification outcomes**.
+
+Implementations **MUST treat unknown fields as non-normative metadata** unless explicitly defined by this specification.
+
+Verification **MUST fail closed**: if any required normative field is missing or malformed, the result MUST be `STATUS=INVALID`. Partial acceptance is not permitted.
+
+Verification **MUST be a pure function** of the bundle contents and the canonicalization rules — it MUST NOT depend on execution environment, system time, external state, or any input not present in the bundle itself.
+
+---
+
+### Reference patterns
+
+How external layers should reference a bundle:
+
+**Agent receipt:**
+```json
+{
+  "action": "publish_report",
+  "evidenceRef": {
+    "type": "aelitium/binding-bundle",
+    "hash": { "algorithm": "sha256", "digest": "<binding_hash>" }
+  }
+}
+```
+
+**Payment reference:**
+```json
+{
+  "paid_inference": true,
+  "evidenceRef": "<binding_hash>"
+}
+```
+
+**Audit log:**
+```json
+{
+  "evidence": "<binding_hash>",
+  "verified": true
+}
+```
+
+### Bundle immutability
+
+The identity of an AELITIUM evidence bundle is fully determined by `binding_hash`.
+
+If the canonical request or canonical response differ, the resulting `binding_hash` **MUST** differ except with negligible probability due to hash collisions. Therefore:
+
+- Two bundles with the same `binding_hash` **MUST** represent the same canonical request–response pair.
+- Any bundle that produces a different `binding_hash` **MUST** be treated as a distinct evidence object.
+- Implementations **MUST** treat bundles with different `binding_hash` values as distinct evidence objects.
+
+The bundle identifier is **content-addressed and immutable**.
+
+Note: bundles may contain non-normative fields (e.g. `ts_utc`, `provider_metadata`, `captured_at_utc`) that do not affect identity. Immutability applies to `request_hash`, `response_hash`, and `binding_hash` only — not to metadata fields.
+
+---
+
+### What this spec does NOT define
+
+To preserve layer neutrality, this spec does not define:
+
+- Payment schemas or protocols
+- Agent receipt formats
+- Transport envelope structures
+
+It defines only how evidence is identified and referenced. Each layer chooses its own referencing structure; the `binding_hash` is the common anchor.
+
+---
+
 ## Implementations
 
 | Implementation | Language | Status |
