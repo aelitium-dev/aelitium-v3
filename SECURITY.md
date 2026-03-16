@@ -11,7 +11,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Report privately to: **security@aelitium.dev**
+Report privately to: **secure@aelitium.com**
 
 Include:
 - Description of the vulnerability

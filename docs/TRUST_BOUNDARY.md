@@ -74,9 +74,33 @@ If a logging agent selectively omits events before they reach the capture layer,
 | Manifest hash field altered | ✅ detected | ✅ detected |
 | Both bundle and stored hash replaced consistently | ❌ not detected | ✅ detected (signature covers hash) |
 | Bundle packed before/after the real generation | ❌ not detected | ✅ timestamp in receipt |
+| Manually crafted bundle with valid hashes | ❌ not detected | ✅ requires authority to have seen hash at generation time |
 | Packing process compromised | ❌ not detected | ❌ not detected |
 | Agent omits events before capture | ❌ not detected | ❌ not detected |
 | Model or prompt compromised before generation | ❌ out of scope | ❌ out of scope |
+
+---
+
+## Artifact forgery
+
+Any party with access to the original inputs (the messages and model response) can reconstruct a bundle with valid, matching hashes. This is a known property of hash-based integrity systems, not a bug.
+
+**Why this is expected behavior:**
+
+An evidence bundle proves that a given payload was packed and has not changed since. It does not prove that the packing happened at generation time or that no other party could have performed it. The hash is deterministic — that is a design goal, not a vulnerability.
+
+**Consequence:** a bundle alone cannot prove that the person who packed it is the same person who made the API call. Anyone who knows the request and response can produce an identical bundle.
+
+**Mitigations, in increasing strength:**
+
+| Mitigation | What it adds |
+|-----------|-------------|
+| Capture adapter (P2) | `request_hash` ties the bundle to the exact API payload sent, not a reconstruction |
+| Operator signing (P2+) | Ed25519 signature in `verification_keys.json` ties the bundle to the operator's private key |
+| Authority receipt (P3) | External timestamp and signature prove the authority saw this hash at a specific time — forgery would require the authority's private key |
+| Observer-based capture | Independent process intercepts the API call; the agent cannot forge what it did not control |
+
+**Practical implication:** for internal audit trails and model drift detection, P2 hash-only bundles are sufficient — collusion requires controlling both the bundle and the hash store. For third-party audits or regulatory submissions, P3 receipts add non-repudiation.
 
 ---
 

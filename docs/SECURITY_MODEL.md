@@ -75,8 +75,54 @@ P2 (pack + verify) requires only Python stdlib (`json`, `hashlib`, `pathlib`).
 
 ---
 
+## Privacy and PII
+
+Evidence bundles contain a verbatim copy of the AI output payload. If the prompt or response contains personal data, the bundle contains personal data.
+
+**AELITIUM does not:**
+- Inspect, filter, or redact payload content
+- Log payloads to any external service
+- Transmit bundle contents anywhere (all operations are local)
+
+**Operator responsibilities:**
+
+| Concern | Guidance |
+|---------|---------|
+| Bundles stored on disk | Apply filesystem-level access controls; treat bundle directories as you would application logs |
+| Bundles containing personal data | GDPR / CCPA: bundles are data records — deletion requests may require deleting the bundle file. The hash stored separately becomes orphaned and can be deleted alongside it |
+| Long-term archival | Consider whether the `output` field of the payload needs to be archived, or whether storing the hash reference alone is sufficient for your audit requirements |
+| P3 receipts (external signing) | The authority receives only the `ai_hash_sha256` — the payload is never transmitted. Receipt signing is hash-only |
+
+**Using the `metadata` field for PII control:**
+
+If you need to store PII-adjacent context (e.g., a user session ID for correlation) without embedding it in the content hash, store it in the `metadata` field:
+
+```python
+result = capture_openai(
+    client, model, messages, out_dir="./evidence",
+    metadata={"session_id": session_id}  # stored in bundle, not in request_hash
+)
+```
+
+Metadata is preserved in the bundle and included in `ai_canonical.json`, but excluded from `request_hash`. Deletion of the bundle removes all associated metadata.
+
+**Minimum viable bundle (privacy-first):**
+
+If the output itself is sensitive and you only need drift detection (not content archival), you can store only the hashes:
+
+```python
+# Store hashes in your DB; delete the bundle file
+result = capture_openai(client, model, messages, out_dir=tmp_dir)
+db.store(request_hash=result.request_hash, response_hash=result.response_hash)
+shutil.rmtree(tmp_dir)
+```
+
+The `request_hash` and `response_hash` are pseudonymous (SHA-256 of content) — without the original payload, they cannot be used to reconstruct the prompt or response.
+
+---
+
 ## Responsible disclosure
 
-Security issues should be reported privately to `security@aelitium.dev`.
+Security issues should be reported privately to `secure@aelitium.com`.
 
 See [SECURITY.md](../SECURITY.md) for the full policy.

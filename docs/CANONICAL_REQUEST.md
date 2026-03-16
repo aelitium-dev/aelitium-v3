@@ -108,6 +108,31 @@ result = capture_openai(
 
 ---
 
+## Response hash — field selection and schema drift
+
+`response_hash` is computed from a minimal, stable subset of the provider response:
+
+```python
+response_data = {"content": output_text, "model": response.model}
+response_hash = sha256_hash(canonical_json(response_data))
+```
+
+| Field | Included | Reason |
+|-------|----------|--------|
+| `content` | ✅ | The actual model output — core of the evidence |
+| `model` | ✅ | Provider-confirmed model identifier |
+| `id` | ❌ | Response identifier — changes per call, not part of evidence |
+| `created` | ❌ | Timestamp — stored separately in metadata |
+| `finish_reason` | ❌ | Post-processing signal, not part of output content |
+| `usage` | ❌ | Token counts — operational metadata, not evidence |
+| `system_fingerprint` | ❌ | Provider-internal, unstable across versions |
+
+**Schema drift rule:** when providers add new response fields, they are excluded from `response_hash` by default. Only fields explicitly listed above are hashed. This ensures `response_hash` remains stable across provider SDK updates.
+
+**Implication:** two responses with identical content and model name will have the same `response_hash`, regardless of when they were generated or what other metadata the provider returned. This is intentional — the hash captures *what the model said*, not *when or how the provider delivered it*.
+
+---
+
 ## Reference implementation
 
 `engine/capture/openai.py`, line 107:

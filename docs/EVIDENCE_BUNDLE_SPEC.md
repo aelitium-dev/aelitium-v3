@@ -181,6 +181,41 @@ Schema version is stored in `ai_manifest.json` → `schema`. Verifiers must reje
 
 ---
 
+## Hash algorithm upgrade path
+
+AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` field in the manifest is the extension point for future algorithm changes.
+
+**Current state:**
+
+```json
+{
+  "canonicalization": "json-canonical-v1",
+  "ai_hash_sha256": "<sha256 hex>"
+}
+```
+
+**Design rule:** the manifest field name (`ai_hash_sha256`) encodes the algorithm. If the hash algorithm changes, a new field name is added alongside the old one during the transition period:
+
+```json
+{
+  "canonicalization": "json-canonical-v1",
+  "ai_hash_sha256": "<sha256 hex>",
+  "ai_hash_sha3_256": "<sha3-256 hex>"
+}
+```
+
+**Migration policy:**
+
+1. A new schema version (e.g. `2.x`) introduces the new hash field as optional, alongside SHA-256
+2. A subsequent version (`3.0`) deprecates the old hash field; verifiers warn but still accept
+3. A final version removes the old hash field; only the new algorithm is required
+
+**Why not an algorithm identifier string?** Encoding the algorithm in the field name makes it impossible to silently change the algorithm without changing the manifest schema — any verifier that only knows SHA-256 will reject a bundle that omits `ai_hash_sha256`, rather than silently accepting a hash it cannot verify.
+
+**SHA-256 status:** SHA-256 has no known weaknesses for integrity use cases (collision resistance is not required here — only second-preimage resistance). No migration is planned. This section documents the path if standards change.
+
+---
+
 ## Implementations
 
 | Implementation | Language | Status |
