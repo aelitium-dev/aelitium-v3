@@ -150,9 +150,7 @@ Every capture bundle now includes:
 | `metadata.usage` | Token usage: prompt, completion, total |
 | `metadata.captured_at_utc` | Local capture timestamp (ISO8601) |
 
-The `binding_hash` is the critical new field: it is a single SHA256 over
-`canonical({"request_hash": ..., "response_hash": ...})`. Without it,
-a request_hash and response_hash could be mixed from different calls.
+The `binding_hash` is the critical new field: it is a **cryptographic commitment** over the pair `(request_hash, response_hash)` — `sha256(canonical({"request_hash": ..., "response_hash": ...}))`. Any change to either component produces a different `binding_hash`, making the request–response relationship tamper-evident. Without it, a `request_hash` and `response_hash` from different calls could be presented together as a pair.
 
 ## Operator signing (optional)
 
