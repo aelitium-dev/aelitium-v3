@@ -3,14 +3,63 @@
 > Git-style verification for LLM outputs.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-177%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 LLM outputs can change silently. AELITIUM proves what the model actually returned.
 
+## Try in 30 seconds
 
-Binding is computed client-side from canonicalized request/response payloads.
-Verification operates in embedded mode (no external key resolution).
+Add deterministic, offline-verifiable evidence to a real LLM call.
+
+**1. Install**
+
+```bash
+pip install aelitium litellm
+export OPENAI_API_KEY="sk-..."
+```
+
+**2. Run**
+
+```python
+from aelitium import enable_litellm
+import litellm
+
+enable_litellm(verbose=True)
+
+response = litellm.completion(
+    model="openai/gpt-4o",
+    messages=[{"role": "user", "content": "Say hello in one sentence"}],
+)
+print(response.choices[0].message.content)
+```
+
+```
+AELITIUM: bundle → ./aelitium/bundles/<binding_hash>  binding_hash=<hash>
+Hello! How are you doing today?
+```
+
+**3. Verify**
+
+```bash
+BUNDLE=$(ls -td aelitium/bundles/* | head -1)
+aelitium verify-bundle "$BUNDLE"
+# STATUS=VALID
+```
+
+**4. Tamper and verify again**
+
+```bash
+sed -i 's/Hello/HELLO/' "$BUNDLE/ai_canonical.json"
+aelitium verify-bundle "$BUNDLE"
+# STATUS=INVALID
+```
+
+`enable_litellm()` requires no changes to your existing code.
+Every call produces a deterministic evidence bundle — offline, fail-closed.
+Any modification → `INVALID`.
+
+---
 
 ## When you need this
 
@@ -141,7 +190,7 @@ Add one line. Keep using LiteLLM normally.
 from aelitium import enable_litellm
 import litellm
 
-enable_litellm(out_dir="./aelitium/bundles")
+enable_litellm(out_dir="./aelitium/bundles", verbose=True)
 
 response = litellm.completion(
     model="openai/gpt-4o",
@@ -149,7 +198,7 @@ response = litellm.completion(
 )
 
 print(response.choices[0].message.content)
-# Bundle written to ./aelitium/bundles/<binding_hash>/
+# AELITIUM: bundle → ./aelitium/bundles/<binding_hash>  binding_hash=<hash>
 ```
 
 Every call writes a bundle automatically. The LLM response is unchanged.
