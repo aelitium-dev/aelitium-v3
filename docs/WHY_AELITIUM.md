@@ -9,10 +9,12 @@ Later, something goes wrong. Or an auditor asks: *"What exactly did the model sa
 You check your logs. The text is there. But you can't prove:
 
 - That the log wasn't modified
-- That the output you see is the output the model actually generated
-- That no one in the pipeline altered it before it was stored
+- That no one in the pipeline altered the output before it was stored
+- That what you are inspecting is identical to what was recorded at capture time
 
-**Logging records what happened. It doesn't prove it.**
+**Logging records what happened. It doesn't prove the record wasn't changed.**
+
+Note: AELITIUM does not solve capture authenticity — it cannot prove that the capture path itself was honest, or that the bundle reflects exactly what the model produced. It provides cryptographic integrity for the evidence bundle you create. See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md).
 
 ---
 
@@ -25,16 +27,16 @@ You check your logs. The text is there. But you can't prove:
 | Audit logs | Records actions | Can be altered by admins |
 | Vector stores | Stores embeddings | Not designed for integrity guarantees |
 
-These tools are built for debugging and monitoring. None of them answer: *"Is this output exactly what the model generated?"*
+These tools are built for debugging and monitoring. None of them answer: *"Has this recorded output been modified since it was captured?"*
 
 ---
 
 ## What AELITIUM does differently
 
-AELITIUM attaches a cryptographic fingerprint to every AI output at generation time.
+AELITIUM binds a cryptographic fingerprint to the evidence bundle at packaging time.
 
 ```
-AI response generated
+AI response captured
         ↓
 AELITIUM packs it into an evidence bundle
         ↓
@@ -46,9 +48,9 @@ Hash stored alongside the output
 Later, anyone can recompute the hash and check:
 
 ```bash
-aelitium verify --out ./evidence
-# STATUS=VALID rc=0   ← output is intact
-# STATUS=INVALID rc=2 reason=HASH_MISMATCH  ← output was modified
+aelitium verify-bundle ./evidence
+# STATUS=VALID rc=0   ← bundle is intact
+# STATUS=INVALID rc=2 reason=HASH_MISMATCH  ← bundle was modified
 ```
 
 No network required. No AELITIUM server required. Just math.
@@ -83,9 +85,9 @@ AELITIUM is not:
 - A content moderation layer
 - A guarantee that the model behaved correctly
 
-AELITIUM proves **integrity** (the output wasn't changed), not **quality** (the output was good).
+AELITIUM proves **bundle integrity** (the evidence wasn't changed after packaging), not **capture authenticity** (that the bundle faithfully represents what the model produced) and not **quality** (that the output was correct).
 
-These are separate problems. AELITIUM solves the integrity problem.
+These are separate problems. AELITIUM solves the integrity problem. See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) for the full boundary.
 
 ---
 
@@ -106,4 +108,4 @@ These are separate problems. AELITIUM solves the integrity problem.
 - Teams running LLM pipelines in regulated industries (healthcare, finance, legal)
 - Developers building AI agents that take consequential actions
 - Engineers who need audit trails for AI-generated content
-- Anyone who wants to answer "what did the model actually say?" with proof
+- Anyone who wants to detect post-hoc modification of recorded LLM interactions
