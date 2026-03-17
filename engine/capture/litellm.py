@@ -202,7 +202,7 @@ def enable(
 
     Invariants:
       - wrapped(*args, **kwargs) returns identical response to original
-      - side-effect: bundle written to <out_dir>/<ai_hash_sha256>/
+      - side-effect: bundle written to <out_dir>/<binding_hash>/
       - LLM call errors always propagate (never swallowed)
       - streaming calls (stream=True) pass through without capture
       - bundle capture errors: warn (default) or raise if strict=True
@@ -280,14 +280,15 @@ def enable(
                 out_dir=tmp_dir,
                 _pre_response=response,
             )
-            final_dir = base_out_dir / result.ai_hash_sha256
+            manifest = json.loads((tmp_dir / "ai_manifest.json").read_text())
+            binding_hash = manifest["binding_hash"]
+            final_dir = base_out_dir / binding_hash
             if tmp_dir.exists():
                 tmp_dir.rename(final_dir)
             if verbose:
-                manifest = json.loads((final_dir / "ai_manifest.json").read_text())
                 print(
                     f"AELITIUM: bundle → {final_dir}"
-                    f"  binding_hash={manifest.get('binding_hash', result.ai_hash_sha256)}"
+                    f"  binding_hash={binding_hash}"
                 )
         except Exception as exc:
             if tmp_dir.exists():
