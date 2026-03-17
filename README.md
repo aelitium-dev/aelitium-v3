@@ -59,6 +59,9 @@ aelitium verify-bundle "$BUNDLE"
 Every call produces a deterministic evidence bundle — offline, fail-closed.
 Any modification → `INVALID`.
 
+Binding is computed client-side from canonicalized request/response payloads.
+Verification operates in embedded mode (no external key resolution).
+
 ---
 
 ## When you need this
