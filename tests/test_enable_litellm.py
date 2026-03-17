@@ -191,6 +191,32 @@ class TestEnableLiteLLM(unittest.TestCase):
         self.assertIn("binding_hash", manifest)
         self.assertEqual(len(manifest["binding_hash"]), 64)
 
+    # --- verbose ---
+
+    def test_verbose_prints_binding_hash(self):
+        self._mod.enable(out_dir=self.tmp, verbose=True)
+        import io, sys
+        buf = io.StringIO()
+        sys.stdout = buf
+        try:
+            self._stub.completion(model="openai/gpt-4o", messages=[{"role": "user", "content": "hi"}])
+        finally:
+            sys.stdout = sys.__stdout__
+        output = buf.getvalue()
+        self.assertIn("AELITIUM:", output)
+        self.assertIn("binding_hash=", output)
+
+    def test_verbose_false_prints_nothing(self):
+        self._mod.enable(out_dir=self.tmp, verbose=False)
+        import io, sys
+        buf = io.StringIO()
+        sys.stdout = buf
+        try:
+            self._stub.completion(model="openai/gpt-4o", messages=[{"role": "user", "content": "hi"}])
+        finally:
+            sys.stdout = sys.__stdout__
+        self.assertEqual(buf.getvalue(), "")
+
     # --- positional args ---
 
     def test_positional_args_normalised(self):

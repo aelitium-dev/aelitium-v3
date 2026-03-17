@@ -15,7 +15,7 @@ from aelitium import enable_litellm
 import litellm
 
 # One line: all subsequent litellm.completion() calls write evidence bundles.
-enable_litellm(out_dir="./aelitium/bundles")
+enable_litellm(out_dir="./aelitium/bundles", verbose=True)
 
 response = litellm.completion(
     model="openai/gpt-4o",

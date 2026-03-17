@@ -195,6 +195,7 @@ def capture_completion(
 def enable(
     out_dir: str | Path = "./aelitium/bundles",
     strict: bool = False,
+    verbose: bool = False,
 ) -> None:
     """
     Patch litellm.completion() globally to auto-capture evidence bundles.
@@ -207,10 +208,12 @@ def enable(
       - bundle capture errors: warn (default) or raise if strict=True
 
     Args:
-        out_dir: Base directory for bundles. Each call writes to a subdirectory
-                 named by ai_hash_sha256 (content-addressed).
-        strict:  If True, capture failures raise RuntimeError instead of warning.
-                 Also raises if streaming=True (which cannot be captured).
+        out_dir:  Base directory for bundles. Each call writes to a subdirectory
+                  named by ai_hash_sha256 (content-addressed).
+        strict:   If True, capture failures raise RuntimeError instead of warning.
+                  Also raises if streaming=True (which cannot be captured).
+        verbose:  If True, prints one line per captured call:
+                  AELITIUM: bundle → <path>  binding_hash=<hash>
 
     Removing the call to enable() must restore exactly the original behaviour.
     This function is a capture convenience layer — it does not alter the
@@ -280,6 +283,12 @@ def enable(
             final_dir = base_out_dir / result.ai_hash_sha256
             if tmp_dir.exists():
                 tmp_dir.rename(final_dir)
+            if verbose:
+                manifest = json.loads((final_dir / "ai_manifest.json").read_text())
+                print(
+                    f"AELITIUM: bundle → {final_dir}"
+                    f"  binding_hash={manifest.get('binding_hash', result.ai_hash_sha256)}"
+                )
         except Exception as exc:
             if tmp_dir.exists():
                 shutil.rmtree(tmp_dir, ignore_errors=True)
