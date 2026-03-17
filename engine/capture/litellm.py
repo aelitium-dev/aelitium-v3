@@ -33,6 +33,7 @@ def capture_completion(
     messages: List[Dict[str, str]],
     out_dir: str | Path,
     metadata: Optional[Dict[str, Any]] = None,
+    _pre_response: Optional[Any] = None,
     **litellm_kwargs: Any,
 ) -> CaptureResult:
     """
@@ -83,8 +84,11 @@ def capture_completion(
     request_payload = {"messages": messages, "model": model}
     request_hash = sha256_hash(canonical_json(request_payload))
 
-    # 2. Call LiteLLM
-    response = _litellm.completion(model=model, messages=messages, **litellm_kwargs)
+    # 2. Call LiteLLM (or use pre-obtained response — avoids double LLM call in enable())
+    if _pre_response is not None:
+        response = _pre_response
+    else:
+        response = _litellm.completion(model=model, messages=messages, **litellm_kwargs)
 
     # 3. Extract output text (OpenAI-compatible response)
     choices = getattr(response, "choices", None)
@@ -186,3 +190,107 @@ def capture_completion(
         ai_hash_sha256=result.ai_hash_sha256,
         signed=signed,
     )
+
+
+def enable(
+    out_dir: str | Path = "./aelitium/bundles",
+    strict: bool = False,
+) -> None:
+    """
+    Patch litellm.completion() globally to auto-capture evidence bundles.
+
+    Invariants:
+      - wrapped(*args, **kwargs) returns identical response to original
+      - side-effect: bundle written to <out_dir>/<ai_hash_sha256>/
+      - LLM call errors always propagate (never swallowed)
+      - streaming calls (stream=True) pass through without capture
+      - bundle capture errors: warn (default) or raise if strict=True
+
+    Args:
+        out_dir: Base directory for bundles. Each call writes to a subdirectory
+                 named by ai_hash_sha256 (content-addressed).
+        strict:  If True, capture failures raise RuntimeError instead of warning.
+                 Also raises if streaming=True (which cannot be captured).
+
+    Removing the call to enable() must restore exactly the original behaviour.
+    This function is a capture convenience layer — it does not alter the
+    evidence model, verification semantics, or trust boundary.
+    """
+    import shutil
+    import uuid
+    import warnings
+
+    try:
+        import litellm as _litellm
+    except ImportError:
+        raise ImportError(
+            "LiteLLM adapter requires the 'litellm' package. "
+            "Install it with: pip install aelitium[litellm]"
+        )
+
+    base_out_dir = Path(out_dir)
+    original = _litellm.completion
+
+    def _wrapped(*args, **kwargs):
+        # Streaming: cannot hash incremental chunks — pass through
+        if kwargs.get("stream", False):
+            if strict:
+                raise RuntimeError(
+                    "AELITIUM [strict]: stream=True is not supported — "
+                    "bundle cannot be captured. Remove strict=True or disable streaming."
+                )
+            warnings.warn(
+                "AELITIUM: streaming call detected — bundle not captured.",
+                stacklevel=2,
+            )
+            return original(*args, **kwargs)
+
+        # Normalise positional and keyword args
+        _args = list(args)
+        try:
+            model = _args.pop(0) if _args else kwargs.pop("model")
+            messages = _args.pop(0) if _args else kwargs.pop("messages")
+        except KeyError:
+            if strict:
+                raise RuntimeError(
+                    "AELITIUM [strict]: cannot extract model/messages from call signature"
+                )
+            warnings.warn(
+                "AELITIUM: cannot extract model/messages — bundle not captured.",
+                stacklevel=2,
+            )
+            return original(*args, **kwargs)
+
+        # kwargs now contains only extra params (temperature, max_tokens, …)
+        extra_kwargs = kwargs
+
+        # Step 1: call original LLM — errors always propagate unchanged
+        response = original(model=model, messages=messages, **extra_kwargs)
+
+        # Step 2: pack + write — isolated from LLM call so a disk/packing
+        # failure cannot suppress or alter the response the caller receives
+        tmp_dir = base_out_dir / f"_tmp_{uuid.uuid4().hex}"
+        try:
+            result = capture_completion(
+                model=model,
+                messages=messages,
+                out_dir=tmp_dir,
+                _pre_response=response,
+            )
+            final_dir = base_out_dir / result.ai_hash_sha256
+            if tmp_dir.exists():
+                tmp_dir.rename(final_dir)
+        except Exception as exc:
+            if tmp_dir.exists():
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            if strict:
+                raise
+            warnings.warn(
+                f"AELITIUM: bundle capture failed ({exc!r}) — "
+                "LLM response returned without evidence.",
+                stacklevel=2,
+            )
+
+        return response
+
+    _litellm.completion = _wrapped

@@ -32,10 +32,18 @@ except ImportError:
     __all_anthropic__ = []
 
 try:
-    from engine.capture.litellm import capture_completion as capture_litellm_completion
+    from engine.capture.litellm import (
+        capture_completion as capture_litellm_completion,
+        enable as enable_litellm,
+    )
     capture_litellm = capture_litellm_completion
 except ImportError:
     def capture_litellm_completion(*args, **kwargs):
+        raise ImportError(
+            "LiteLLM adapter requires the 'litellm' package. "
+            "Install it with: pip install aelitium[litellm]"
+        )
+    def enable_litellm(*args, **kwargs):
         raise ImportError(
             "LiteLLM adapter requires the 'litellm' package. "
             "Install it with: pip install aelitium[litellm]"
@@ -52,6 +60,7 @@ __all__ = [
     "capture_chat_completion_stream",
     "capture_anthropic_message",
     "capture_litellm_completion",
+    "enable_litellm",
     "CaptureResult",
     "EvidenceLog",
     "export_eu_ai_act_art12",
