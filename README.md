@@ -74,7 +74,7 @@ All commands accept `--json` for structured output.
 ## How it works
 
 ```
-API call (OpenAI / Anthropic)
+API call (OpenAI / Anthropic / LiteLLM)
       ↓
 capture adapter   ← records request_hash + response_hash at call time
       ↓
@@ -88,7 +88,7 @@ Each bundle contains a deterministic SHA-256 hash of the payload, a manifest wit
 
 ---
 
-## Capture adapter (OpenAI / Anthropic)
+## Capture adapter (OpenAI / Anthropic / LiteLLM)
 
 No manual JSON. The capture adapter intercepts the API call and writes the bundle automatically.
 
@@ -112,7 +112,20 @@ aelitium verify-bundle ./evidence
 # BINDING_HASH=...   ← cryptographic link between request and response
 ```
 
-See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, streaming, and signing.
+LiteLLM routes to any provider — one adapter covers all:
+
+```python
+from aelitium import capture_litellm
+
+result = capture_litellm(
+    model="openai/gpt-4o",           # or "anthropic/...", "bedrock/...", etc.
+    messages=[{"role": "user", "content": "What is the capital of France?"}],
+    out_dir="./evidence",
+)
+print(result.ai_hash_sha256)
+```
+
+See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, LiteLLM, streaming, and signing.
 
 ---
 
@@ -253,6 +266,8 @@ Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
 - [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, trust gap explanation
 - [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
 - [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — open draft standard for verifiable AI output bundles; AELITIUM is the reference implementation
+- [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
+- [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — interoperability note: referencing AELITIUM bundles from Agent Action Receipts
 
 ---
 
