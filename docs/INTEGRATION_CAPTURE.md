@@ -109,10 +109,10 @@ For stronger provenance, combine with a signing authority (P3).
 
 ## What is not supported yet
 
-- Streaming responses
+- Streaming responses (OpenAI streaming is supported; LiteLLM/Anthropic streaming is not)
 - Tool / function calls
 - Async clients
-- Anthropic, Gemini, LiteLLM adapters
+- Gemini adapter
 
 These are planned for future releases.
 
@@ -217,3 +217,60 @@ from engine.capture.anthropic import capture_message
 result = capture_message(anthropic_client, "claude-3-5-sonnet-20241022", messages, "./evidence/run-1")
 print(result.ai_hash_sha256)
 ```
+
+---
+
+## LiteLLM
+
+LiteLLM routes calls to multiple providers (OpenAI, Anthropic, Bedrock, Cohere, etc.) via a unified interface. The AELITIUM adapter works at the LiteLLM boundary — the evidence bundle is provider-agnostic.
+
+### Install
+
+```bash
+pip install aelitium[litellm]
+# or: pip install aelitium litellm
+```
+
+### Usage
+
+```python
+from engine.capture.litellm import capture_completion
+
+result = capture_completion(
+    model="openai/gpt-4o",           # LiteLLM model string (provider/model)
+    messages=[{"role": "user", "content": "What is 2+2?"}],
+    out_dir="./evidence",
+)
+
+print(result.ai_hash_sha256)   # deterministic hash of the evidence bundle
+print(result.bundle_dir)       # path to bundle files
+print(result.response)         # original LiteLLM response (unmodified)
+```
+
+Works with any LiteLLM-supported provider:
+
+```python
+# Anthropic via LiteLLM
+capture_completion("anthropic/claude-3-5-sonnet-20241022", messages, "./evidence")
+
+# AWS Bedrock via LiteLLM
+capture_completion("bedrock/anthropic.claude-3-sonnet-20240229-v1:0", messages, "./evidence")
+```
+
+### Model string in the bundle
+
+LiteLLM model strings include a provider prefix (`"openai/gpt-4o"`). The bundle records both:
+
+| Field | Value | What it represents |
+|-------|-------|--------------------|
+| `metadata.model_requested` | `"openai/gpt-4o"` | Model string passed to LiteLLM |
+| `metadata.model_confirmed` | `"gpt-4o"` | Model name returned by the provider |
+
+`request_hash` uses `model_requested` — it records what was asked. `response_hash` uses `model_confirmed` — it records what the provider declared.
+
+### Scope (v1)
+
+- `litellm.completion()` — synchronous, non-streaming
+- Optional Ed25519 signing (same as OpenAI/Anthropic adapters)
+
+Not in scope for v1: streaming, async (`litellm.acompletion`), tool calls.
