@@ -129,6 +129,52 @@ See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, LiteLLM, streami
 
 ---
 
+## Zero-config with LiteLLM
+
+Add one line. Keep using LiteLLM normally.
+
+```python
+from aelitium import enable_litellm
+import litellm
+
+enable_litellm(out_dir="./aelitium/bundles")
+
+response = litellm.completion(
+    model="openai/gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+
+print(response.choices[0].message.content)
+# Bundle written to ./aelitium/bundles/<binding_hash>/
+```
+
+Every call writes a bundle automatically. The LLM response is unchanged.
+
+**What you get:**
+
+- `request_hash` — deterministic hash of the exact request sent
+- `response_hash` — hash of the exact response received
+- `binding_hash` — cryptographic link between the two
+
+**Failure modes:**
+
+| Mode | Capture fails | Streaming |
+|---|---|---|
+| `strict=False` (default) | warning, response returned | pass-through |
+| `strict=True` | raises | raises |
+
+```python
+enable_litellm(strict=True)  # capture failure raises instead of warning
+```
+
+**Notes:**
+- Streaming calls (`stream=True`) are not captured — they pass through unchanged
+- No API key changes, no proxy, no new workflow — existing LiteLLM code works as-is
+
+See [`examples/litellm_enable.py`](examples/litellm_enable.py) for a runnable example.
+
+---
+
 ## Detect when the model changed
 
 ```bash
