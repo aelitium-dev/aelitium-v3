@@ -8,6 +8,10 @@
 
 LLM outputs can change silently. AELITIUM proves what the model actually returned.
 
+
+Binding is computed client-side from canonicalized request/response payloads.
+Verification operates in embedded mode (no external key resolution).
+
 ## When you need this
 
 You sent the same prompt to an LLM last week.  
