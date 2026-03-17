@@ -55,7 +55,7 @@ Stable across Machine A, Machine B, Python 3.10+, any OS.
 
 ### Notes
 
-The capture layer closes the trust gap present in the original pack-time model.
+The capture layer reduces the manual handoff gap present in the original pack-time model.
 Instead of the user writing JSON manually, `capture_chat_completion()` intercepts
 the API call at runtime, hashing request and response at the moment of the call.
 

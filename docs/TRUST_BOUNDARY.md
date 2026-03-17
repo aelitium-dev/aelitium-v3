@@ -57,7 +57,7 @@ Each level answers a stronger question:
 
 These are different properties:
 
-- **Integrity**: captured events have not been altered after capture. AELITIUM provides this.
+- **Integrity**: packed evidence has not been altered after packing. AELITIUM provides this.
 - **Completeness**: all events that should have been captured were captured. AELITIUM does not provide this.
 
 If a logging agent selectively omits events before they reach the capture layer, no cryptographic mechanism can detect the omission — there is nothing to hash. This is a well-known property of tamper-evident logs in distributed systems: proving nothing was omitted is harder than proving nothing was altered.

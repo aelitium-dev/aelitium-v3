@@ -124,8 +124,8 @@ Run `aelitium compare` against it in every CI run.
 If the model changes, the pipeline fails with `STATUS=CHANGED rc=2` and you have cryptographic proof:
 
 - what was asked (exact request)
-- what the model said before (previous response hash)
-- what it says now (new response hash)
+- what response content was recorded before (previous response hash)
+- what response content is recorded now (new response hash)
 - that the request itself did not change
 
 This is AI provider accountability: verifiable, offline, no third-party trust required.

@@ -4,7 +4,7 @@
 
 You're running an AI pipeline in production. A model generates a response. That response influences a decision — a summary, a recommendation, an automated action.
 
-Later, something goes wrong. Or an auditor asks: *"What exactly did the model say on March 5th at 14:32?"*
+Later, something goes wrong. Or an auditor asks: *"What exactly was recorded for the model interaction on March 5th at 14:32?"*
 
 You check your logs. The text is there. But you can't prove:
 
@@ -97,7 +97,7 @@ These are separate problems. AELITIUM solves the integrity problem. See [TRUST_B
 
 **Deterministic.** The same AI output always produces the same hash. This is a property, not an accident — it's enforced by the canonicalization algorithm.
 
-**Fail-closed.** If verification fails for any reason, the exit code is `2`. There is no "warning" state. Either the output is intact or it isn't.
+**Fail-closed.** If verification fails for any reason, the exit code is `2`. There is no "warning" state. Either the bundle verifies or it does not.
 
 **Small surface area.** The core is ~150 lines of Python with no exotic dependencies. It's auditable by any developer in an afternoon.
 

@@ -6,7 +6,7 @@
 ![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-LLM outputs can change silently. AELITIUM proves what the model actually returned.
+LLM outputs can change silently. AELITIUM proves that an evidence bundle has not been modified after packing.
 
 ## Try in 30 seconds
 
@@ -314,7 +314,7 @@ Validated on two independent machines (A + B) with identical hashes.
 
 Tools like Langfuse or Helicone help you **debug LLM calls**.
 
-AELITIUM helps you **prove what the model actually said**.
+AELITIUM helps you **verify that recorded evidence was not altered after packing**.
 
 Logs can be edited. Evidence bundles cannot.
 
@@ -331,7 +331,7 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 
 - Detect when an LLM provider silently changes behavior between runs
 - Prove AI outputs weren't modified after the fact
-- Investigate incidents involving AI agents ("what exactly did the model say?")
+- Investigate incidents involving AI agents ("what exactly was recorded for this interaction?")
 - Produce verifiable records for compliance or audits (EU AI Act Art.12, SOC 2)
 - Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
 
@@ -347,7 +347,7 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 | `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
 | `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
-| `verify --out <dir>` | Verify integrity of a pack output dir |
+| `verify <dir>` | Verify integrity of a pack output dir |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
 | `canonicalize --input <file>` | Print deterministic hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
