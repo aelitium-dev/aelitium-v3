@@ -6,7 +6,7 @@
 ![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-LLM outputs can change silently. AELITIUM proves what the model actually returned.
+LLM outputs can change silently. AELITIUM proves that a packed evidence bundle has not been modified after packing.
 
 ## Try in 30 seconds
 
@@ -314,7 +314,7 @@ Validated on two independent machines (A + B) with identical hashes.
 
 Tools like Langfuse or Helicone help you **debug LLM calls**.
 
-AELITIUM helps you **prove what the model actually said**.
+AELITIUM helps you **prove that recorded evidence was not modified after packing**.
 
 Logs can be edited. Evidence bundles cannot.
 

@@ -6,7 +6,7 @@ AI logs are mutable.
 
 When an LLM output influences a real decision — finance, healthcare, legal, compliance — someone eventually asks:
 
-> *"Can you prove what the model actually said?"*
+> *"Can you prove that the recorded evidence was not modified after packing?"*
 
 Standard logging (databases, S3, observability tools) cannot answer this. An admin with access can edit records. A bucket can be overwritten. A breach can go undetected.
 
