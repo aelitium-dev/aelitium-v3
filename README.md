@@ -69,7 +69,7 @@ Verification operates in embedded mode (no external key resolution).
 You sent the same prompt to an LLM last week.  
 Today the output is different.
 
-Can you prove exactly when it changed?
+Can you verify that behavior changed between recorded runs?
 
 ```bash
 pip install aelitium
@@ -98,7 +98,7 @@ You run the same prompt in production. One week later, the output is different.
 
 The model changed — but your logs just show two JSON blobs. There's no proof of *when* it changed, or *which* call started returning different results.
 
-AELITIUM gives you cryptographic evidence for every LLM call — request hash, response hash, tamper-evident bundle — so you can prove exactly when behavior changed, and that your records haven't been altered.
+AELITIUM gives you cryptographic evidence for every LLM call — request hash, response hash, tamper-evident bundle — so you can verify that behavior changed between recorded runs, and that your records haven't been altered.
 
 ---
 

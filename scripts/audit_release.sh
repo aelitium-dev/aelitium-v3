@@ -3,42 +3,19 @@ set -euo pipefail
 
 echo "== AELITIUM release audit =="
 
-fail=0
+echo
+echo "## Public claims guardrail"
+./scripts/guardrail_public_claims.sh
 
-scan_no_matches() {
-  local label="$1"
-  shift
+echo
+echo "## Capture adapter call-time claims"
+if grep -RIn --exclude='*.bak' -e "captured at call time" engine/capture ; then
   echo
-  echo "## $label"
-  if grep -RIn --exclude='*.bak' --exclude='RELEASE_AUDIT_CHECKLIST.md' "$@" ; then
-    echo
-    echo "[FAIL] $label"
-    fail=1
-  else
-    echo "[PASS] $label"
-  fi
-}
-
-scan_no_matches "Positive overclaim scan" \
-  -e "proves what the model actually" \
-  -e "what the model actually said" \
-  -e "what the model actually returned" \
-  -e "exactly what the model generated" \
-  -e "closes the trust gap" \
-  -e "no trust gap" \
-  -e "captured at call time" \
-  -e "after capture" \
-  -e "since capture" \
-  -e "at generation time" \
-  README.md docs engine/capture
-
-scan_no_matches "CLI drift in docs" \
-  -e "verify --out" \
-  README.md docs
-
-scan_no_matches "Capture adapter call-time claims" \
-  -e "captured at call time" \
-  engine/capture
+  echo "[FAIL] Capture adapter call-time claims"
+  exit 1
+else
+  echo "[PASS] Capture adapter call-time claims"
+fi
 
 echo
 echo "## CLI help validation"
@@ -53,9 +30,4 @@ else
 fi
 
 echo
-if [ "$fail" -ne 0 ]; then
-  echo "[FAIL] Release audit failed"
-  exit 1
-fi
-
 echo "[PASS] Release audit passed"
