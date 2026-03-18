@@ -62,9 +62,9 @@ def capture_completion(
         and the exact messages list. response_hash covers the provider-confirmed
         model name and the extracted content. binding_hash links the two.
 
-        This adapter proves that the output was captured at call time and has not
-        been altered since. It does NOT prove that the underlying provider is
-        honest or that the model output is correct.
+        This adapter records request/response data in the same process boundary as the call path and then packs a tamper-evident bundle.
+        It supports tamper-evident verification from packing onward.
+        It does NOT prove that the underlying provider is honest or that the model output is correct.
 
     Note on model string:
         LiteLLM model strings include a provider prefix (e.g. "openai/gpt-4o").

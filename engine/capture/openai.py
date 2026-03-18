@@ -99,9 +99,9 @@ def capture_chat_completion(
         <out_dir>/verification_keys.json  (if signing key is configured)
 
     Trust boundary:
-        This adapter proves that the output was captured at call time and
-        has not been altered since. It does NOT prove the model is correct
-        or that the client itself was not compromised.
+        This adapter records request/response data in the same process boundary as the API call and then packs a tamper-evident bundle.
+        It supports tamper-evident verification from packing onward.
+        It does NOT prove the model is correct or that the client itself was not compromised.
     """
     # 1. Hash the request before sending — records what was asked
     request_payload = {"messages": messages, "model": model}

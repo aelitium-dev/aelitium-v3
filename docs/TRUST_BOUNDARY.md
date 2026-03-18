@@ -57,7 +57,7 @@ Each level answers a stronger question:
 
 These are different properties:
 
-- **Integrity**: captured events have not been altered after capture. AELITIUM provides this.
+- **Integrity**: packed evidence has not been altered after packing. AELITIUM provides this.
 - **Completeness**: all events that should have been captured were captured. AELITIUM does not provide this.
 
 If a logging agent selectively omits events before they reach the capture layer, no cryptographic mechanism can detect the omission — there is nothing to hash. This is a well-known property of tamper-evident logs in distributed systems: proving nothing was omitted is harder than proving nothing was altered.
@@ -74,7 +74,7 @@ If a logging agent selectively omits events before they reach the capture layer,
 | Manifest hash field altered | ✅ detected | ✅ detected |
 | Both bundle and stored hash replaced consistently | ❌ not detected | ✅ detected (signature covers hash) |
 | Bundle packed before/after the real generation | ❌ not detected | ✅ timestamp in receipt |
-| Manually crafted bundle with valid hashes | ❌ not detected | ✅ requires authority to have seen hash at generation time |
+| Manually crafted bundle with valid hashes | ❌ not detected | ✅ requires authority to have seen hash at packing time |
 | Packing process compromised | ❌ not detected | ❌ not detected |
 | Agent omits events before capture | ❌ not detected | ❌ not detected |
 | Model or prompt compromised before generation | ❌ out of scope | ❌ out of scope |
@@ -87,7 +87,7 @@ Any party with access to the original inputs (the messages and model response) c
 
 **Why this is expected behavior:**
 
-An evidence bundle proves that a given payload was packed and has not changed since. It does not prove that the packing happened at generation time or that no other party could have performed it. The hash is deterministic — that is a design goal, not a vulnerability.
+An evidence bundle proves that a given payload was packed and has not changed since. It does not prove that the packing happened during the original model call or that no other party could have performed it. The hash is deterministic — that is a design goal, not a vulnerability.
 
 **Consequence:** a bundle alone cannot prove that the person who packed it is the same person who made the API call. Anyone who knows the request and response can produce an identical bundle.
 

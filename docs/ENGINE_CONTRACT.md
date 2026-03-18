@@ -74,7 +74,7 @@ Verify integrity and authenticity offline.
 ### Syntax
 
 ```bash
-aelitium verify --out <dir>
+aelitium verify-bundle <dir>
 ```
 
 ### Behavior

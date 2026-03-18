@@ -347,7 +347,7 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 | `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
 | `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
-| `verify --out <dir>` | Verify integrity of a pack output dir |
+| `verify <dir>` | Verify integrity of a pack output dir |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
 | `canonicalize --input <file>` | Print deterministic hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
