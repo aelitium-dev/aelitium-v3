@@ -9,9 +9,9 @@ Rule: only observed results are recorded. No inferred claims.
 
 - Machine: AELITIUM-DEV
 - Repo path: /home/catarina-aelitium/aelitium-v3
-- Commit:
-- Python version:
-- Date:
+- Commit: 164d4b22ba3392c59a24bef98d59b654d5e3aea0
+- Python version: Python 3.12.3
+- Date: 2026-03-18T21:52:16Z
 
 ---
 
@@ -132,6 +132,10 @@ BINDING_HASH=ffef7ea10038b83e5fd89bdd983cfaa8274b1eb8a3e566e72292d5a8a4dcfacf
 - BINDING_HASH: ffef7ea10038b83e5fd89bdd983cfaa8274b1eb8a3e566e72292d5a8a4dcfacf
 
 - SIGNATURE: NONE
+
+- Note:
+
+Hash values match the observed values recorded in Run 2 for the same bundle.
 
 - PASS/FAIL:
 
