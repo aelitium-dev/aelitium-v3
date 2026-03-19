@@ -88,7 +88,7 @@ Untrusted data must always be verified before use.
 
 ## Canonicalization Boundary
 
-All guarantees apply **after canonicalization**.
+All guarantees apply **after canonicalization and inclusion in a verifiable bundle (pack step)**.
 
 The system assumes:
 
@@ -122,7 +122,9 @@ The adversary is assumed NOT to:
 
 - break SHA-256
 - forge Ed25519 signatures without the private key
-- compromise the trusted runtime environment
+
+The adversary model does NOT include compromise of the trusted runtime environment.
+If this assumption does not hold, guarantees are void.
 
 ### Insider Case
 
@@ -187,6 +189,7 @@ VALID does NOT mean:
 - the producer is legitimate
 - the artifact is current or fresh
 - the artifact is safe or correct
+- the capture process was honest
 
 ---
 
@@ -198,7 +201,8 @@ The system does NOT provide:
 - temporal guarantees
 - context binding
 
-A valid artifact may be reused outside its original context.
+A valid artifact may be reused outside its original context without detection.
+Mitigation requires external context binding or higher-level protocols.
 
 ---
 
@@ -210,11 +214,14 @@ The system guarantees reproducibility only under:
 - identical canonicalization
 - identical runtime conditions
 
-Not guaranteed:
+Not guaranteed as a general property:
 
-- cross-machine equivalence
+- cross-machine equivalence across arbitrary environments
 - cross-OS equivalence
 - cross-version equivalence
+
+Reproducibility claims apply only to explicitly validated configurations
+and documented procedures (see REPRO_CHECKLIST.md and EVIDENCE_LOG.md).
 
 ---
 
