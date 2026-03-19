@@ -6,12 +6,12 @@ Internal reference. Use this before writing any public-facing copy.
 
 ## Canonical claim
 
-> AELITIUM detects post-hoc modification of recorded LLM interactions,
+> AELITIUM detects post-hoc modification of bundled records of LLM interactions,
 > offline and deterministically.
 
 Longer form:
 
-> If an LLM output is modified after capture, you can prove it.
+> If a bundled LLM output is modified after packing, you can prove it.
 > Verification is offline, fail-closed, and requires no AELITIUM server.
 
 ---
@@ -71,7 +71,7 @@ Full version: `docs/TRUST_BOUNDARY.md`, `docs/SECURITY_MODEL.md`
 |----------|-----------|
 | tamper-evident evidence bundles | proof of AI outputs |
 | detects post-hoc modification | proves the model said this |
-| integrity of captured interactions | truth of model outputs |
+| integrity of bundled interaction records | truth of model outputs |
 | offline, fail-closed verification | secure AI / trusted AI |
 | binding_hash links request to response | cryptographic proof of LLM call |
 
@@ -96,7 +96,7 @@ These create expectations AELITIUM cannot fulfill:
 Use this verbatim when surfacing the trust boundary:
 
 ```
-What this proves: bundle contents were not modified after capture.
+What this proves: bundle contents were not modified after packing.
 What this does not prove: that the model produced this output,
 that the output is correct, or that the capture process was honest.
 Verification is offline, deterministic, and fail-closed.

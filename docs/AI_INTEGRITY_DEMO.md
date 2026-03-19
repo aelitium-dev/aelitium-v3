@@ -69,7 +69,7 @@ Two files are written to `./evidence/`:
 ## Step 3 — Verify (any machine, any time)
 
 ```bash
-aelitium verify --out ./evidence
+aelitium verify-bundle ./evidence
 ```
 
 Output:
@@ -91,7 +91,7 @@ Edit one word in `evidence/ai_canonical.json` and verify again:
 # simulate tamper
 sed -i 's/Revenue risk/Revenue opportunity/' evidence/ai_canonical.json
 
-aelitium verify --out ./evidence
+aelitium verify-bundle ./evidence
 ```
 
 Output:
