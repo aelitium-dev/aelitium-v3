@@ -47,7 +47,7 @@ bundle.zip
 
 The canonicalized form of the original AI output payload. Canonicalization is applied before hashing to ensure deterministic hashing in validated configurations.
 
-Canonicalization method: `json-canonical-v1` (deterministic JSON serialization as implemented).
+Canonicalization method: `json_sorted_keys_no_whitespace_utf8` (deterministic JSON serialization as implemented).
 
 ### ai_manifest.json
 
@@ -56,7 +56,7 @@ Canonicalization method: `json-canonical-v1` (deterministic JSON serialization a
   "schema": "1.1",
   "ts_utc": "2026-03-10T14:32:00Z",
   "ai_hash_sha256": "<sha256 of canonical.json>",
-  "canonicalization": "json-canonical-v1",
+  "canonicalization": "json_sorted_keys_no_whitespace_utf8",
   "input_schema": "ai_output_v1"
 }
 ```
@@ -125,7 +125,7 @@ All fields are preserved in canonical.json after canonicalization.
 ```
 1. Unzip bundle
 2. Read ai_manifest.json → extract ai_hash_sha256
-3. Canonicalize canonical.json using json-canonical-v1
+3. Canonicalize canonical.json using json_sorted_keys_no_whitespace_utf8
 4. Compute SHA-256 of canonical.json bytes
 5. Compare computed hash with manifest hash
 6. If match → STATUS=VALID (rc=0)
@@ -185,7 +185,7 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 
 ```json
 {
-  "canonicalization": "json-canonical-v1",
+  "canonicalization": "json_sorted_keys_no_whitespace_utf8",
   "ai_hash_sha256": "<sha256 hex>"
 }
 ```
@@ -194,7 +194,7 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 
 ```json
 {
-  "canonicalization": "json-canonical-v1",
+  "canonicalization": "json_sorted_keys_no_whitespace_utf8",
   "ai_hash_sha256": "<sha256 hex>",
   "ai_hash_sha3_256": "<sha3-256 hex>"
 }
