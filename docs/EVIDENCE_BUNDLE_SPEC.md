@@ -12,7 +12,7 @@
 
 ## Overview
 
-An **evidence bundle** is a self-contained, verifiable artefact that proves an AI output payload has not been altered since it was created.
+An **evidence bundle** is a self-contained, verifiable artefact that shows a recorded AI output payload has not been altered since it was bundled.
 
 Verification requires no network access, no external service, and no trust in the original infrastructure. Any conforming implementation can verify any conforming bundle.
 
@@ -24,7 +24,7 @@ This is analogous to what Docker images did for software environments, or what S
 
 | Goal | Description |
 |------|-------------|
-| **Deterministic** | Same input always produces the same bundle hash, on any machine |
+| **Deterministic** | Same input produces the same bundle hash in validated configurations |
 | **Self-contained** | Bundle includes everything needed for verification |
 | **Offline-first** | Verification never requires network access |
 | **Extensible** | Schema versioning allows forward evolution |
@@ -38,16 +38,16 @@ An evidence bundle is a ZIP archive with the following layout:
 
 ```
 bundle.zip
-├── canonical.json       ← canonicalized payload (RFC 8785 JSON Canonicalization)
+├── canonical.json       ← canonicalized payload (deterministic JSON serialization as implemented)
 ├── ai_manifest.json     ← bundle metadata, hash, schema version
 └── receipt.json         ← optional: Ed25519 authority signature
 ```
 
 ### canonical.json
 
-The canonicalized form of the original AI output payload. Canonicalization is applied before hashing to ensure determinism across machines, language runtimes, and JSON serializers.
+The canonicalized form of the original AI output payload. Canonicalization is applied before hashing to ensure deterministic hashing in validated configurations.
 
-Canonicalization method: `json-canonical-v1` (RFC 8785: sort keys, no insignificant whitespace, UTF-8).
+Canonicalization method: `json-canonical-v1` (deterministic JSON serialization as implemented).
 
 ### ai_manifest.json
 
@@ -141,11 +141,7 @@ Optional:
 
 ## Reproducibility guarantee
 
-The same input always produces the same `ai_hash_sha256`, regardless of:
-- Operating system
-- Python version (3.10+)
-- Machine architecture
-- Time of execution
+The same input is expected to produce the same `ai_hash_sha256` in validated configurations using the same canonicalization rules.
 
 This is verified by `scripts/verify_repro.sh`, which packs the example twice in a clean environment and asserts the hashes match.
 
@@ -161,7 +157,7 @@ An evidence bundle proves:
 
 An evidence bundle does **not** prove:
 
-- That the model actually produced the output (requires capture-layer integration)
+- That the model actually produced the output (requires stronger provenance than the bundle alone)
 - That the prompt or output is correct, safe, or unbiased
 - That the system that created the bundle was trustworthy
 

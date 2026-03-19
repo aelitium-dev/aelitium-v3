@@ -54,7 +54,7 @@ json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 ```
 
 Properties:
-- **Stable across Python versions** — no floating-point tricks, no custom codec
+- **Intended to be stable in validated configurations** — no custom codec or external serializer dependency
 - **Unicode-safe** — `ensure_ascii=False` preserves non-ASCII content faithfully
 - **No whitespace** — compact form removes formatting ambiguity
 
@@ -72,7 +72,7 @@ Required fields:
 | `ts_utc` | ISO-8601 string | Generation timestamp |
 | `model` | string | Model identifier |
 | `prompt` | string | Input prompt |
-| `output` | string | Model response |
+| `output` | string | Recorded response content |
 | `metadata` | object | Arbitrary run metadata |
 
 See `engine/schemas/ai_output_v1.json` for the full JSON Schema.
@@ -149,7 +149,7 @@ aelitium verify-receipt --receipt receipt.json --pubkey authority.b64
 
 | Principle | Consequence |
 |-----------|-------------|
-| **Deterministic** | Same input → same hash, on any machine |
+| **Deterministic** | Same input → same hash in validated configurations |
 | **Offline-first** | Verification never requires network access |
 | **Fail-closed** | Any error returns `rc=2`; no silent success |
 | **Self-describing** | Manifest records schema, method, and timestamp |
