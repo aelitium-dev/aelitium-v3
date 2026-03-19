@@ -6,7 +6,9 @@
 ![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-LLM outputs can change silently. AELITIUM proves that a packed evidence bundle has not been modified after packing.
+> AELITIUM is a library/CLI for producing and verifying tamper-evident, offline-verifiable evidence bundles for recorded LLM interactions under deterministic canonicalization.
+
+LLM outputs can change silently. AELITIUM currently enforces fail-closed verification semantics on the validated surface and verifies whether recorded evidence has been modified after packing.
 
 ## Quickstart
 
@@ -28,6 +30,20 @@ Verify a bundle offline:
 ```bash
 aelitium verify-bundle ./bundle
 ```
+
+## What it proves
+
+- Recorded request and recorded response artifacts can be cryptographically bound
+- Post-hoc modification of canonicalized recorded artifacts is detectable
+- Verification can be performed offline on the validated surface
+
+## What it does not prove
+
+- That the model actually executed
+- That the provider was honest
+- That the response is correct or truthful
+- That capture was complete
+- That semantic equivalence implies hash equivalence
 
 ---
 
@@ -78,6 +94,17 @@ aelitium compare         ← UNCHANGED / CHANGED / NOT_COMPARABLE
 ```
 
 Each bundle contains a deterministic SHA-256 hash of the payload, a manifest with timestamp and schema, and a cryptographic `binding_hash` linking the recorded request and recorded response artifacts. Anyone with the bundle can verify it — no network required.
+
+Current binding construction:
+
+```text
+binding_hash = SHA256(
+  canonical({
+    "request_hash": request_hash,
+    "response_hash": response_hash
+  })
+)
+```
 
 ---
 
@@ -246,7 +273,7 @@ Validated on two independent machines (A + B) with identical hashes.
 
 ---
 
-## How this differs from observability tools
+## Why logs are not enough
 
 Tools like Langfuse or Helicone help you **debug LLM calls**.
 
