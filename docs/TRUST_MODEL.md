@@ -174,6 +174,11 @@ Additionally:
 
 No soft-fail behavior is permitted.
 
+The verifier validates byte-level integrity and hash consistency of the packed artifact.
+
+It does NOT validate full schema correctness of the canonical payload.
+Unexpected but well-formed structures may still verify as VALID.
+
 ---
 
 ## Meaning of VALID
