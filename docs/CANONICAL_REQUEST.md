@@ -129,7 +129,7 @@ response_hash = sha256_hash(canonical_json(response_data))
 
 **Schema drift rule:** when providers add new response fields, they are excluded from `response_hash` by default. Only fields explicitly listed above are hashed. This ensures `response_hash` remains stable across provider SDK updates.
 
-**Implication:** two responses with identical content and model name will have the same `response_hash`, regardless of when they were generated or what other metadata the provider returned. This is intentional — the hash captures *what the model said*, not *when or how the provider delivered it*.
+**Implication:** two responses with identical content and model name will have the same `response_hash`, regardless of when they were generated or what other metadata the provider returned. This is intentional — the hash captures *the recorded response content*, not *when or how the provider delivered it*.
 
 ---
 

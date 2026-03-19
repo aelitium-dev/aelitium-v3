@@ -1,6 +1,6 @@
 # AELITIUM Capture Layer
 
-The capture layer closes the trust gap by intercepting LLM API calls directly, instead of relying on manually written JSON.
+The capture layer reduces the manual handoff gap by intercepting LLM API calls directly, instead of relying on manually written JSON.
 
 **Before capture layer:**
 ```
@@ -12,7 +12,7 @@ LLM → output → user writes JSON → aelitium pack → bundle
 LLM → capture_chat_completion() → bundle (automatic)
 ```
 
-The bundle is created at call time, capturing the exact request and response hashes. No manual step. No trust gap.
+The bundle is created in the same process boundary as the API call, recording request and response hashes without a manual JSON handoff.
 
 ---
 
@@ -65,7 +65,7 @@ print(result.response)         # original OpenAI response (unmodified)
 ### Verify offline
 
 ```bash
-aelitium verify --out ./evidence
+aelitium verify-bundle ./evidence
 # STATUS=VALID rc=0
 # AI_HASH_SHA256=<hash>
 ```
@@ -94,14 +94,15 @@ result = capture_chat_completion(
 
 ### Trust boundary
 
-The capture adapter proves:
-- The output was captured at call time
+The capture adapter provides stronger provenance than manual packing within the same process boundary:
+- The request and response were recorded during the adapter-controlled call path
 - The bundle has not been altered since capture
 - The request hash matches the messages that were sent
 
 The capture adapter does **not** prove:
 - That the model itself was not compromised
 - That the `openai.OpenAI()` client was not intercepted upstream
+- That an independent observer witnessed the call
 
 For stronger provenance, combine with a signing authority (P3).
 
