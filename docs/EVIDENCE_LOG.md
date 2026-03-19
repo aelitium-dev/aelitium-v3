@@ -404,3 +404,93 @@ This run does NOT prove:
 - cross-OS reproducibility
 - semantic equivalence beyond byte-level inputs
 
+## REPRO RUN — cross-machine-001
+
+### Machine A
+- Host: AELITIUM-DEV
+- Repo path: /home/catarina-aelitium/aelitium-v3-clean-a
+- Commit: b2d80a1cf32470da2976a8a0075369b76376caf7
+- Python version: Python 3.12.3
+- Date (UTC): 2026-03-19T01:13:27Z
+
+### Machine B
+- Host: <FILL_FROM_CODESPACE_HOSTNAME>
+- Repo path: /workspaces/aelitium-v3
+- Commit: b2d80a1cf32470da2976a8a0075369b76376caf7
+- Python version: <FILL_FROM_CODESPACE_PYTHON>
+- Date (UTC): <FILL_FROM_CODESPACE_DATE>
+
+---
+
+### Required invariants
+
+- verify-bundle:
+  - STATUS=VALID rc=0
+  - AI_HASH_SHA256 must match
+  - BINDING_HASH must match
+
+- compare (same bundle):
+  - STATUS=UNCHANGED rc=0
+  - REQUEST_HASH=SAME
+  - RESPONSE_HASH=SAME
+  - BINDING_HASH=SAME
+
+- compare (different bundle):
+  - STATUS=CHANGED rc=2
+  - REQUEST_HASH=SAME
+  - RESPONSE_HASH=DIFFERENT
+  - BINDING_HASH=DIFFERENT
+
+- determinism unit test:
+  - final result: OK
+
+- verify-receipt:
+  - valid receipt → STATUS=VALID rc=0
+  - modified receipt → STATUS=INVALID rc=2 reason=SIGNATURE_INVALID
+
+---
+
+### Observed values (Machine A and Machine B)
+
+- AI_HASH_SHA256:
+  7431bf8c98c1766379b1f3970e103f905791fe79cd07e9e236057b595518fd63
+
+- BINDING_HASH:
+  ffef7ea10038b83e5fd89bdd983cfaa8274b1eb8a3e566e72292d5a8a4dcfacf
+
+---
+
+### Comparison result
+
+- binding_hash_match: YES
+- bundle_hash_match: YES
+- compare_same_match: YES
+- compare_changed_match: YES
+- determinism_match: YES
+- receipt_valid_status_match: YES
+- receipt_invalid_status_match: YES
+
+- receipt_id_match_required: NO
+
+---
+
+### Final result
+
+PASS
+
+---
+
+### Interpretation
+
+The same repository commit produced identical observable verification results
+across two different execution environments.
+
+---
+
+### Non-goal
+
+This run does NOT prove:
+- full environment equivalence
+- semantic equivalence beyond byte-level inputs
+- reproducibility beyond the validated surface
+
