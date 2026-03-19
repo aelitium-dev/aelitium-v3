@@ -414,11 +414,11 @@ This run does NOT prove:
 - Date (UTC): 2026-03-19T01:13:27Z
 
 ### Machine B
-- Host: <FILL_FROM_CODESPACE_HOSTNAME>
+- Host: codespaces-e9f0e2
 - Repo path: /workspaces/aelitium-v3
 - Commit: b2d80a1cf32470da2976a8a0075369b76376caf7
-- Python version: <FILL_FROM_CODESPACE_PYTHON>
-- Date (UTC): <FILL_FROM_CODESPACE_DATE>
+- Python version: Python 3.12.1
+- Date (UTC): 2026-03-19T01:53:13Z
 
 ---
 
@@ -493,4 +493,3 @@ This run does NOT prove:
 - full environment equivalence
 - semantic equivalence beyond byte-level inputs
 - reproducibility beyond the validated surface
-
