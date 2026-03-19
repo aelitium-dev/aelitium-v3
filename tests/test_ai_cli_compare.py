@@ -106,7 +106,7 @@ class TestCompareChanged(unittest.TestCase):
             _make_capture_bundle(Path(d1), "Summarize this.", "Summary A")
             _make_capture_bundle(Path(d2), "Summarize this.", "Summary B")
             r = _compare(Path(d1), Path(d2))
-            self.assertIn("Same request produced a different response", r.stdout)
+            self.assertIn("Same request_hash with different response_hash observed", r.stdout)
 
     def test_changed_json_output(self):
         with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:

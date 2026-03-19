@@ -304,21 +304,75 @@ def cmd_compare(args: argparse.Namespace) -> int:
     - UNCHANGED:      request_hash same, response_hash same
     - CHANGED:        request_hash same, response_hash different
     - NOT_COMPARABLE: request_hash differs, or bundles lack capture metadata
-    - INVALID_BUNDLE: one or both bundles cannot be read
+    - INVALID_BUNDLE: one or both bundles fail bundle verification
 
     Usage: aelitium compare <bundle_a> <bundle_b>
     """
-    def _read_bundle(path: Path):
+    import hashlib
+    import re
+
+    def _verify_bundle_quiet(path: Path):
         canon_path = path / "ai_canonical.json"
         manifest_path = path / "ai_manifest.json"
+
         if not canon_path.exists() or not manifest_path.exists():
-            return None, None
+            return False, "MISSING_BUNDLE_FILES", None, None
+
         try:
-            canon = json.loads(canon_path.read_text(encoding="utf-8"))
+            canon_text = canon_path.read_text(encoding="utf-8")
+            canon_obj = json.loads(canon_text)
+        except Exception as e:
+            return False, "CANONICAL_NOT_JSON", type(e).__name__, None
+
+        try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            return canon, manifest
-        except Exception:
-            return None, None
+        except Exception as e:
+            return False, "MANIFEST_NOT_JSON", type(e).__name__, None
+
+        for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
+            if field not in manifest:
+                return False, "MANIFEST_MISSING_FIELD", field, None
+
+        if manifest["schema"] != "ai_pack_manifest_v1":
+            return False, "MANIFEST_BAD_SCHEMA", manifest["schema"], None
+
+        if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
+            return False, "MANIFEST_BAD_TS_UTC", manifest["ts_utc"], None
+
+        actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
+        if actual_hash != manifest["ai_hash_sha256"]:
+            return False, "HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...", None
+
+        vk_path = path / "verification_keys.json"
+        if vk_path.exists():
+            try:
+                if __package__:
+                    from .signing import verify_manifest_signature
+                else:
+                    from engine.signing import verify_manifest_signature
+                vk = json.loads(vk_path.read_text(encoding="utf-8"))
+                manifest_bytes = manifest_path.read_bytes()
+                verify_manifest_signature(manifest_bytes, vk)
+            except Exception as exc:
+                return False, "SIGNATURE_INVALID", str(exc), None
+
+        manifest_binding = manifest.get("binding_hash")
+        if manifest_binding:
+            meta = canon_obj.get("metadata", {})
+            request_hash = meta.get("request_hash")
+            response_hash = meta.get("response_hash")
+            if not request_hash or not response_hash:
+                return False, "BINDING_HASH_MISSING_SOURCES", "manifest has binding_hash but canonical metadata lacks request_hash/response_hash", None
+
+            payload = json.dumps(
+                {"request_hash": request_hash, "response_hash": response_hash},
+                sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+            )
+            computed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+            if computed != manifest_binding:
+                return False, "BINDING_HASH_MISMATCH", f"expected={manifest_binding[:16]}... computed={computed[:16]}...", None
+
+        return True, "OK", "", {"canon": canon_obj, "manifest": manifest}
 
     def _hashes(canon, manifest):
         meta = canon.get("metadata", {})
@@ -332,16 +386,24 @@ def cmd_compare(args: argparse.Namespace) -> int:
     path_a = Path(args.bundle_a)
     path_b = Path(args.bundle_b)
 
-    canon_a, manifest_a = _read_bundle(path_a)
-    canon_b, manifest_b = _read_bundle(path_b)
+    ok_a, reason_a, detail_a, data_a = _verify_bundle_quiet(path_a)
+    ok_b, reason_b, detail_b, data_b = _verify_bundle_quiet(path_b)
 
-    if canon_a is None or canon_b is None:
+    if not ok_a or not ok_b:
+        detail_parts = []
+        if not ok_a:
+            detail_parts.append(f"a={reason_a}")
+        if not ok_b:
+            detail_parts.append(f"b={reason_b}")
         _out(args,
              ["STATUS=INVALID_BUNDLE rc=2",
-              "DETAIL=One or both bundles could not be read"],
+              f"DETAIL={' ; '.join(detail_parts)}"],
              {"status": "INVALID_BUNDLE", "rc": 2,
-              "detail": "One or both bundles could not be read"})
+              "detail": " ; ".join(detail_parts)})
         return 2
+
+    canon_a, manifest_a = data_a["canon"], data_a["manifest"]
+    canon_b, manifest_b = data_b["canon"], data_b["manifest"]
 
     h_a = _hashes(canon_a, manifest_a)
     h_b = _hashes(canon_b, manifest_b)
@@ -367,13 +429,12 @@ def cmd_compare(args: argparse.Namespace) -> int:
     elif resp == "SAME":
         status = "UNCHANGED"
         rc = 0
-        interpretation = "Same request produced the same response"
+        interpretation = "Same request_hash and response_hash observed"
     else:
         status = "CHANGED"
         rc = 2
-        interpretation = "Same request produced a different response"
+        interpretation = "Same request_hash with different response_hash observed"
 
-    # Build text lines — show actual hash values for debugging
     def _short(h): return h[:16] + "..." if h else "N/A"
     lines = [
         f"STATUS={status} rc={rc}",

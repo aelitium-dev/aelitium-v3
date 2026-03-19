@@ -95,7 +95,7 @@ An evidence bundle proves that a given payload was packed and has not changed si
 
 | Mitigation | What it adds |
 |-----------|-------------|
-| Capture adapter (P2) | `request_hash` ties the bundle to the exact API payload sent, not a reconstruction |
+| Capture adapter (P2) | `request_hash` ties the bundle to the payload recorded by the capture path, not a reconstruction |
 | Operator signing (P2+) | Ed25519 signature in `verification_keys.json` ties the bundle to the operator's private key |
 | Authority receipt (P3) | External timestamp and signature prove the authority saw this hash at a specific time — forgery would require the authority's private key |
 | Observer-based capture | Independent process intercepts the API call; the agent cannot forge what it did not control |
