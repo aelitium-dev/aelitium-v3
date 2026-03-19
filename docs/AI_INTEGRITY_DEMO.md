@@ -1,7 +1,7 @@
 # AELITIUM AI Integrity — 5-minute demo
 
-> **Verifiable AI infrastructure.**
-> Aelitium generates cryptographic evidence for AI outputs so that anyone can verify integrity later — even offline.
+> **Verifiable AI evidence infrastructure.**
+> Aelitium generates cryptographic evidence for recorded AI outputs so that integrity can be verified later — even offline.
 >
 > Pack → Verify → Detect tampering. No SaaS. No network required.
 
@@ -61,12 +61,12 @@ Two files are written to `./evidence/`:
 
 | File | Contents |
 |------|----------|
-| `ai_canonical.json` | Deterministic, sorted-key JSON — the exact bytes that were hashed |
+| `ai_canonical.json` | Deterministic, sorted-key JSON — the recorded bytes that were hashed |
 | `ai_manifest.json` | Schema, hash, timestamp, canonicalization method |
 
 ---
 
-## Step 3 — Verify (any machine, any time)
+## Step 3 — Verify offline
 
 ```bash
 aelitium verify --out ./evidence
@@ -123,7 +123,7 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 
 ## What you get
 
-- **Deterministic hash** — same AI output always produces the same hash
+- **Deterministic hash** — same input produces the same hash in validated configurations
 - **Offline verification** — no network, no third party
 - **Tamper-evident** — any change detected immediately
 - **Pipeline-friendly** — parse `STATUS=` and exit codes in CI/CD
@@ -146,5 +146,5 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 
 ```bash
 python3 -m unittest discover -s tests -q
-# Ran 158 tests in ~42s ... OK
+# Ran 206 tests ... OK
 ```
