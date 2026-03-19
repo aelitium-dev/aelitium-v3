@@ -85,6 +85,31 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
 
 ## Check 6 — verify-receipt (valid)
 
+### Command
+```bash
+TMPDIR=$(mktemp -d)
+export AEL_ED25519_PRIVKEY_B64="$(tr -d '\n' < tests/fixtures/ed25519_test_private_key.b64)"
+export TMPDIR
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+from p3.server.signing import authority_public_key_b64, sign_receipt
+
+tmp = Path(os.environ["TMPDIR"])
+receipt = sign_receipt(subject_hash="b" * 64, subject_type="ai_output_v1")
+(tmp / "receipt.json").write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+(tmp / "pubkey.b64").write_text(authority_public_key_b64(), encoding="utf-8")
+PY
+python3 -m engine.ai_cli verify-receipt \
+  --receipt "$TMPDIR/receipt.json" \
+  --pubkey "$TMPDIR/pubkey.b64" \
+  --hash "$(python3 - <<'PY'
+print('b' * 64)
+PY
+)"
+```
+
 ### PASS
 - STATUS=VALID rc=0
 
@@ -94,6 +119,32 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
 ---
 
 ## Check 7 — verify-receipt (invalid)
+
+### Command
+```bash
+TMPDIR=$(mktemp -d)
+export AEL_ED25519_PRIVKEY_B64="$(tr -d '\n' < tests/fixtures/ed25519_test_private_key.b64)"
+export TMPDIR
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+from p3.server.signing import authority_public_key_b64, sign_receipt
+
+tmp = Path(os.environ["TMPDIR"])
+receipt = sign_receipt(subject_hash="b" * 64, subject_type="ai_output_v1")
+receipt["subject_hash_sha256"] = "c" * 64
+(tmp / "receipt.json").write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+(tmp / "pubkey.b64").write_text(authority_public_key_b64(), encoding="utf-8")
+PY
+python3 -m engine.ai_cli verify-receipt \
+  --receipt "$TMPDIR/receipt.json" \
+  --pubkey "$TMPDIR/pubkey.b64" \
+  --hash "$(python3 - <<'PY'
+print('c' * 64)
+PY
+)"
+```
 
 ### PASS
 - STATUS=INVALID rc=2

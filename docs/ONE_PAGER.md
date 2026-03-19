@@ -6,7 +6,7 @@ AI logs are mutable.
 
 When an LLM output influences a real decision — finance, healthcare, legal, compliance — someone eventually asks:
 
-> *"Can you prove what the model actually said?"*
+> *"Can you prove what was recorded for the model interaction?"*
 
 Standard logging (databases, S3, observability tools) cannot answer this. An admin with access can edit records. A bucket can be overwritten. A breach can go undetected.
 
@@ -23,7 +23,7 @@ LLM call
     ↓
 capture_chat_completion()     ← intercepts at call time
     ↓
-canonicalize + hash           ← deterministic, cross-machine stable
+canonicalize + hash           ← deterministic in validated configurations
     ↓
 evidence bundle               ← ai_canonical.json + ai_manifest.json
     ↓
@@ -40,19 +40,19 @@ pip install aelitium
 # Option A: capture directly from OpenAI (strongest — trust chain starts at call time)
 from engine.capture.openai import capture_chat_completion
 result = capture_chat_completion(client, "gpt-4o", messages, "./evidence")
-# result.ai_hash_sha256  →  same hash, every time, any machine
+# result.ai_hash_sha256  →  same hash for the same input in validated configurations
 
 # Option B: pack a JSON output manually
 aelitium pack --input output.json --out ./evidence
 
 # Verify bundle integrity (offline)
 aelitium verify-bundle ./evidence
-# STATUS=VALID | BINDING_HASH=OK | SIGNATURE=NONE
+# STATUS=VALID rc=0 | BINDING_HASH=<hash> | SIGNATURE=NONE
 
 # Detect if model behavior changed between two captures
 aelitium compare ./evidence_run1 ./evidence_run2
-# STATUS=UNCHANGED rc=0   (same request → same response)
-# STATUS=CHANGED    rc=2  (same request → different response — model changed)
+# STATUS=UNCHANGED rc=0   (same request_hash and response_hash observed)
+# STATUS=CHANGED   rc=2   (same request_hash, different response_hash observed)
 ```
 
 Tamper detection:
@@ -95,12 +95,12 @@ Without the capture adapter, the chain starts at **pack time** — when the user
 
 ## Current state
 
-- `pip install aelitium` — published to PyPI (v0.2.2)
+- `pip install aelitium` — published to PyPI (v0.2.4)
 - OpenAI + Anthropic capture adapters — synchronous, minimal, production-ready
-- 158 tests, all passing
-- Determinism verified on two independent machines
+- 206 tests passing in the current suite
+- Determinism validated on two independent machines in the documented repro flow
 - Offline verification — no network, no SaaS, no blockchain
-- `compare` command for detecting AI provider model drift
+- `compare` command for detecting changed recorded responses across bundles
 
 ---
 
