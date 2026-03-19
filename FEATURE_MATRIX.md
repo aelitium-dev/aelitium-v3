@@ -148,6 +148,7 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
   - Does not prove when the bundle was generated
   - Does not prove what a model "actually said"
   - Does not verify facts outside the included artifacts
+  - Does not validate full schema correctness of the canonical payload
 
 ---
 

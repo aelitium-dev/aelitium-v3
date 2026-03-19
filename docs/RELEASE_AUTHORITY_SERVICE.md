@@ -1,7 +1,7 @@
 # Release Authority as a Service — P3 Architecture v0
 
 > Instead of running your own Machine B, you delegate the authority role to AELITIUM.
-> Your team packs locally. AELITIUM signs. Anyone can verify offline.
+> Your team packs locally. AELITIUM signs recorded hashes. Verification remains offline in validated configurations.
 
 ---
 
@@ -14,7 +14,7 @@ P1 and P2 require a trusted "Machine B" — an offline authority that signs rele
 ## Core model
 
 ```
-Client (your pipeline)         AELITIUM Authority         Auditor (any machine)
+Client (your pipeline)         AELITIUM Authority         Auditor (validated configurations)
         |                             |                           |
         |  POST /v1/sign              |                           |
         |  { bundle or pack }  -----> |                           |
@@ -127,7 +127,7 @@ Returns the current authority public key and fingerprint.
 }
 ```
 
-Used for offline verification setup (download once, verify forever).
+Used for offline verification setup (download once, verify locally thereafter).
 
 ---
 
@@ -189,6 +189,8 @@ No network required after step 1.
 - Not a bundle storage service (P3 only signs hashes)
 - Not a content inspection service (never sees your data)
 - Not a replacement for P1/P2 (builds on top of them)
+- Not a truth oracle for bundle contents
+- Not automatic proof of institutional legitimacy beyond the authority and key-distribution assumptions
 
 ---
 

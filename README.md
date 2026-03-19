@@ -35,7 +35,7 @@ aelitium verify-bundle ./bundle
 
 You run the same prompt in production. One week later, the output is different.
 
-The model changed — but your logs just show two JSON blobs. It is hard to verify whether the recorded evidence was modified after packing.
+The recorded response changed — but your logs just show two JSON blobs. It is hard to verify whether the recorded evidence was modified after packing.
 
 ---
 
@@ -47,7 +47,7 @@ cd aelitium-v3 && pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
-Same request. Different output. That means the change came from the model — not your code.
+Same request hash. Different recorded response hash. That means the recorded response changed for the compared bundles.
 
 ```bash
 # Scan your codebase for unprotected LLM calls:
@@ -77,7 +77,7 @@ aelitium verify-bundle   ← STATUS=VALID / STATUS=INVALID
 aelitium compare         ← UNCHANGED / CHANGED / NOT_COMPARABLE
 ```
 
-Each bundle contains a deterministic SHA-256 hash of the payload, a manifest with timestamp and schema, and a cryptographic `binding_hash` linking the exact request to the exact response. Anyone with the bundle can verify it — no network required.
+Each bundle contains a deterministic SHA-256 hash of the payload, a manifest with timestamp and schema, and a cryptographic `binding_hash` linking the recorded request and recorded response artifacts. Anyone with the bundle can verify it — no network required.
 
 ---
 
@@ -95,7 +95,7 @@ result = capture_openai(
     [{"role": "user", "content": "What is the capital of France?"}],
     out_dir="./evidence",
 )
-print(result.ai_hash_sha256)  # deterministic proof of this exact call
+print(result.ai_hash_sha256)  # deterministic hash for this recorded request/response pair
 ```
 
 ```bash
@@ -145,8 +145,8 @@ Every call writes a bundle automatically. The LLM response is unchanged.
 
 **What you get:**
 
-- `request_hash` — deterministic hash of the exact request sent
-- `response_hash` — hash of the exact response received
+- `request_hash` — deterministic hash of the recorded request payload
+- `response_hash` — hash of the recorded response content
 - `binding_hash` — cryptographic link between the two
 
 **Failure modes:**
@@ -167,17 +167,17 @@ See [`examples/litellm_enable.py`](examples/litellm_enable.py) for a runnable ex
 
 ---
 
-## Detect when the model changed
+## Detect when the recorded response changed
 
 ```bash
 aelitium compare ./bundle_last_week ./bundle_today
 # STATUS=CHANGED rc=2
 # REQUEST_HASH=SAME    a=3f4a8c1d... b=3f4a8c1d...
 # RESPONSE_HASH=DIFFERENT  a=9b2e7f1a... b=c41d8e3b...
-# INTERPRETATION=Same request produced a different response
+# INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-If `REQUEST_HASH=SAME` and `RESPONSE_HASH=DIFFERENT`, the change came from the model — not your code.
+If `REQUEST_HASH=SAME` and `RESPONSE_HASH=DIFFERENT`, the compared bundles contain different recorded responses for the same hashed request. AELITIUM does not attribute the cause.
 
 Run offline (no API key):
 
@@ -234,7 +234,7 @@ aelitium scan ./src --ci
 
 ## Reproducibility
 
-The same AI output always produces the same hash, on any machine:
+The same input produces the same hash in validated configurations:
 
 ```bash
 bash scripts/verify_repro.sh
@@ -252,7 +252,7 @@ Tools like Langfuse or Helicone help you **debug LLM calls**.
 
 AELITIUM helps you **verify that recorded evidence was not altered after packing**.
 
-Logs can be edited. Evidence bundles cannot.
+Logs can be edited. Evidence-bundle tampering is detectable.
 
 | Tool | What it does |
 |------|-------------|
@@ -265,8 +265,8 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 
 ## When teams use AELITIUM
 
-- Detect when an LLM provider silently changes behavior between runs
-- Prove AI outputs weren't modified after the fact
+- Detect when recorded responses differ between runs for the same request hash
+- Prove recorded evidence wasn't modified after the fact
 - Investigate incidents involving AI agents ("what recorded evidence is available for this interaction?")
 - Produce verifiable records for compliance or audits (EU AI Act Art.12, SOC 2)
 - Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
@@ -280,7 +280,7 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 | Command | Description |
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
-| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect model behavior change |
+| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect changed recorded responses |
 | `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify <dir>` | Verify integrity of a pack output dir |
@@ -316,7 +316,7 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 
 ## Design principles
 
-- **Deterministic** — same input always produces the same hash, on any machine
+- **Deterministic** — same input produces the same hash in validated configurations
 - **Offline-first** — verification never requires network access
 - **Fail-closed** — any verification error returns `rc=2`; no silent failures
 - **Auditable** — every pack includes a manifest with schema, timestamp, and hash
@@ -331,7 +331,7 @@ AELITIUM provides **tamper-evidence**, not truth guarantees.
 **What AELITIUM proves:**
 - the bundle contents have not changed since packing
 - the canonicalized payload matches the recorded hash
-- (with capture adapter) the request hash matches the exact API payload sent
+- (with capture adapter) the request hash matches the payload recorded by the capture path
 
 **What AELITIUM does not prove:**
 - that the model output was correct or safe

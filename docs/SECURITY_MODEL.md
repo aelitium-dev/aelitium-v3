@@ -8,7 +8,7 @@ AELITIUM provides **integrity guarantees** for AI outputs and release artifacts.
 
 | Threat | Protected? | How |
 |--------|-----------|-----|
-| AI output tampered after generation | ✅ | SHA-256 hash mismatch detected on verify |
+| Recorded bundle content tampered after packing | ✅ | SHA-256 hash mismatch detected on verify |
 | Log entry modified in storage | ✅ | Canonical JSON + hash is independent of storage |
 | Manifest hash field altered | ✅ | Detected: recomputed hash won't match |
 | Canonical JSON altered | ✅ | Detected: recomputed hash won't match |
@@ -108,12 +108,17 @@ Metadata is preserved in the bundle and included in `ai_canonical.json`, but exc
 
 **Minimum viable bundle (privacy-first):**
 
-If the output itself is sensitive and you only need drift detection (not content archival), you can store only the hashes:
+If the output itself is sensitive and you only need drift detection signals (not content archival), you can store the hashes extracted from the written bundle and then delete the bundle:
 
 ```python
-# Store hashes in your DB; delete the bundle file
+# Store hashes derived from the bundle; delete the bundle file
 result = capture_openai(client, model, messages, out_dir=tmp_dir)
-db.store(request_hash=result.request_hash, response_hash=result.response_hash)
+manifest = json.loads((result.bundle_dir / "ai_manifest.json").read_text(encoding="utf-8"))
+bundle = json.loads((result.bundle_dir / "ai_canonical.json").read_text(encoding="utf-8"))
+db.store(
+    request_hash=bundle["metadata"]["request_hash"],
+    response_hash=bundle["metadata"]["response_hash"],
+)
 shutil.rmtree(tmp_dir)
 ```
 

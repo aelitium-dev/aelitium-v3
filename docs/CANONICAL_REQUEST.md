@@ -11,9 +11,9 @@ This document defines what fields are included in the `request_hash` computed by
 
 `request_hash` is a SHA-256 hash of the canonical form of the LLM request.
 
-Its purpose: allow two bundles to be compared and determine whether they came from **the same logical request** — regardless of when, where, or with which SDK version the call was made.
+Its purpose: allow two bundles to be compared and determine whether they came from the same hashed request within the implemented capture model.
 
-If two bundles have the same `request_hash`, any difference in `response_hash` is attributable to the model, not the caller.
+If two bundles have the same `request_hash`, the compared bundles contain the same hashed request fields. A different `response_hash` means a different recorded response artifact was observed.
 
 ---
 
@@ -61,18 +61,16 @@ Before hashing, the request object is serialized to canonical JSON:
 - UTF-8 encoding
 - No trailing newline
 
-This matches RFC 8785 (JSON Canonicalization Scheme) and is implemented in `engine/canonical.py`.
+This uses deterministic JSON serialization as implemented in `engine/canonical.py`.
 
 ---
 
-## Stability guarantee
+## Stability scope
 
-`request_hash` is stable across:
+`request_hash` is intended to be stable in validated configurations using the current implementation, including:
 
-- Python versions (3.10+)
-- Operating systems
-- OpenAI SDK versions
-- Machines A and B (validated)
+- documented Python runtimes in the supported surface
+- validated machine/configuration checks recorded in the reproducibility docs
 
 It is **not** stable if:
 - The `messages` content changes (including whitespace inside strings)
@@ -86,9 +84,9 @@ It is **not** stable if:
 
 ```
 REQUEST_HASH=SAME       ← same model, same messages
-RESPONSE_HASH=DIFFERENT ← model returned something different
+RESPONSE_HASH=DIFFERENT ← different recorded response artifact observed
 STATUS=CHANGED
-INTERPRETATION=Same request produced a different response
+INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
 If `REQUEST_HASH=DIFFERENT`, the requests are not equivalent and comparison is `NOT_COMPARABLE`.
@@ -127,9 +125,9 @@ response_hash = sha256_hash(canonical_json(response_data))
 | `usage` | ❌ | Token counts — operational metadata, not evidence |
 | `system_fingerprint` | ❌ | Provider-internal, unstable across versions |
 
-**Schema drift rule:** when providers add new response fields, they are excluded from `response_hash` by default. Only fields explicitly listed above are hashed. This ensures `response_hash` remains stable across provider SDK updates.
+**Schema drift rule:** when providers add new response fields, they are excluded from `response_hash` by default. Only fields explicitly listed above are hashed. This is intended to keep `response_hash` stable across validated configurations even when non-hashed provider fields drift.
 
-**Implication:** two responses with identical content and model name will have the same `response_hash`, regardless of when they were generated or what other metadata the provider returned. This is intentional — the hash captures *what the model said*, not *when or how the provider delivered it*.
+**Implication:** two recorded responses with identical content and model name will have the same `response_hash`, regardless of when they were generated or what other metadata the provider returned. This is intentional — the hash captures recorded response content, not timing or delivery metadata.
 
 ---
 
