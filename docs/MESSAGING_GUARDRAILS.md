@@ -11,7 +11,7 @@ Internal reference. Use this before writing any public-facing copy.
 
 Longer form:
 
-> If an LLM output is modified after capture, you can prove it.
+> If a packed evidence bundle is modified after packing, you can prove it.
 > Verification is offline, fail-closed, and requires no AELITIUM server.
 
 ---
@@ -96,7 +96,7 @@ These create expectations AELITIUM cannot fulfill:
 Use this verbatim when surfacing the trust boundary:
 
 ```
-What this proves: bundle contents were not modified after capture.
+What this proves: bundle contents were not modified after packing.
 What this does not prove: that the model produced this output,
 that the output is correct, or that the capture process was honest.
 Verification is offline, deterministic, and fail-closed.

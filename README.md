@@ -6,7 +6,7 @@
 ![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-LLM outputs can change silently. AELITIUM proves that an evidence bundle has not been modified after packing.
+LLM outputs can change silently. AELITIUM proves that a packed evidence bundle has not been modified after packing.
 
 ## Quickstart
 
