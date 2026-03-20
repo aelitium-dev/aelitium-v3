@@ -49,7 +49,7 @@ aelitium pack --input output.json --out ./evidence
 aelitium verify-bundle ./evidence
 # STATUS=VALID rc=0 | BINDING_HASH=<hash> | SIGNATURE=NONE
 
-# Detect if model behavior changed between two captures
+# Detect if recorded responses differ between two captures
 aelitium compare ./evidence_run1 ./evidence_run2
 # STATUS=UNCHANGED rc=0   (same request_hash and response_hash observed)
 # STATUS=CHANGED   rc=2   (same request_hash, different response_hash observed)

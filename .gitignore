@@ -43,8 +43,11 @@ env/
 # Internal (keep private)
 governance/.obsidian/
 governance/authority/
+governance/logs/
 founder/
 artifacts/governance/
+artifacts/real_input/
+audit_results/
 
 # Test artifacts (manual smoke tests — never commit)
 evidence_signed_test/
