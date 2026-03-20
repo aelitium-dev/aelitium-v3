@@ -1,0 +1,20 @@
+{
+  "_comment": "Example AAR receipt referencing an AELITIUM evidence bundle via evidenceRef. Replace placeholder values with real hashes from your bundle.",
+  "schemaVersion": "aar/1.1",
+  "agent": "research-crew/analyst",
+  "action": "market_scan",
+  "timestamp": "2026-03-20T08:00:00Z",
+  "inputHash": "sha256:3f4a8c1d2e7b9f0c4d5a6e8b1c3f7d2a9e0b4c6d8f1a3e5c7b9d2f4a6c8e0b2",
+  "outputHash": "sha256:9b2e7f1a4c5d8e3b6f0a2c4d7e9b1f3a5c7d9e2b4f6a8c0d2e4f6a8b0c2d4e6",
+  "evidenceRef": [
+    {
+      "type": "aelitium/binding-bundle",
+      "hash": {
+        "alg": "sha256",
+        "digest": "7b30b0d2f1563cc8c0b7b71c41d8e3b5f9a22018d5e4c7a9b3f1d6e2a8c4f0b9"
+      },
+      "uri": "./examples/drift_demo/bundle_a"
+    }
+  ],
+  "signature": "ed25519:<receipt_signature>"
+}
