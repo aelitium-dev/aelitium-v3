@@ -338,6 +338,7 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 - [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — open draft standard for verifiable AI output bundles; AELITIUM is the reference implementation
 - [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
 - [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — interoperability note: referencing AELITIUM bundles from Agent Action Receipts
+- [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — referencing AELITIUM bundles as `evidenceRef` in Agent Action Receipts (AAR v1.1)
 
 ---
 
