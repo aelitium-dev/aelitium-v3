@@ -1,6 +1,5 @@
 # AELITIUM — Messaging Guardrails
 
-Internal reference. Use this before writing any public-facing copy.
 
 ---
 
