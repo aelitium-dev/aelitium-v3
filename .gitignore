@@ -6,6 +6,11 @@ __pycache__/
 build/
 
 # Local outputs
+# Raw demo recordings (local only — never commit)
+demo.cast
+demo_final.cast
+demo_full.cast
+
 output/
 *.log
 *.tmp
