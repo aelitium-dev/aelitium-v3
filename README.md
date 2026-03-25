@@ -10,6 +10,10 @@
 
 LLM outputs can change silently. AELITIUM currently enforces fail-closed verification semantics on the validated surface and verifies whether recorded evidence has been modified after packing.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/OFLJN0nM5QDk2acz.svg)](https://asciinema.org/a/OFLJN0nM5QDk2acz)
+
 ## Quickstart
 
 Find uncaptured LLM call sites:
