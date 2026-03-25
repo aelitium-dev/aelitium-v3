@@ -33,7 +33,6 @@ dist/
 artifacts/results/
 artifacts/handoff_kit/
 release_output/
-output/
 
 # Virtual environments
 .venv/
@@ -46,7 +45,6 @@ env/
 *.key
 
 # Internal (keep private)
-governance/.obsidian/
 governance/authority/
 governance/logs/
 founder/
