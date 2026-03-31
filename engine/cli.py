@@ -1,3 +1,7 @@
+# DEPRECATED: legacy CLI path. Retained for release/test script compatibility only.
+# Canonical product surface is engine/ai_cli.py (python3 -m engine.ai_cli).
+# Do not expose this interface publicly or use in new integrations.
+
 import argparse
 import sys
 
