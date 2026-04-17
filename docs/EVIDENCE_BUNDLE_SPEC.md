@@ -327,6 +327,28 @@ It defines only how evidence is identified and referenced. Each layer chooses it
 
 ---
 
+## Reserved Extensions
+
+> **Status: Non-normative. Not currently implemented. This section reserves field names only.**
+
+The following fields are reserved for optional, non-normative use by higher layers. They are **not part of the primitive core** and **MUST NOT be included in the `binding_hash` computation**.
+
+| Field | Status | Purpose |
+|-------|--------|---------|
+| `agent_state_hash` | Reserved / non-normative | Optional hash of agent state snapshot as defined by an adjacent layer. Semantics are not defined here. |
+| `delegation_warrant_ref` | Reserved / non-normative | Optional reference to a delegation credential or warrant identifying who authorised the call. Relevant to agent receipt layers, not to the evidence primitive. |
+
+**Constraints — these hold without exception:**
+
+- Neither field alters the canonical identity of the bundle.
+- `binding_hash = sha256(canonical({request_hash, response_hash}))` is unchanged by these fields.
+- Implementations MUST treat these fields as non-normative metadata — they MUST NOT affect bundle identity or core bundle verification outcomes.
+- A bundle that includes these fields MUST produce the same `binding_hash` as a bundle that omits them, given the same `request_hash` and `response_hash`.
+
+These fields belong to context layers that sit above or adjacent to the evidence primitive. See [EVIDENCE_MODEL.md](EVIDENCE_MODEL.md) for layer separation.
+
+---
+
 ## Implementations
 
 | Implementation | Language | Status |

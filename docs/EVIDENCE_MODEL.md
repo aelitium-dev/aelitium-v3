@@ -28,6 +28,19 @@ Those properties belong to other layers.
 
 ---
 
+## Adjacent layers: what the primitive is not
+
+Temporal binding and delegation context are **not part of the evidence primitive**. They belong to layers that sit above or adjacent to the AELITIUM bundle:
+
+- **Temporal binding** — when required, belongs to an adjacent attestation or receipt layer. Anchoring an interaction to a specific time is an external attestation concern; the bundle itself makes no claim about when execution occurred.
+- **Delegation context** — agent identity, delegation chains, and authorisation credentials are agent-receipt-layer concerns. They reference the bundle by `binding_hash` but do not enter its construction.
+
+The evidence primitive records exactly one thing: this canonical request produced this canonical response. Temporal and delegation context are verifiable supplements provided by external layers — they do not redefine the evidence object.
+
+> These are architectural observations, not protocol requirements. No runtime support for these reserved extensions is currently implemented. See [EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md) § Reserved Extensions.
+
+---
+
 ## Content-addressability
 
 Because bundle identity is defined as:
