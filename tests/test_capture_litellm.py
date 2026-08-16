@@ -18,6 +18,8 @@ _litellm_stub = MagicMock()
 _litellm_stub.__name__ = "litellm"
 sys.modules.setdefault("litellm", _litellm_stub)
 
+from engine.ai_verify import verify_ai_bundle  # noqa: E402
+from engine.capture.common import CaptureMetadataCollisionError  # noqa: E402
 from engine.capture.litellm import capture_completion, CaptureResult  # noqa: E402
 
 
@@ -122,6 +124,53 @@ class TestCaptureLiteLLM(unittest.TestCase):
         self._call(metadata={"experiment": "test-run-1"})
         canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
         self.assertEqual(canon["metadata"]["experiment"], "test-run-1")
+
+    def test_all_adapter_owned_metadata_collisions_raise(self):
+        reserved_keys = (
+            "provider",
+            "sdk",
+            "model_requested",
+            "model_confirmed",
+            "request_hash",
+            "response_hash",
+            "binding_hash",
+            "response_id",
+            "finish_reason",
+            "usage",
+            "captured_at_utc",
+        )
+        for key in reserved_keys:
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
+                with self.assertRaises(CaptureMetadataCollisionError) as context:
+                    self._call(
+                        out_dir=out_dir,
+                        metadata={key: "caller-value"},
+                    )
+                self.assertEqual(context.exception.offending_keys, (key,))
+
+    def test_custom_metadata_preserves_owned_hashes_and_verifies(self):
+        with tempfile.TemporaryDirectory() as base_dir, tempfile.TemporaryDirectory() as custom_dir:
+            self._call(out_dir=base_dir)
+            self._call(
+                out_dir=custom_dir,
+                metadata={"experiment": "test-run-1", "team": "assurance"},
+            )
+
+            base = json.loads(
+                (Path(base_dir) / "ai_canonical.json").read_text(encoding="utf-8")
+            )["metadata"]
+            custom = json.loads(
+                (Path(custom_dir) / "ai_canonical.json").read_text(
+                    encoding="utf-8"
+                )
+            )["metadata"]
+            for key in ("request_hash", "response_hash", "binding_hash"):
+                self.assertEqual(custom[key], base[key])
+            self.assertEqual(custom["provider"], "litellm")
+            self.assertEqual(custom["model_requested"], self.model)
+            self.assertEqual(custom["experiment"], "test-run-1")
+            self.assertEqual(custom["team"], "assurance")
+            self.assertTrue(verify_ai_bundle(custom_dir).valid)
 
     def test_model_confirmed_differs_when_provider_returns_different(self):
         """Provider may return model name without prefix — both are recorded."""

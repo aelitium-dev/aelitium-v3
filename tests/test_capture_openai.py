@@ -8,9 +8,16 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from engine.capture.openai import capture_chat_completion, CaptureResult
+from engine.ai_verify import verify_ai_bundle
+from engine.capture.common import CaptureMetadataCollisionError
+from engine.capture.openai import (
+    CaptureResult,
+    capture_chat_completion,
+    capture_chat_completion_stream,
+)
 
 
 def _make_mock_client(model: str = "gpt-4o", content: str = "Hello, world!") -> MagicMock:
@@ -21,6 +28,30 @@ def _make_mock_client(model: str = "gpt-4o", content: str = "Hello, world!") -> 
 
     client = MagicMock()
     client.chat.completions.create.return_value = response
+    return client
+
+
+def _make_mock_stream_client() -> MagicMock:
+    chunks = [
+        SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(content="Hello "),
+                    finish_reason=None,
+                )
+            ]
+        ),
+        SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(content="stream"),
+                    finish_reason="stop",
+                )
+            ]
+        ),
+    ]
+    client = MagicMock()
+    client.chat.completions.create.return_value = iter(chunks)
     return client
 
 
@@ -70,6 +101,69 @@ class TestCaptureOpenAI(unittest.TestCase):
         )
         canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text(encoding="utf-8"))
         self.assertEqual(canon["metadata"]["run_id"], "test-999")
+
+    def test_all_adapter_owned_metadata_collisions_raise(self):
+        reserved_keys = (
+            "provider",
+            "sdk",
+            "request_hash",
+            "response_hash",
+            "binding_hash",
+            "response_id",
+            "provider_created_at",
+            "finish_reason",
+            "usage",
+            "captured_at_utc",
+        )
+        for key in reserved_keys:
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
+                client = _make_mock_client(
+                    model=self.model,
+                    content="Quantum computing uses qubits.",
+                )
+                with self.assertRaises(CaptureMetadataCollisionError) as context:
+                    capture_chat_completion(
+                        client,
+                        self.model,
+                        self.messages,
+                        out_dir,
+                        metadata={key: "caller-value"},
+                    )
+                self.assertEqual(context.exception.offending_keys, (key,))
+
+    def test_custom_metadata_preserves_owned_hashes_and_verifies(self):
+        with tempfile.TemporaryDirectory() as base_dir, tempfile.TemporaryDirectory() as custom_dir:
+            capture_chat_completion(
+                _make_mock_client(self.model, "Quantum computing uses qubits."),
+                self.model,
+                self.messages,
+                base_dir,
+            )
+            caller_metadata = {"run_id": "test-999", "team": "assurance"}
+            caller_before = dict(caller_metadata)
+            capture_chat_completion(
+                _make_mock_client(self.model, "Quantum computing uses qubits."),
+                self.model,
+                self.messages,
+                custom_dir,
+                metadata=caller_metadata,
+            )
+
+            base = json.loads(
+                (Path(base_dir) / "ai_canonical.json").read_text(encoding="utf-8")
+            )["metadata"]
+            custom = json.loads(
+                (Path(custom_dir) / "ai_canonical.json").read_text(
+                    encoding="utf-8"
+                )
+            )["metadata"]
+            for key in ("request_hash", "response_hash", "binding_hash"):
+                self.assertEqual(custom[key], base[key])
+            self.assertEqual(custom["provider"], "openai")
+            self.assertEqual(custom["run_id"], "test-999")
+            self.assertEqual(custom["team"], "assurance")
+            self.assertEqual(caller_metadata, caller_before)
+            self.assertTrue(verify_ai_bundle(custom_dir).valid)
 
     def test_manifest_schema_field(self):
         capture_chat_completion(self.client, self.model, self.messages, self.tmp)
@@ -224,3 +318,40 @@ class TestCaptureDeterminism(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text())
         self.assertNotEqual(actual_hash, manifest["ai_hash_sha256"],
                             "Tampered bundle should fail hash check")
+
+
+class TestCaptureOpenAIStreaming(unittest.TestCase):
+    def setUp(self):
+        self.model = "gpt-4o"
+        self.messages = [{"content": "Stream a greeting.", "role": "user"}]
+
+    def test_streaming_owned_metadata_collision_raises(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            with self.assertRaises(CaptureMetadataCollisionError) as context:
+                capture_chat_completion_stream(
+                    _make_mock_stream_client(),
+                    self.model,
+                    self.messages,
+                    out_dir,
+                    metadata={"streaming": False},
+                )
+            self.assertEqual(context.exception.offending_keys, ("streaming",))
+
+    def test_streaming_custom_metadata_round_trips_and_verifies(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            caller_metadata = {"run_id": "stream-123"}
+            capture_chat_completion_stream(
+                _make_mock_stream_client(),
+                self.model,
+                self.messages,
+                out_dir,
+                metadata=caller_metadata,
+            )
+
+            canonical = json.loads(
+                (Path(out_dir) / "ai_canonical.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(canonical["metadata"]["run_id"], "stream-123")
+            self.assertIs(canonical["metadata"]["streaming"], True)
+            self.assertEqual(canonical["metadata"]["provider"], "openai")
+            self.assertTrue(verify_ai_bundle(out_dir).valid)
