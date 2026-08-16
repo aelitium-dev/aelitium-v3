@@ -5,52 +5,44 @@ Verifies an evidence bundle without requiring aelitium to be installed.
 Usage: python aelitium_verify_standalone.py --bundle ./evidence
 """
 import argparse
-import hashlib
 import json
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
+
+
+STANDALONE_OPTIONS = AIVerificationOptions(
+    required_manifest_fields=("schema", "ts_utc", "ai_hash_sha256"),
+    validate_manifest_timestamp=False,
+    verify_signature=False,
+    verify_binding=False,
+)
+
 
 def verify_bundle(bundle_dir: Path) -> tuple:
     """Returns (valid, reason, details)."""
-    canon_path = bundle_dir / "ai_canonical.json"
-    manifest_path = bundle_dir / "ai_manifest.json"
     vk_path = bundle_dir / "verification_keys.json"
+    result = verify_ai_bundle(bundle_dir, options=STANDALONE_OPTIONS)
+    if not result.valid:
+        if result.reason in ("MISSING_CANONICAL", "MISSING_MANIFEST"):
+            reason = result.reason
+        elif result.reason in ("CANONICAL_NOT_JSON", "MANIFEST_NOT_JSON"):
+            reason = f"{result.reason}: {result.error_message}"
+        elif result.detail:
+            reason = f"{result.reason}: {result.detail}"
+        else:
+            reason = result.reason
+        return False, reason, {}
 
-    # 1. Files exist
-    if not canon_path.exists():
-        return False, "MISSING_CANONICAL", {}
-    if not manifest_path.exists():
-        return False, "MISSING_MANIFEST", {}
-
-    # 2. Valid JSON
-    try:
-        canon_text = canon_path.read_text(encoding="utf-8")
-        canonical = json.loads(canon_text)
-    except Exception as e:
-        return False, f"CANONICAL_NOT_JSON: {e}", {}
-
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception as e:
-        return False, f"MANIFEST_NOT_JSON: {e}", {}
-
-    # 3. Manifest required fields
-    for field in ("schema", "ts_utc", "ai_hash_sha256"):
-        if field not in manifest:
-            return False, f"MANIFEST_MISSING_FIELD: {field}", {}
-
-    if manifest["schema"] != "ai_pack_manifest_v1":
-        return False, f"MANIFEST_BAD_SCHEMA: {manifest['schema']}", {}
-
-    # 4. Hash verification
-    actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
-    expected_hash = manifest["ai_hash_sha256"]
-    if actual_hash != expected_hash:
-        return False, f"HASH_MISMATCH: expected={expected_hash[:16]}... got={actual_hash[:16]}...", {}
+    canonical = result.canonical
+    manifest = result.manifest
 
     details = {
-        "ai_hash_sha256": actual_hash,
+        "ai_hash_sha256": result.ai_hash_sha256,
         "model": canonical.get("model"),
         "ts_utc": canonical.get("ts_utc"),
         "has_binding_hash": "binding_hash" in manifest,
