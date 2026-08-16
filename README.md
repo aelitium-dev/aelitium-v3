@@ -375,8 +375,8 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, and same-process boundary guidance
-- [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
-- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — open draft standard for verifiable AI output bundles; AELITIUM is the reference implementation
+- [Engine contract](docs/ENGINE_CONTRACT.md) — legacy generic bundle compatibility contract
+- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — conceptual, non-normative draft; it is not the current AI v1 runtime contract, and AELITIUM does not currently claim conformance or reference-implementation status
 - [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
 - [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — interoperability note: referencing AELITIUM bundles from Agent Action Receipts
 - [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — referencing AELITIUM bundles as `evidenceRef` in Agent Action Receipts (AAR v1.1)

@@ -493,7 +493,11 @@ def main() -> int:
 
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
-    ve.add_argument("--json", action="store_true", help="Output as JSON")
+    ve.add_argument(
+        "--json",
+        action="store_true",
+        help="Output valid results as JSON; invalid results retain compatibility text",
+    )
     ve.add_argument("--require-signature", action="store_true",
                     help="Reject bundles without signature material")
     ve.add_argument("--require-binding", action="store_true",
@@ -512,16 +516,26 @@ def main() -> int:
     c.add_argument("--print", action="store_true", help="Print canonical JSON")
     c.set_defaults(fn=cmd_canonicalize)
 
-    vb = sub.add_parser("verify-bundle", help="Verify evidence bundle (hash + signature + binding hash)")
+    vb = sub.add_parser(
+        "verify-bundle",
+        help="Verify AI bundle integrity and any present signature/binding evidence",
+    )
     vb.add_argument("bundle", help="Path to evidence bundle directory")
-    vb.add_argument("--json", action="store_true", help="Output as JSON")
+    vb.add_argument(
+        "--json",
+        action="store_true",
+        help="Output valid results as JSON; invalid results retain compatibility text",
+    )
     vb.add_argument("--require-signature", action="store_true",
                     help="Reject bundles without signature material")
     vb.add_argument("--require-binding", action="store_true",
                     help="Reject bundles without v1 binding evidence")
     vb.set_defaults(fn=cmd_verify_bundle)
 
-    cmp = sub.add_parser("compare", help="Compare two bundles to detect AI model behavior change")
+    cmp = sub.add_parser(
+        "compare",
+        help="Compare selected v1 request/response hashes between bundles",
+    )
     cmp.add_argument("bundle_a", help="Path to first evidence bundle directory")
     cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
     cmp.add_argument("--json", action="store_true", help="Output as JSON")

@@ -209,7 +209,7 @@ def enable(
 
     Args:
         out_dir:  Base directory for bundles. Each call writes to a subdirectory
-                  named by ai_hash_sha256 (content-addressed).
+                  named by binding_hash (content-addressed).
         strict:   If True, capture failures raise RuntimeError instead of warning.
                   Also raises if streaming=True (which cannot be captured).
         verbose:  If True, prints one line per captured call:

@@ -74,7 +74,7 @@ The `binding_hash` uniquely identifies the request ↔ response pairing. Using `
 2. Run `aelitium verify-bundle ./bundle`
 3. If `STATUS=VALID`, note the `BINDING_HASH=<digest>` printed to output
 4. Compare that digest with `evidenceRef[].hash.digest` in the receipt
-5. If they match, the bundle referenced in the receipt has not been modified since packing
+5. If they match, the bundle's computed binding hash is consistent with the receipt reference. This does not by itself establish historical non-modification; that additionally requires an independently trusted receipt authority, expected hash, or equivalent external anchor.
 
 ---
 

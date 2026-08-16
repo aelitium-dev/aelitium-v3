@@ -1,9 +1,12 @@
 # AELITIUM — Evidence Model
 
-**Status:** Non-normative
-**See also:** [Evidence Bundle Spec](EVIDENCE_BUNDLE_SPEC.md) (normative), [Trust Boundary](TRUST_BOUNDARY.md)
+**Status:** CONCEPTUAL_MODEL_NON_NORMATIVE
+**Current runtime authority:** [Messaging Guardrails](MESSAGING_GUARDRAILS.md), [Trust Boundary](TRUST_BOUNDARY.md)
+**Related conceptual draft:** [Evidence Bundle Spec](EVIDENCE_BUNDLE_SPEC.md)
 
-This document describes the conceptual model behind the AELITIUM evidence bundle — what it represents, its emergent properties, and how it sits within a layered AI trust stack.
+This document describes a conceptual evidence model — what it could represent, its
+emergent properties, and how it could sit within a layered AI trust stack. It does
+not override or define current AELITIUM AI v1 runtime semantics.
 
 These are architectural observations, not protocol requirements.
 
@@ -11,11 +14,17 @@ These are architectural observations, not protocol requirements.
 
 ## What an evidence bundle represents
 
-An AELITIUM bundle is a **content-addressed record of an LLM interaction boundary**.
+The conceptual evidence object is a **content-addressed commitment over stored
+request and response hash fields**.
 
 It records exactly one thing:
 
-> This canonical request produced this canonical response.
+> These supplied request and response hash values are joined by this binding commitment.
+
+For current AI v1, `request_hash` is a selected-field request identity and
+`binding_hash` is a cryptographic commitment over the stored `request_hash` and
+`response_hash`. Verification checks stored binding-field consistency; it does not
+establish that a real-world request caused a response.
 
 Nothing else. The bundle does not represent:
 
@@ -35,7 +44,9 @@ Temporal binding and delegation context are **not part of the evidence primitive
 - **Temporal binding** — when required, belongs to an adjacent attestation or receipt layer. Anchoring an interaction to a specific time is an external attestation concern; the bundle itself makes no claim about when execution occurred.
 - **Delegation context** — agent identity, delegation chains, and authorisation credentials are agent-receipt-layer concerns. They reference the bundle by `binding_hash` but do not enter its construction.
 
-The evidence primitive records exactly one thing: this canonical request produced this canonical response. Temporal and delegation context are verifiable supplements provided by external layers — they do not redefine the evidence object.
+The conceptual primitive joins supplied request and response hash fields. Temporal
+and delegation context belong to external layers; they do not redefine that
+conceptual commitment.
 
 > These are architectural observations, not protocol requirements. No runtime support for these reserved extensions is currently implemented. See [EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md) § Reserved Extensions.
 
@@ -43,24 +54,30 @@ The evidence primitive records exactly one thing: this canonical request produce
 
 ## Content-addressability
 
-Because bundle identity is defined as:
+In this conceptual model, bundle identity is defined as:
 
 ```
 bundle_id = binding_hash = sha256(canonical({request_hash, response_hash}))
 ```
 
-and `binding_hash` is derived deterministically from the canonical request and canonical response, an AELITIUM bundle is **content-addressed**.
+and `binding_hash` is derived deterministically from the supplied stored hash pair,
+the conceptual evidence object is **content-addressed**. This is not a claim that
+current v1 captures a complete provider invocation.
 
 This leads to several emergent properties:
 
 **Reproducible identity**
-Independent systems capturing the same LLM interaction produce the same `binding_hash` without coordination. Two captures of the same request+response are the same evidence object.
+Independent systems using the same stored `request_hash` and `response_hash` pair
+derive the same conceptual `binding_hash` without coordination. That equality does
+not establish complete invocation equivalence.
 
 **Natural deduplication**
 Bundles can be deduplicated by `binding_hash` without a central registry. If two bundles share a `binding_hash`, they are the same evidence object.
 
 **Offline reconstructibility**
-Given the original request and response, any party can derive the `binding_hash` offline and compare it against a stored identifier. Evidence identity does not require the original bundle file.
+Given the already-derived stored request and response hash values, a party can
+derive the conceptual `binding_hash` offline. The current verifier does not
+independently derive those fields from source request or response material.
 
 These are consequences of the evidence model — not protocol requirements. Implementations are not required to implement caching or deduplication.
 
@@ -68,7 +85,9 @@ These are consequences of the evidence model — not protocol requirements. Impl
 
 ## Reconstructible evidence
 
-An AELITIUM evidence object is **reconstructible**: its identifier (`binding_hash`) can be recomputed from the canonical request and canonical response without access to the original bundle.
+In this conceptual model, an evidence identifier (`binding_hash`) can be recomputed
+from the already-derived stored request and response hash values without access to
+the original bundle.
 
 ```
 binding_hash = sha256(canonical({
@@ -77,15 +96,20 @@ binding_hash = sha256(canonical({
 }))
 ```
 
-Any party possessing the canonical inputs can independently reconstruct the evidence identity. The original bundle file is not required.
+Any party possessing those stored hash values can independently reconstruct the
+conceptual identifier. This does not reproduce or verify the complete current AI
+v1 bundle.
 
 ### Consequences
 
 **Independent verification**
-An auditor can verify an interaction using only `canonical_request`, `canonical_response`, and this specification. Verification remains possible even if the capture system is unavailable, bundle storage is lost, or evidence was transmitted as hashes only.
+An auditor can recompute the conceptual binding commitment from the stored hash
+pair. Current AI v1 payload, schema, canonicalization, and manifest verification
+still requires the governed bundle artifacts.
 
 **Third-party reproducibility**
-Independent systems capturing the same model interaction derive the same `binding_hash` without coordination:
+Independent systems using the same selected-field hash pair derive the same
+conceptual `binding_hash` without coordination:
 
 ```
 system A capture → binding_hash X
@@ -95,14 +119,21 @@ system B capture → binding_hash X
 This enables cross-system evidence correlation without a shared registry.
 
 **Reduced trust requirements**
-Traditional logging systems require trusting the party that produced the log artifact. With reconstructible evidence, trust shifts from the log producer to the deterministic reconstruction. An auditor does not need to trust that a bundle was faithfully preserved if the canonical inputs are available.
+Deterministic reconstruction can reduce disagreement about the supplied hash pair.
+It does not establish that a bundle was historically preserved or that the source
+request and response were captured faithfully.
 
 **Long-term audit durability**
-Evidence identity remains derivable as long as `canonical_request`, `canonical_response`, and the hash algorithm specification are available — independent of proprietary logging systems, provider APIs, or specific storage formats.
+The conceptual identifier remains derivable as long as the stored request and
+response hash values and the hash algorithm specification are available.
 
 ### Boundary
 
-Reconstructibility does not guarantee authenticity. It proves only that this response corresponds to this request. It does not prove that the model actually produced the response, that the provider executed the request, or that the interaction occurred at a specific time. Those assurances require external attestations — signatures, receipts, or transport proofs.
+Reconstructibility does not guarantee authenticity or causation. It establishes at
+most that the supplied stored hash fields produce the stated commitment. It does
+not establish that the model produced the response, that the provider executed a
+complete invocation, or that the interaction occurred at a specific time. Those
+assurances require independently trusted external mechanisms.
 
 ### Why this matters
 
@@ -114,24 +145,34 @@ These properties are emergent consequences of the deterministic evidence model, 
 
 ## Cross-institution verifiable evidence anchors
 
-An AELITIUM evidence bundle acts as a **cross-institution verifiable anchor** if multiple independent parties can derive the same `binding_hash`, verify the same request–response relationship, and reach the same verification result — without requiring mutual trust or shared infrastructure.
+The conceptual model could provide a **cross-institution shared identifier** if
+multiple parties possess the same stored request and response hash values and use
+the same proposed construction. This is not a current cross-language conformance
+claim or proof of a real-world request–response relationship.
 
 This follows directly from deterministic canonicalization, content-addressed identity, and verification determinism.
 
 ### Core property
 
-Given two institutions A and B with no shared trust, no shared storage, and no shared execution environment: if both possess `canonical_request` and `canonical_response`, both independently derive the same `binding_hash` and the same verification result. No coordination is required.
+Given two institutions A and B with no shared storage or execution environment: if
+both possess the same stored hash pair, both can derive the same conceptual
+`binding_hash`. This says nothing about trusted origin or complete invocation
+identity.
 
 ### Consequences
 
 **Trust decoupling**
-Agreement on evidence identity does not require agreement on provider, transport layer, payment system, or execution environment. Evidence verification is decoupled from institutional trust relationships.
+Agreement on the conceptual identifier does not require agreement on provider,
+transport layer, payment system, or execution environment. Trust in origin,
+freshness, and authorization remains separate.
 
 **Neutral reference across boundaries**
 Different institutions can reference the same evidence object using the same `binding_hash` without a central registry, shared database, or coordinating authority.
 
 **Dispute minimization**
-Disagreements can be reduced to `canonical_request` or `canonical_response` mismatches — rather than disputes over log integrity, provider logs, or transport records. The dispute surface narrows to deterministic inputs.
+Disagreements about the conceptual identifier can be reduced to differences in the
+supplied stored hash pair. Disputes about source material, execution, or log
+history remain outside this model.
 
 **Composability across systems**
 Independent agent systems, payment systems, and audit systems can all reference the same `binding_hash` while remaining operationally independent.
@@ -184,7 +225,7 @@ Each layer proves something orthogonal:
 |-------|---------------|------------------------|
 | Payments | A paid inference event occurred | The model output |
 | Transport | Message authenticity and integrity in transit | The response semantics |
-| **AELITIUM** | Request ↔ response binding | Payment, identity, or execution |
+| **AELITIUM AI v1** | Stored request/response/binding-field consistency | Complete invocation, causation, payment, identity, or execution |
 | Agent receipts | A workflow or action occurred | The exact model output |
 
 No layer controls the evidence bundle. Any layer can reference it by `binding_hash`.

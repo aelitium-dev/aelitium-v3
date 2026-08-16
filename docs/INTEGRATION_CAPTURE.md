@@ -150,16 +150,20 @@ python examples/capture_openai.py
 
 ## New in v0.2: Provider metadata
 
-Every capture bundle now includes:
+Depending on the adapter and invocation path, capture metadata may include:
 
 | Field | Description |
 |---|---|
 | `metadata.binding_hash` | Commitment over the stored request/response hash pair |
 | `metadata.response_id` | Provider's response ID (e.g. OpenAI `id`) |
-| `metadata.provider_created_at` | Unix timestamp from provider |
+| `metadata.provider_created_at` | Provider Unix timestamp when emitted by that adapter/path |
 | `metadata.finish_reason` | e.g. `stop`, `end_turn` |
 | `metadata.usage` | Token usage: prompt, completion, total |
 | `metadata.captured_at_utc` | Local capture timestamp (ISO8601) |
+
+`provider_created_at` is adapter/path-specific. The non-streaming OpenAI path
+includes the field from provider response data (and its value may be `None`). The
+OpenAI streaming, Anthropic, and LiteLLM paths do not emit it.
 
 The `binding_hash` is a **cryptographic commitment** over the stored pair
 `(request_hash, response_hash)` —
