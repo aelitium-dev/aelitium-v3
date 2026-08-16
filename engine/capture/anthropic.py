@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
 
 
@@ -84,7 +85,7 @@ def capture_message(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
-    capture_meta: Dict[str, Any] = {
+    base_metadata: Dict[str, Any] = {
         "provider": "anthropic",
         "sdk": "anthropic-python",
         "request_hash": request_hash,
@@ -95,8 +96,7 @@ def capture_message(
         "usage": usage,
         "captured_at_utc": ts,
     }
-    if metadata:
-        capture_meta.update(metadata)
+    capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {
         "metadata": capture_meta,

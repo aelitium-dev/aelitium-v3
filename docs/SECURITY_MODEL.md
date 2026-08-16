@@ -2,14 +2,16 @@
 
 ## What AELITIUM protects against
 
-AELITIUM provides **integrity guarantees** for AI outputs and release artifacts.
+AELITIUM provides governed **internal-consistency checks** for AI evidence bundles
+and supports anchored integrity checks when expected hashes or keys are trusted
+independently.
 
 ### Threats addressed
 
 | Threat | Protected? | How |
 |--------|-----------|-----|
-| Recorded bundle content tampered after packing | ✅ | SHA-256 hash mismatch detected on verify |
-| Log entry modified in storage | ✅ | Canonical JSON + hash is independent of storage |
+| Bundle content changed without consistently updating governed evidence | ✅ | Schema, canonical-byte, or hash verification fails |
+| Payload changed while a separately trusted expected hash is retained | ✅ | Recomputed canonical hash differs from the trusted anchor |
 | Manifest hash field altered | ✅ | Detected: recomputed hash won't match |
 | Canonical JSON altered | ✅ | Detected: recomputed hash won't match |
 | Both files altered consistently | ❌ | See "Limitations" below |
@@ -23,7 +25,7 @@ AELITIUM provides **no protection** for:
 
 - **Pre-generation attacks**: if the model or prompt is compromised before the output is generated, AELITIUM cannot detect this
 - **Collusion**: if an attacker controls both the evidence bundle and the stored hash, they can replace both consistently
-- **Model quality**: AELITIUM proves the output wasn't changed, not that it was correct or safe
+- **Model quality**: AELITIUM evaluates evidence consistency, not whether output content is correct or safe
 - **Key compromise (P3)**: if the Ed25519 authority private key is leaked, signatures lose their trust property
 
 ---
@@ -40,6 +42,17 @@ The hash in `ai_manifest.json` is `sha256(canonical_json)`.
 
 **Limitation**: if an attacker controls the evidence bundle *and* the stored hash, they can substitute a different valid bundle. Mitigation: store hashes in a system the attacker cannot modify (separate DB, immutable log, receipt from P3 authority).
 
+### Signature layers
+
+Current AI bundles can include Ed25519 signature material in
+`verification_keys.json`. Verification establishes mathematical signature validity
+under the bundled public key. It does not establish an externally trusted signer
+identity; `trusted_signer_identity` remains `UNESTABLISHED`.
+
+Unsigned bundles remain valid by default. `--require-signature` lets a caller make
+absence invalid for a particular verification context. Signature verification does
+not evaluate freshness or authorization.
+
 ### Authority signatures (P3 — in development)
 
 P3 adds an Ed25519 signature from an authority server.
@@ -55,7 +68,7 @@ P3 adds an Ed25519 signature from an authority server.
 | Primitive | Usage | Library |
 |-----------|-------|---------|
 | SHA-256 | Content hashing | Python `hashlib` (stdlib) |
-| Ed25519 | Authority signatures (P3) | `cryptography` ≥ 41 |
+| Ed25519 | Bundled operator signatures and authority signatures | `cryptography` ≥ 41 |
 | JSON canonicalization | Deterministic serialization | Python `json` (stdlib) |
 
 No custom cryptography. No novel constructions.
@@ -67,11 +80,13 @@ No custom cryptography. No novel constructions.
 Runtime dependencies:
 
 ```
-cryptography >= 41    # Ed25519 (P3 only; P2 requires only stdlib)
-jsonschema >= 4.18    # Schema validation (validate subcommand)
+cryptography >= 41    # Ed25519 signature support
+jsonschema >= 4.18    # ai_output_v1 validation during pack and verify
 ```
 
-P2 (pack + verify) requires only Python stdlib (`json`, `hashlib`, `pathlib`).
+Current AI pack and verify paths use `jsonschema` to enforce `ai_output_v1`.
+Signature verification additionally uses `cryptography` when signature material is
+present.
 
 ---
 
@@ -103,6 +118,10 @@ result = capture_openai(
     metadata={"session_id": session_id}  # stored in bundle, not in request_hash
 )
 ```
+
+Unrelated custom metadata is accepted. If caller metadata collides with a key in
+the adapter-owned base metadata for that invocation, capture fails with
+`CAPTURE_METADATA_RESERVED_KEY_COLLISION`.
 
 Metadata is preserved in the bundle and included in `ai_canonical.json`, but excluded from `request_hash`. Deletion of the bundle removes all associated metadata.
 

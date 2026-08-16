@@ -144,6 +144,12 @@ class TestVerifyBundleValid(unittest.TestCase):
         self.assertIn("binding_hash", obj)
         self.assertEqual(obj["signature"], "NONE")
         self.assertEqual(obj["binding_hash"], "NONE")
+        self.assertEqual(obj["payload_integrity"], "VALID")
+        self.assertEqual(obj["binding_field_consistency"], "ABSENT")
+        self.assertEqual(obj["signature_validity"], "ABSENT")
+        self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
+        self.assertEqual(obj["freshness"], "NOT_EVALUATED")
+        self.assertEqual(obj["authorization"], "NOT_EVALUATED")
 
     def test_no_traceback_on_valid(self):
         r = _verify_bundle(self.outdir)
@@ -175,6 +181,7 @@ class TestVerifyBundleCapture(unittest.TestCase):
         obj = json.loads(r.stdout.strip())
         self.assertEqual(obj["binding_hash"], self.binding_hash)
         self.assertRegex(obj["binding_hash"], HASH_RE)
+        self.assertEqual(obj["binding_field_consistency"], "VALID")
 
     def test_tampered_binding_hash_in_manifest_gives_rc2(self):
         m = json.loads((self.outdir / "ai_manifest.json").read_text())
@@ -197,7 +204,9 @@ class TestVerifyBundleCapture(unittest.TestCase):
         # Also update the manifest hash so it matches the new canonical
         import hashlib
         new_text = (self.outdir / "ai_canonical.json").read_text()
-        new_hash = hashlib.sha256(new_text.rstrip("\n").encode()).hexdigest()
+        new_hash = hashlib.sha256(
+            new_text.removesuffix("\n").encode()
+        ).hexdigest()
         m = json.loads((self.outdir / "ai_manifest.json").read_text())
         m["ai_hash_sha256"] = new_hash
         (self.outdir / "ai_manifest.json").write_text(
@@ -250,7 +259,15 @@ class TestVerifyBundleTamper(unittest.TestCase):
         canon = self.outdir / "ai_canonical.json"
         obj = json.loads(canon.read_text())
         obj["output"] = "TAMPERED"
-        canon.write_text(json.dumps(obj) + "\n", encoding="utf-8")
+        canon.write_text(
+            json.dumps(
+                obj,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ) + "\n",
+            encoding="utf-8",
+        )
         r = _verify_bundle(self.outdir)
         self.assertEqual(r.returncode, 2)
         self.assertIn("HASH_MISMATCH", r.stdout)
@@ -277,6 +294,8 @@ class TestVerifyBundleSigned(unittest.TestCase):
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["status"], "VALID")
             self.assertEqual(obj["signature"], "VALID")
+            self.assertEqual(obj["signature_validity"], "VALID")
+            self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
 
     def test_tampered_verification_keys_gives_signature_invalid(self):
         with tempfile.TemporaryDirectory() as d:

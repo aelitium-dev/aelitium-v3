@@ -7,6 +7,8 @@ from unittest.mock import MagicMock
 
 try:
     from engine.capture.anthropic import capture_message, CaptureResult
+    from engine.capture.common import CaptureMetadataCollisionError
+    from engine.ai_verify import verify_ai_bundle
     _ANTHROPIC_AVAILABLE = True
 except ImportError:
     _ANTHROPIC_AVAILABLE = False
@@ -72,3 +74,57 @@ class TestCaptureAnthropic(unittest.TestCase):
         capture_message(self.client, self.model, self.messages, self.tmp)
         canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
         self.assertEqual(canon["output"], "The answer is 4.")
+
+    def test_all_adapter_owned_metadata_collisions_raise(self):
+        reserved_keys = (
+            "provider",
+            "sdk",
+            "request_hash",
+            "response_hash",
+            "binding_hash",
+            "response_id",
+            "finish_reason",
+            "usage",
+            "captured_at_utc",
+        )
+        for key in reserved_keys:
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
+                with self.assertRaises(CaptureMetadataCollisionError) as context:
+                    capture_message(
+                        self.client,
+                        self.model,
+                        self.messages,
+                        out_dir,
+                        metadata={key: "caller-value"},
+                    )
+                self.assertEqual(context.exception.offending_keys, (key,))
+
+    def test_custom_metadata_preserves_owned_hashes_and_verifies(self):
+        with tempfile.TemporaryDirectory() as base_dir, tempfile.TemporaryDirectory() as custom_dir:
+            capture_message(
+                self.client,
+                self.model,
+                self.messages,
+                base_dir,
+            )
+            capture_message(
+                self.client,
+                self.model,
+                self.messages,
+                custom_dir,
+                metadata={"run_id": "anthropic-123"},
+            )
+
+            base = json.loads(
+                (Path(base_dir) / "ai_canonical.json").read_text(encoding="utf-8")
+            )["metadata"]
+            custom = json.loads(
+                (Path(custom_dir) / "ai_canonical.json").read_text(
+                    encoding="utf-8"
+                )
+            )["metadata"]
+            for key in ("request_hash", "response_hash", "binding_hash"):
+                self.assertEqual(custom[key], base[key])
+            self.assertEqual(custom["provider"], "anthropic")
+            self.assertEqual(custom["run_id"], "anthropic-123")
+            self.assertTrue(verify_ai_bundle(custom_dir).valid)

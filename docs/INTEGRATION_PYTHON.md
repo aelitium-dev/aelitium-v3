@@ -18,7 +18,9 @@ store (ai_hash_sha256, evidence_uri)
 downstream processing
 ```
 
-The hash is the cryptographic ID of the output. Store it anywhere — DB, log, trace.
+The hash identifies the complete validated canonical object, including timestamp
+and metadata. Store a trusted copy separately when later verification must
+distinguish the expected artifact from a fully self-consistent replacement.
 
 ---
 
@@ -189,8 +191,8 @@ from pathlib import Path
 def verify_evidence(evidence_uri: str, expected_hash: str,
                     aelitium_cwd: Path = Path(".")) -> bool:
     """
-    Verify that an evidence bundle is intact.
-    Returns True if VALID, False if INVALID or any error.
+    Verify bundle consistency and compare it with a separately stored expected hash.
+    Returns True if both checks pass, False if INVALID or any error.
     """
     result = subprocess.run(
         ["python3", "-m", "engine.ai_cli", "verify",
@@ -243,5 +245,5 @@ def audit(run_id: str):
 
 - **Fail-closed**: if `pack` fails, the inference endpoint returns 500 — no output is returned without evidence
 - **Offline verification**: `verify` never requires network access
-- **Deterministic**: same AI output always produces the same `ai_hash_sha256`
-- **Auditable**: `ai_manifest.json` records model, schema, timestamp, canonicalization method
+- **Deterministic**: the same complete validated `ai_output_v1` object produces the same `ai_hash_sha256` under the governed canonicalization
+- **Auditable**: the canonical payload and manifest together record model, schema, timestamp fields, and canonicalization method

@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
 
 
@@ -140,7 +141,7 @@ def capture_completion(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
-    capture_meta: Dict[str, Any] = {
+    base_metadata: Dict[str, Any] = {
         "provider": "litellm",
         "sdk": "litellm",
         "model_requested": model,           # as passed (may include provider prefix)
@@ -153,8 +154,7 @@ def capture_completion(
         "usage": usage,
         "captured_at_utc": ts,
     }
-    if metadata:
-        capture_meta.update(metadata)
+    capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {
         "metadata": capture_meta,
@@ -209,7 +209,7 @@ def enable(
 
     Args:
         out_dir:  Base directory for bundles. Each call writes to a subdirectory
-                  named by ai_hash_sha256 (content-addressed).
+                  named by binding_hash (content-addressed).
         strict:   If True, capture failures raise RuntimeError instead of warning.
                   Also raises if streaming=True (which cannot be captured).
         verbose:  If True, prints one line per captured call:

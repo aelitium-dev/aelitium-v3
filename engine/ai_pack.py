@@ -2,10 +2,14 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
-from .canonical import canonical_json  # já existe no core
-from .canonical import sha256_hash     # já existe no core
+from .ai_canonical import canonicalize_ai_output
+from .ai_contract import (
+    AI_CANONICALIZATION,
+    AI_MANIFEST_SCHEMA,
+    AI_OUTPUT_SCHEMA_VERSION,
+)
 
 @dataclass(frozen=True)
 class AIPackResult:
@@ -13,16 +17,14 @@ class AIPackResult:
     ai_hash_sha256: str
     manifest: Dict[str, Any]
 
-def ai_pack_from_obj(obj: Dict[str, Any]) -> AIPackResult:
-    # canonical JSON (sorted keys, no whitespace)
-    canon = canonical_json(obj)
-    h = sha256_hash(canon)  # expects str
+def ai_pack_from_obj(obj: Any) -> AIPackResult:
+    canon, h = canonicalize_ai_output(obj)
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     manifest = {
-        "schema": "ai_pack_manifest_v1",
+        "schema": AI_MANIFEST_SCHEMA,
         "ts_utc": ts,
-        "input_schema": obj.get("schema_version", None),
-        "canonicalization": "json_sorted_keys_no_whitespace_utf8",
+        "input_schema": AI_OUTPUT_SCHEMA_VERSION,
+        "canonicalization": AI_CANONICALIZATION,
         "ai_hash_sha256": h,
     }
     return AIPackResult(canonical_json=canon, ai_hash_sha256=h, manifest=manifest)

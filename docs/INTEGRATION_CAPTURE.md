@@ -12,7 +12,10 @@ LLM → output → user writes JSON → aelitium pack → bundle
 LLM → capture_chat_completion() → bundle (automatic)
 ```
 
-The bundle is created at call time, capturing the exact request and response hashes. No manual step. No trust gap.
+The bundle is created in the adapter-controlled call path without a manual JSON
+handoff. The v1 hashes cover selected recorded request and response fields; they
+do not represent every provider invocation parameter or eliminate the need for
+external trust anchors.
 
 ---
 
@@ -92,16 +95,24 @@ result = capture_chat_completion(
 )
 ```
 
+Caller metadata may add unrelated custom fields. Every key present in the
+adapter-owned base metadata for that invocation is reserved. A collision fails
+with `CAPTURE_METADATA_RESERVED_KEY_COLLISION`; the adapter does not silently
+overwrite or discard either value. The reserved set is invocation-specific rather
+than one universal static list shared by all adapters.
+
 ### Trust boundary
 
 What the capture adapter supports:
 - The request and response were recorded during the adapter-controlled call path
-- The bundle has not been altered since packing
-- The request hash matches the messages that were sent
+- The v1 request identity covers the recorded model and messages selected by the adapter
+- Verification can check the current bundle's schema, canonical representation, hashes, and stored binding fields for internal consistency
 
 The capture adapter does **not** prove:
 - That the model itself was not compromised
 - That the `openai.OpenAI()` client was not intercepted upstream
+- That every behavior-affecting invocation parameter is represented in `request_hash`
+- That a self-consistent bundle was not replaced without an independently trusted anchor
 
 For stronger provenance, combine with a signing authority (P3).
 
@@ -139,18 +150,27 @@ python examples/capture_openai.py
 
 ## New in v0.2: Provider metadata
 
-Every capture bundle now includes:
+Depending on the adapter and invocation path, capture metadata may include:
 
 | Field | Description |
 |---|---|
-| `metadata.binding_hash` | Single proof linking request↔response |
+| `metadata.binding_hash` | Commitment over the stored request/response hash pair |
 | `metadata.response_id` | Provider's response ID (e.g. OpenAI `id`) |
-| `metadata.provider_created_at` | Unix timestamp from provider |
+| `metadata.provider_created_at` | Provider Unix timestamp when emitted by that adapter/path |
 | `metadata.finish_reason` | e.g. `stop`, `end_turn` |
 | `metadata.usage` | Token usage: prompt, completion, total |
 | `metadata.captured_at_utc` | Local capture timestamp (ISO8601) |
 
-The `binding_hash` is the critical new field: it is a **cryptographic commitment** over the pair `(request_hash, response_hash)` — `sha256(canonical({"request_hash": ..., "response_hash": ...}))`. Any change to either component produces a different `binding_hash`, making the request–response relationship tamper-evident. Without it, a `request_hash` and `response_hash` from different calls could be presented together as a pair.
+`provider_created_at` is adapter/path-specific. The non-streaming OpenAI path
+includes the field from provider response data (and its value may be `None`). The
+OpenAI streaming, Anthropic, and LiteLLM paths do not emit it.
+
+The `binding_hash` is a **cryptographic commitment** over the stored pair
+`(request_hash, response_hash)` —
+`sha256(canonical({"request_hash": ..., "response_hash": ...}))`. Current v1
+verification checks consistency among the stored request, response, and binding
+fields. It does not independently reconstruct source request or response material
+or prove that a real-world provider invocation produced the recorded response.
 
 ## Operator signing (optional)
 
@@ -162,6 +182,13 @@ export AEL_ED25519_PRIVKEY_B64=<your-32-byte-key-base64>
 
 When set, every `capture_chat_completion()` call writes `verification_keys.json`
 alongside the bundle. The `CaptureResult.signed` field is `True`.
+
+This supports mathematical Ed25519 signature verification. Because the public key
+is packaged with the artifact, a valid signature does not establish an externally
+trusted signer identity; `trusted_signer_identity` remains `UNESTABLISHED`.
+Unsigned bundles remain valid by default. Use `--require-signature` when absence
+must fail. Binding evidence is likewise optional by default; use
+`--require-binding` when it is required.
 
 ## Chain of custody (EvidenceLog)
 
@@ -222,7 +249,10 @@ print(result.ai_hash_sha256)
 
 ## LiteLLM
 
-LiteLLM routes calls to multiple providers (OpenAI, Anthropic, Bedrock, Cohere, etc.) via a unified interface. The AELITIUM adapter works at the LiteLLM boundary — the evidence bundle is provider-agnostic.
+LiteLLM routes calls to multiple providers through a unified interface. The
+AELITIUM adapter captures at that LiteLLM boundary and emits the same provider-
+neutral v1 evidence contract. Repository unit tests exercise the adapter boundary;
+they are not conformance results for every provider supported by LiteLLM.
 
 ### Install
 
@@ -247,7 +277,7 @@ print(result.bundle_dir)       # path to bundle files
 print(result.response)         # original LiteLLM response (unmodified)
 ```
 
-Works with any LiteLLM-supported provider:
+Examples of provider routes exposed by LiteLLM include:
 
 ```python
 # Anthropic via LiteLLM
@@ -266,7 +296,10 @@ LiteLLM model strings include a provider prefix (`"openai/gpt-4o"`). The bundle 
 | `metadata.model_requested` | `"openai/gpt-4o"` | Model string passed to LiteLLM |
 | `metadata.model_confirmed` | `"gpt-4o"` | Model name returned by the provider |
 
-`request_hash` uses `model_requested` — it records what was asked. `response_hash` uses `model_confirmed` — it records what the provider declared.
+`request_hash` uses `model_requested` together with messages as the current v1
+selected-field request identity. Forwarded behavior parameters such as
+`temperature` and `max_tokens` are not represented in that hash. `response_hash`
+uses `model_confirmed` with recorded response content.
 
 ### Scope (v1)
 

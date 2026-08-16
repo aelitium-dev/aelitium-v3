@@ -1,4 +1,16 @@
-# 📜 AELITIUM v3 — ENGINE CONTRACT
+# 📜 AELITIUM — Legacy Generic Bundle Compatibility Contract
+
+**Status:** LEGACY_GENERIC_BUNDLE_COMPATIBILITY
+
+> This document describes the generic/legacy evidence bundle stack using
+> `manifest.json`, `evidence_pack.json`, and required verification material. It is
+> not the canonical current AELITIUM AI evidence bundle surface. Current AI bundle
+> users should use `engine.ai_cli` and consult
+> [MESSAGING_GUARDRAILS.md](MESSAGING_GUARDRAILS.md) and
+> [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md).
+>
+> The mandatory-signature rules below are requirements of this legacy
+> compatibility stack only. They do not change current AI v1 defaults.
 
 ## 1. Nature
 
@@ -16,7 +28,7 @@ No hidden state.
 
 ---
 
-# 2. CLI Interface (Official v3 Surface)
+# 2. CLI Interface (Legacy Generic Compatibility Surface)
 
 O engine expõe **3 comandos apenas**:
 
@@ -46,7 +58,7 @@ aelitium pack --input input.json --out ./output/
    * `evidence_pack.json` — canonical payload + hash
    * `verification_keys.json` — `keyring_format: "ed25519-v1"`, public key, signature
 
-### Signing (required)
+### Signing (required by this legacy stack)
 
 `pack` requires a signing key at runtime:
 
@@ -69,13 +81,19 @@ Running twice with same input and same key MUST produce identical hashes.
 
 ### Purpose
 
-Verify integrity and authenticity offline.
+Verify legacy bundle integrity and bundled signature consistency offline.
 
 ### Syntax
 
 ```bash
 aelitium verify-bundle <dir>
 ```
+
+Compatibility clarification: current `engine.ai_cli verify-bundle` follows the AI
+v1 contract and does not require signature or binding evidence by default. The
+spelling above is retained as historical legacy-contract notation; the mandatory
+signature rules below apply only to the generic compatibility stack documented
+here.
 
 ### Behavior
 
@@ -158,9 +176,9 @@ No exceptions.
 
 ---
 
-# 6. Product Definition
+# 6. Legacy Stack Scope
 
-AELITIUM v3 product =
+This generic compatibility stack =
 
 > Deterministic Evidence Pack + Offline Verifier
 

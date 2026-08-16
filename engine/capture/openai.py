@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from .common import merge_capture_metadata
 
 
 @dataclass(frozen=True)
@@ -156,7 +157,7 @@ def capture_chat_completion(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
-    capture_meta: Dict[str, Any] = {
+    base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
         "request_hash": request_hash,
@@ -168,8 +169,7 @@ def capture_chat_completion(
         "usage": usage,
         "captured_at_utc": ts,
     }
-    if metadata:
-        capture_meta.update(metadata)
+    capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {
         "metadata": capture_meta,
@@ -262,7 +262,7 @@ def capture_chat_completion_stream(
     # 5. Build payload
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
-    capture_meta: Dict[str, Any] = {
+    base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
         "request_hash": request_hash,
@@ -272,8 +272,7 @@ def capture_chat_completion_stream(
         "captured_at_utc": ts,
         "streaming": True,
     }
-    if metadata:
-        capture_meta.update(metadata)
+    capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {
         "metadata": capture_meta,

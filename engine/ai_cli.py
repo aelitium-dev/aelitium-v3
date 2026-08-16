@@ -8,12 +8,14 @@ from pathlib import Path
 #  - running as a module (python -m engine.ai_cli)
 #  - running as a script   (python engine/ai_cli.py)
 if __package__:
-    from .ai_canonical import canonicalize_ai_output
+    from .ai_canonical import AICanonicalError, canonicalize_ai_output
+    from .ai_verify import AIVerificationOptions, verify_ai_bundle
 else:
     import sys
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
-    from engine.ai_canonical import canonicalize_ai_output
+    from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
+    from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
 
 
 def _out(args, text_lines: list[str], json_obj: dict) -> None:
@@ -22,6 +24,29 @@ def _out(args, text_lines: list[str], json_obj: dict) -> None:
     else:
         for line in text_lines:
             print(line)
+
+
+def _assurance_lines(result) -> list[str]:
+    return [
+        f"{name.upper()}={state}"
+        for name, state in result.assurance_dict().items()
+    ]
+
+
+def _verification_options(args: argparse.Namespace) -> AIVerificationOptions:
+    return AIVerificationOptions(
+        require_signature=getattr(args, "require_signature", False),
+        require_binding=getattr(args, "require_binding", False),
+    )
+
+
+def _verification_fail(result) -> int:
+    print(f"STATUS=INVALID rc=2 reason={result.reason}")
+    if result.detail:
+        print(f"DETAIL={result.detail}")
+    for line in _assurance_lines(result):
+        print(line)
+    return 2
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -50,69 +75,24 @@ def cmd_canonicalize(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    import hashlib
-    import re
-
     outdir = Path(args.out)
-    canon_path = outdir / "ai_canonical.json"
-    manifest_path = outdir / "ai_manifest.json"
 
-    def fail(reason: str, detail: str = "") -> int:
-        print(f"STATUS=INVALID rc=2 reason={reason}")
-        if detail:
-            print(f"DETAIL={detail}")
-        return 2
-
-    if not canon_path.exists():
-        return fail("MISSING_CANONICAL", "ai_canonical.json not found")
-    if not manifest_path.exists():
-        return fail("MISSING_MANIFEST", "ai_manifest.json not found")
-
-    try:
-        canon_text = canon_path.read_text(encoding="utf-8")
-        json.loads(canon_text)
-    except Exception as e:
-        return fail("CANONICAL_NOT_JSON", type(e).__name__)
-
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception as e:
-        return fail("MANIFEST_NOT_JSON", type(e).__name__)
-
-    for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
-        if field not in manifest:
-            return fail("MANIFEST_MISSING_FIELD", field)
-
-    if manifest["schema"] != "ai_pack_manifest_v1":
-        return fail("MANIFEST_BAD_SCHEMA", manifest["schema"])
-
-    if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
-        return fail("MANIFEST_BAD_TS_UTC", manifest["ts_utc"])
-
-    actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
-    if actual_hash != manifest["ai_hash_sha256"]:
-        return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
-
-    # Signature enforcement: if verification_keys.json is present, it MUST be valid.
-    vk_path = outdir / "verification_keys.json"
-    if vk_path.exists():
-        try:
-            if __package__:
-                from .signing import verify_manifest_signature
-            else:
-                from engine.signing import verify_manifest_signature
-            vk = json.loads(vk_path.read_text(encoding="utf-8"))
-            manifest_bytes = manifest_path.read_bytes()
-            verify_manifest_signature(manifest_bytes, vk)
-            signature = "VALID"
-        except Exception as exc:
-            return fail("SIGNATURE_INVALID", str(exc))
-    else:
-        signature = "NONE"
+    result = verify_ai_bundle(
+        outdir,
+        options=_verification_options(args),
+    )
+    if not result.valid:
+        return _verification_fail(result)
 
     _out(args,
-         ["STATUS=VALID rc=0", f"AI_HASH_SHA256={actual_hash}", f"SIGNATURE={signature}"],
-         {"status": "VALID", "rc": 0, "ai_hash_sha256": actual_hash, "signature": signature})
+         ["STATUS=VALID rc=0",
+          f"AI_HASH_SHA256={result.ai_hash_sha256}",
+          f"SIGNATURE={result.signature}",
+          *_assurance_lines(result)],
+         {"status": "VALID", "rc": 0,
+          "ai_hash_sha256": result.ai_hash_sha256,
+          "signature": result.signature,
+          **result.assurance_dict()})
     return 0
 
 
@@ -202,97 +182,23 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
 
     Usage: aelitium verify-bundle <bundle_dir>
     """
-    import hashlib
-    import re
-
     outdir = Path(args.bundle)
-    canon_path = outdir / "ai_canonical.json"
-    manifest_path = outdir / "ai_manifest.json"
 
-    def fail(reason: str, detail: str = "") -> int:
-        print(f"STATUS=INVALID rc=2 reason={reason}")
-        if detail:
-            print(f"DETAIL={detail}")
-        return 2
-
-    if not canon_path.exists():
-        return fail("MISSING_CANONICAL", "ai_canonical.json not found")
-    if not manifest_path.exists():
-        return fail("MISSING_MANIFEST", "ai_manifest.json not found")
-
-    try:
-        canon_text = canon_path.read_text(encoding="utf-8")
-        canon_obj = json.loads(canon_text)
-    except Exception as e:
-        return fail("CANONICAL_NOT_JSON", type(e).__name__)
-
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception as e:
-        return fail("MANIFEST_NOT_JSON", type(e).__name__)
-
-    for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
-        if field not in manifest:
-            return fail("MANIFEST_MISSING_FIELD", field)
-
-    if manifest["schema"] != "ai_pack_manifest_v1":
-        return fail("MANIFEST_BAD_SCHEMA", manifest["schema"])
-
-    if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
-        return fail("MANIFEST_BAD_TS_UTC", manifest["ts_utc"])
-
-    actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
-    if actual_hash != manifest["ai_hash_sha256"]:
-        return fail("HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...")
-
-    # Signature enforcement
-    vk_path = outdir / "verification_keys.json"
-    if vk_path.exists():
-        try:
-            if __package__:
-                from .signing import verify_manifest_signature
-            else:
-                from engine.signing import verify_manifest_signature
-            vk = json.loads(vk_path.read_text(encoding="utf-8"))
-            manifest_bytes = manifest_path.read_bytes()
-            verify_manifest_signature(manifest_bytes, vk)
-            signature = "VALID"
-        except Exception as exc:
-            return fail("SIGNATURE_INVALID", str(exc))
-    else:
-        signature = "NONE"
-
-    # Binding hash: recompute from request_hash + response_hash in canonical metadata
-    manifest_binding = manifest.get("binding_hash")
-    if manifest_binding:
-        meta = canon_obj.get("metadata", {})
-        request_hash = meta.get("request_hash")
-        response_hash = meta.get("response_hash")
-        if not request_hash or not response_hash:
-            return fail("BINDING_HASH_MISSING_SOURCES",
-                        "manifest has binding_hash but canonical metadata lacks request_hash/response_hash")
-        # Recompute using the same algorithm as the capture adapters
-        payload = json.dumps(
-            {"request_hash": request_hash, "response_hash": response_hash},
-            sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        )
-        computed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-        if computed != manifest_binding:
-            return fail("BINDING_HASH_MISMATCH",
-                        f"expected={manifest_binding[:16]}... computed={computed[:16]}...")
-        binding = manifest_binding
-    else:
-        binding = "NONE"
+    result = verify_ai_bundle(outdir, options=_verification_options(args))
+    if not result.valid:
+        return _verification_fail(result)
 
     _out(args,
          ["STATUS=VALID rc=0",
-          f"AI_HASH_SHA256={actual_hash}",
-          f"SIGNATURE={signature}",
-          f"BINDING_HASH={binding}"],
+          f"AI_HASH_SHA256={result.ai_hash_sha256}",
+          f"SIGNATURE={result.signature}",
+          f"BINDING_HASH={result.binding_hash}",
+          *_assurance_lines(result)],
          {"status": "VALID", "rc": 0,
-          "ai_hash_sha256": actual_hash,
-          "signature": signature,
-          "binding_hash": binding})
+          "ai_hash_sha256": result.ai_hash_sha256,
+          "signature": result.signature,
+          "binding_hash": result.binding_hash,
+          **result.assurance_dict()})
     return 0
 
 
@@ -308,71 +214,19 @@ def cmd_compare(args: argparse.Namespace) -> int:
 
     Usage: aelitium compare <bundle_a> <bundle_b>
     """
-    import hashlib
-    import re
-
     def _verify_bundle_quiet(path: Path):
-        canon_path = path / "ai_canonical.json"
-        manifest_path = path / "ai_manifest.json"
+        result = verify_ai_bundle(path)
+        if not result.valid:
+            if result.reason in ("MISSING_CANONICAL", "MISSING_MANIFEST"):
+                return False, "MISSING_BUNDLE_FILES", None, None
+            return False, result.reason, result.detail, None
 
-        if not canon_path.exists() or not manifest_path.exists():
+        if result.canonical is None or result.manifest is None:
             return False, "MISSING_BUNDLE_FILES", None, None
-
-        try:
-            canon_text = canon_path.read_text(encoding="utf-8")
-            canon_obj = json.loads(canon_text)
-        except Exception as e:
-            return False, "CANONICAL_NOT_JSON", type(e).__name__, None
-
-        try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except Exception as e:
-            return False, "MANIFEST_NOT_JSON", type(e).__name__, None
-
-        for field in ("schema", "ts_utc", "input_schema", "canonicalization", "ai_hash_sha256"):
-            if field not in manifest:
-                return False, "MANIFEST_MISSING_FIELD", field, None
-
-        if manifest["schema"] != "ai_pack_manifest_v1":
-            return False, "MANIFEST_BAD_SCHEMA", manifest["schema"], None
-
-        if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", manifest["ts_utc"]):
-            return False, "MANIFEST_BAD_TS_UTC", manifest["ts_utc"], None
-
-        actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
-        if actual_hash != manifest["ai_hash_sha256"]:
-            return False, "HASH_MISMATCH", f"expected={manifest['ai_hash_sha256'][:16]}... got={actual_hash[:16]}...", None
-
-        vk_path = path / "verification_keys.json"
-        if vk_path.exists():
-            try:
-                if __package__:
-                    from .signing import verify_manifest_signature
-                else:
-                    from engine.signing import verify_manifest_signature
-                vk = json.loads(vk_path.read_text(encoding="utf-8"))
-                manifest_bytes = manifest_path.read_bytes()
-                verify_manifest_signature(manifest_bytes, vk)
-            except Exception as exc:
-                return False, "SIGNATURE_INVALID", str(exc), None
-
-        manifest_binding = manifest.get("binding_hash")
-        if manifest_binding:
-            meta = canon_obj.get("metadata", {})
-            request_hash = meta.get("request_hash")
-            response_hash = meta.get("response_hash")
-            if not request_hash or not response_hash:
-                return False, "BINDING_HASH_MISSING_SOURCES", "manifest has binding_hash but canonical metadata lacks request_hash/response_hash", None
-
-            payload = json.dumps(
-                {"request_hash": request_hash, "response_hash": response_hash},
-                sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-            )
-            computed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-            if computed != manifest_binding:
-                return False, "BINDING_HASH_MISMATCH", f"expected={manifest_binding[:16]}... computed={computed[:16]}...", None
-
-        return True, "OK", "", {"canon": canon_obj, "manifest": manifest}
+        return True, "OK", "", {
+            "canon": result.canonical,
+            "manifest": result.manifest,
+        }
 
     def _hashes(canon, manifest):
         meta = canon.get("metadata", {})
@@ -600,11 +454,19 @@ def cmd_pack(args: argparse.Namespace) -> int:
     from engine.ai_pack import ai_pack_from_obj
 
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    try:
+        res = ai_pack_from_obj(obj)
+    except AICanonicalError as exc:
+        reason = str(exc)
+        _out(
+            args,
+            [f"STATUS=INVALID rc=2 reason={reason}"],
+            {"status": "INVALID", "rc": 2, "reason": reason},
+        )
+        return 2
+
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
-
-    res = ai_pack_from_obj(obj)
-
     (outdir / "ai_canonical.json").write_text(res.canonical_json + "\n", encoding="utf-8")
     (outdir / "ai_manifest.json").write_text(json.dumps(res.manifest, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -631,7 +493,15 @@ def main() -> int:
 
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
-    ve.add_argument("--json", action="store_true", help="Output as JSON")
+    ve.add_argument(
+        "--json",
+        action="store_true",
+        help="Output valid results as JSON; invalid results retain compatibility text",
+    )
+    ve.add_argument("--require-signature", action="store_true",
+                    help="Reject bundles without signature material")
+    ve.add_argument("--require-binding", action="store_true",
+                    help="Reject bundles without v1 binding evidence")
     ve.set_defaults(fn=cmd_verify)
 
     vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
@@ -646,12 +516,26 @@ def main() -> int:
     c.add_argument("--print", action="store_true", help="Print canonical JSON")
     c.set_defaults(fn=cmd_canonicalize)
 
-    vb = sub.add_parser("verify-bundle", help="Verify evidence bundle (hash + signature + binding hash)")
+    vb = sub.add_parser(
+        "verify-bundle",
+        help="Verify AI bundle integrity and any present signature/binding evidence",
+    )
     vb.add_argument("bundle", help="Path to evidence bundle directory")
-    vb.add_argument("--json", action="store_true", help="Output as JSON")
+    vb.add_argument(
+        "--json",
+        action="store_true",
+        help="Output valid results as JSON; invalid results retain compatibility text",
+    )
+    vb.add_argument("--require-signature", action="store_true",
+                    help="Reject bundles without signature material")
+    vb.add_argument("--require-binding", action="store_true",
+                    help="Reject bundles without v1 binding evidence")
     vb.set_defaults(fn=cmd_verify_bundle)
 
-    cmp = sub.add_parser("compare", help="Compare two bundles to detect AI model behavior change")
+    cmp = sub.add_parser(
+        "compare",
+        help="Compare selected v1 request/response hashes between bundles",
+    )
     cmp.add_argument("bundle_a", help="Path to first evidence bundle directory")
     cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
     cmp.add_argument("--json", action="store_true", help="Output as JSON")

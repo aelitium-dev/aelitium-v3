@@ -1,20 +1,30 @@
 # Evidence Bundle Specification
 
 **Version:** 1.1
-**Status:** Draft Standard
+**Status:** CONCEPTUAL_DRAFT_NON_NORMATIVE
 **Last updated:** 2026-03-10
 
-> This specification is intended to be implemented by any tool that produces or verifies AI output evidence bundles. It is not specific to AELITIUM. AELITIUM is the reference implementation.
+> **Quarantine notice:** This document is a conceptual draft specification. It is
+> **not** the current AELITIUM AI evidence bundle v1 runtime contract, and AELITIUM
+> is not currently a reference implementation of this draft. Current implemented
+> assurance semantics are documented in
+> [MESSAGING_GUARDRAILS.md](MESSAGING_GUARDRAILS.md) and
+> [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md).
 >
-> Feedback and alternative implementations are welcome.
+> The formats, version lineage, identity rules, and conformance language below are
+> proposed draft semantics unless a section explicitly says otherwise. Feedback
+> and alternative implementations are welcome.
 
 ---
 
 ## Overview
 
-An **evidence bundle** is a self-contained, verifiable artefact that shows a recorded AI output payload has not been altered since it was bundled.
+This draft models an **evidence bundle** as a self-contained artefact whose
+internal consistency can be verified under the proposed rules.
 
-Verification requires no network access, no external service, and no trust in the original infrastructure. Any conforming implementation can verify any conforming bundle.
+The draft proposes offline verification without an external service. Cross-language
+conformance remains a design goal of this draft, not a demonstrated property of
+the current AELITIUM AI v1 runtime.
 
 This is analogous to what Docker images did for software environments, or what SBOM documents did for software supply chains — except applied to AI outputs.
 
@@ -32,9 +42,10 @@ This is analogous to what Docker images did for software environments, or what S
 
 ---
 
-## Bundle structure
+## Proposed bundle structure
 
-An evidence bundle is a ZIP archive with the following layout:
+This draft proposes a ZIP archive with the following layout. These filenames and
+the ZIP container are not the current AELITIUM AI v1 bundle contract.
 
 ```
 bundle.zip
@@ -87,9 +98,10 @@ Verification: `aelitium verify-receipt --receipt receipt.json --pubkey authority
 
 ---
 
-## Input schema: ai_output_v1
+## Proposed input schema: ai_output_v1
 
-The input payload that AELITIUM accepts for packing.
+The draft proposes the following input shape. It is not the authoritative schema
+enforced by the current AELITIUM AI v1 runtime.
 
 **Required fields:**
 
@@ -120,7 +132,10 @@ All fields are preserved in canonical.json after canonicalization.
 
 ---
 
-## Verification algorithm
+## Proposed verification algorithm
+
+The following algorithm belongs to this draft format. It is not a description of
+the current AELITIUM AI v1 verification kernel.
 
 ```
 1. Unzip bundle
@@ -147,41 +162,47 @@ This is verified by `scripts/verify_repro.sh`, which packs the example twice in 
 
 ---
 
-## Trust boundary
+## Draft trust boundary
 
-An evidence bundle proves:
+Under this draft model, verification can establish:
 
-- The payload has not changed since the bundle was created
-- The hash in the manifest matches the canonical payload
-- (With receipt) An authority with the corresponding private key signed this hash
+- The inspected payload and manifest hash are internally consistent under the
+  proposed draft rules
+- An optional receipt signature is mathematically valid under the verification
+  material supplied to the verifier
 
-An evidence bundle does **not** prove:
+The draft does **not** by itself establish:
 
 - That the model actually produced the output (requires stronger provenance than the bundle alone)
 - That the prompt or output is correct, safe, or unbiased
 - That the system that created the bundle was trustworthy
+- Historical non-modification without an independently trusted external anchor
+- Trusted signer identity merely from verification material packaged with an artefact
 
 See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) for full analysis.
 
 ---
 
-## Schema evolution
+## Proposed schema evolution
 
 | Version | Status | Changes |
 |---------|--------|---------|
 | 1.0 | Deprecated | Initial schema |
-| 1.1 | **Current** | Added `canonicalization` field to manifest |
-| 2.0 | Planned | Capture layer fields: `request_hash`, `response_hash`, `provider`, `sdk` |
+| 1.1 | Draft baseline | Added `canonicalization` field to the proposed manifest |
+| 2.0 | Draft proposal | Capture layer fields: `request_hash`, `response_hash`, `provider`, `sdk` |
 
-Schema version is stored in `ai_manifest.json` → `schema`. Verifiers must reject bundles with unrecognised schema versions.
+Within this draft, schema version is stored in `ai_manifest.json` → `schema` and
+draft-conforming verifiers reject unrecognised draft versions. This table is not
+AELITIUM runtime or release lineage.
 
 ---
 
-## Hash algorithm upgrade path
+## Proposed hash algorithm upgrade path
 
-AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` field in the manifest is the extension point for future algorithm changes.
+This draft specifies SHA-256 for its content hashes and treats the proposed
+manifest fields as extension points for future algorithm changes.
 
-**Current state:**
+**Draft hash fields:**
 
 ```json
 {
@@ -200,7 +221,7 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 }
 ```
 
-**Migration policy:**
+**Proposed migration policy:**
 
 1. A new schema version (e.g. `2.x`) introduces the new hash field as optional, alongside SHA-256
 2. A subsequent version (`3.0`) deprecates the old hash field; verifiers warn but still accept
@@ -208,11 +229,16 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 
 **Why not an algorithm identifier string?** Encoding the algorithm in the field name makes it impossible to silently change the algorithm without changing the manifest schema — any verifier that only knows SHA-256 will reject a bundle that omits `ai_hash_sha256`, rather than silently accepting a hash it cannot verify.
 
-**SHA-256 status:** SHA-256 has no known weaknesses for integrity use cases (collision resistance is not required here — only second-preimage resistance). No migration is planned. This section documents the path if standards change.
+**SHA-256 status in this draft:** No migration is currently proposed. This section
+records a conceptual upgrade path if the draft's algorithm requirements change.
 
 ---
 
-## Reference semantics
+## Proposed reference semantics
+
+This section describes a conceptual identity model. Current AELITIUM AI v1 uses a
+selected-field request identity and verifies consistency among stored binding
+fields; it does not independently reconstruct source request or response material.
 
 ### Bundle identifier
 
@@ -220,7 +246,9 @@ AELITIUM currently uses SHA-256 for all content hashes. The `canonicalization` f
 bundle_id = binding_hash
 ```
 
-The `binding_hash` is the canonical identifier of an AELITIUM evidence bundle. It is the deterministic commitment over the canonical request–response pair:
+In this draft, `binding_hash` is the proposed bundle identifier. It is a
+deterministic commitment over the supplied request and response hash pair; it does
+not by itself establish real-world request-to-response causation.
 
 ```
 binding_hash = sha256(canonical({"request_hash": ..., "response_hash": ...}))
@@ -299,9 +327,10 @@ How external layers should reference a bundle:
 }
 ```
 
-### Bundle immutability
+### Proposed content-addressed identity
 
-The identity of an AELITIUM evidence bundle is fully determined by `binding_hash`.
+Under this draft model, the content-addressed identity is determined by
+`binding_hash`.
 
 If the canonical request or canonical response differ, the resulting `binding_hash` **MUST** differ except with negligible probability due to hash collisions. Therefore:
 
@@ -309,9 +338,14 @@ If the canonical request or canonical response differ, the resulting `binding_ha
 - Any bundle that produces a different `binding_hash` **MUST** be treated as a distinct evidence object.
 - Implementations **MUST** treat bundles with different `binding_hash` values as distinct evidence objects.
 
-The bundle identifier is **content-addressed and immutable**.
+The proposed identifier is content-addressed and stable for the same supplied hash
+pair. That property is not evidence of historical non-modification without an
+independently trusted anchor.
 
-Note: bundles may contain non-normative fields (e.g. `ts_utc`, `provider_metadata`, `captured_at_utc`) that do not affect identity. Immutability applies to `request_hash`, `response_hash`, and `binding_hash` only — not to metadata fields.
+Note: the draft allows non-normative fields (e.g. `ts_utc`, `provider_metadata`,
+`captured_at_utc`) that do not affect its proposed identity. Identity stability in
+this model applies to `request_hash`, `response_hash`, and `binding_hash` only —
+not to metadata fields.
 
 ---
 
@@ -349,15 +383,15 @@ These fields belong to context layers that sit above or adjacent to the evidence
 
 ---
 
-## Implementations
+## Draft implementations and conformance
 
-| Implementation | Language | Status |
-|---------------|----------|--------|
-| `aelitium` | Python 3.10+ | Reference implementation — [PyPI](https://pypi.org/project/aelitium/) |
+No implementation is currently designated as the reference implementation of this
+draft. The current AELITIUM AI v1 runtime does not claim conformance to this draft
+format.
 
-To register a third-party implementation, open a pull request adding a row to this table.
-
-The specification is the canonical reference. Implementations must pass the [verification algorithm](#verification-algorithm) and produce the [canonical reference hash](#canonical-reference-hash) from the demo input.
+Future implementations claiming conformance to this draft would need to agree on
+the proposed verification algorithm and reference vector before interoperable
+conformance could be claimed.
 
 ---
 
@@ -366,18 +400,19 @@ The specification is the canonical reference. Implementations must pass the [ver
 | Standard | Relation |
 |----------|----------|
 | SBOM (CycloneDX, SPDX) | Analogous concept applied to AI outputs instead of software components |
-| OpenTelemetry | Complementary — OTEL provides observability, AELITIUM provides tamper-evidence |
+| OpenTelemetry | Complementary — OTEL provides observability; this draft proposes portable evidence-consistency semantics |
 | Sigstore | Similar trust model; AELITIUM is offline-first and AI-specific |
 | JWT | Similar signed-artefact concept; bundles include full payload, not just claims |
 
 ---
 
-## Canonical reference hash
+## Proposed draft reference vector
 
-Demo bundle (`examples/ai_output_min.json`):
+Proposed demo input (`examples/ai_output_min.json`):
 
 ```
 ai_hash_sha256 = 8b647717b14ad030fe8a641a9dcd63202e70aca170071d96040908e8354ef842
 ```
 
-This value is stable across machines and versions. Use it to verify your implementation.
+This value is retained as a draft example. It is not a current cross-language or
+cross-version AELITIUM conformance guarantee.

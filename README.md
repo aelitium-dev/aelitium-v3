@@ -3,12 +3,15 @@
 > Git-style verification for LLM outputs.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 
-> AELITIUM is a library/CLI for producing and verifying tamper-evident, offline-verifiable evidence bundles for recorded LLM interactions under deterministic canonicalization.
+> AELITIUM is a library/CLI for producing and verifying internally consistent,
+> offline-verifiable evidence bundles for recorded LLM interactions under
+> deterministic canonicalization.
 
-LLM outputs can change silently. AELITIUM currently enforces fail-closed verification semantics on the validated surface and verifies whether recorded evidence has been modified after packing.
+LLM outputs can change silently. AELITIUM currently enforces fail-closed
+verification semantics on the validated surface and checks the internal consistency
+of recorded AI evidence under the v1 schema and canonicalization contract.
 
 ## Demo
 
@@ -35,18 +38,20 @@ Verify a bundle offline:
 aelitium verify-bundle ./bundle
 ```
 
-## What it proves
+## What current v1 verification establishes
 
-- Recorded request and recorded response artifacts can be cryptographically bound
-- Post-hoc modification of canonicalized recorded artifacts is detectable
+- Stored v1 request and response hashes can be joined by a deterministic binding commitment
+- Modifications inconsistent with the bundle's recorded contract and hashes are detectable
 - Verification can be performed offline on the validated surface
 
-## What it does not prove
+## What it does not establish
 
 - That the model actually executed
 - That the provider was honest
 - That the response is correct or truthful
 - That capture was complete
+- Complete provider invocation identity
+- Trusted signer identity, freshness, or authorization
 - That semantic equivalence implies hash equivalence
 
 ---
@@ -55,7 +60,9 @@ aelitium verify-bundle ./bundle
 
 You run the same prompt in production. One week later, the output is different.
 
-The recorded response changed — but your logs just show two JSON blobs. It is hard to verify whether the recorded evidence was modified after packing.
+The recorded response changed — but your logs just show two JSON blobs. It is hard
+to check their schema and hash consistency against a separately retained expected
+record.
 
 ---
 
@@ -80,7 +87,10 @@ aelitium scan ./src
 # STATUS=INCOMPLETE rc=2
 ```
 
-All commands accept `--json` for structured output.
+Commands expose parseable key/value output, and supported successful command paths
+offer `--json`. Successful `verify` and `verify-bundle` calls emit JSON when
+requested; invalid results currently retain key/value compatibility output. The
+standalone verifier emits JSON for invalid verification results.
 
 ---
 
@@ -97,7 +107,11 @@ aelitium verify-bundle   ← STATUS=VALID / STATUS=INVALID
 aelitium compare         ← UNCHANGED / CHANGED / NOT_COMPARABLE
 ```
 
-Each bundle contains a deterministic SHA-256 hash of the payload, a manifest with timestamp and schema, and a cryptographic `binding_hash` linking the recorded request and recorded response artifacts. Anyone with the bundle can verify it — no network required.
+Each bundle contains a deterministic SHA-256 hash of its complete canonical
+payload and a manifest with timestamp and schema information. Capture bundles can
+also contain a `binding_hash`: a cryptographic commitment over the stored v1
+`request_hash` and `response_hash` pair. Anyone with the bundle can evaluate its
+internal consistency offline.
 
 Current binding construction:
 
@@ -109,6 +123,18 @@ binding_hash = SHA256(
   })
 )
 ```
+
+Current binding verification checks consistency among stored v1 hash fields. It
+does not reconstruct source request or response material or establish that a
+real-world provider invocation produced a particular response.
+
+Verification reports separate assurance dimensions: `payload_integrity`,
+`binding_field_consistency`, `signature_validity`, `trusted_signer_identity`,
+`freshness`, and `authorization`. Unsigned and unbound bundles remain valid by
+default; `--require-signature` and `--require-binding` reject the corresponding
+absence. Bundled key material can establish mathematical signature validity, but
+`trusted_signer_identity` remains `UNESTABLISHED`; freshness and authorization
+remain `NOT_EVALUATED`.
 
 ---
 
@@ -126,17 +152,19 @@ result = capture_openai(
     [{"role": "user", "content": "What is the capital of France?"}],
     out_dir="./evidence",
 )
-print(result.ai_hash_sha256)  # deterministic hash for this recorded request/response pair
+print(result.ai_hash_sha256)  # hash of the complete validated canonical object
 ```
 
 ```bash
 aelitium verify-bundle ./evidence
 # STATUS=VALID rc=0
 # AI_HASH_SHA256=...
-# BINDING_HASH=...   ← cryptographic link between request and response
+# BINDING_HASH=...   ← commitment over the stored request/response hash pair
 ```
 
-LiteLLM routes to any provider — one adapter covers all:
+LiteLLM capture records calls at the LiteLLM boundary using the same v1 evidence
+contract. Repository tests cover the adapter boundary, not every provider route
+supported by LiteLLM:
 
 ```python
 from aelitium import capture_litellm
@@ -172,13 +200,14 @@ print(response.choices[0].message.content)
 # AELITIUM: bundle → ./aelitium/bundles/<binding_hash>  binding_hash=<hash>
 ```
 
-Every call writes a bundle automatically. The LLM response is unchanged.
+Each successfully captured supported non-streaming call writes a bundle
+automatically. The LLM response is unchanged.
 
 **What you get:**
 
-- `request_hash` — deterministic hash of the recorded request payload
-- `response_hash` — hash of the recorded response content
-- `binding_hash` — cryptographic link between the two
+- `request_hash` — v1 selected-field identity over recorded model/messages
+- `response_hash` — selected-field hash over recorded response content/model
+- `binding_hash` — commitment over the two stored hashes
 
 **Failure modes:**
 
@@ -265,7 +294,8 @@ aelitium scan ./src --ci
 
 ## Reproducibility
 
-The same input produces the same hash in validated configurations:
+The same complete validated input object produces the same hash in validated
+configurations:
 
 ```bash
 bash scripts/verify_repro.sh
@@ -281,23 +311,28 @@ Validated on two independent machines (A + B) with identical hashes.
 
 Tools like Langfuse or Helicone help you **debug LLM calls**.
 
-AELITIUM helps you **verify that recorded evidence was not altered after packing**.
+AELITIUM helps you **verify the internal consistency of recorded evidence** and,
+when compared with an independently trusted anchor, detect inconsistent changes.
 
-Logs can be edited. Evidence-bundle tampering is detectable.
+Logs can be edited. Changes inconsistent with a bundle's governed evidence are
+detectable; a self-consistent replacement requires an independently trusted anchor
+to distinguish it from the expected artifact.
 
 | Tool | What it does |
 |------|-------------|
 | Langfuse, Helicone, LangSmith | observability — traces, metrics, dashboards |
-| AELITIUM | verification — cryptographic proof the record wasn't altered |
+| AELITIUM | verification — governed schema, canonicalization, and evidence consistency checks |
 
-These are complementary, not competing. AELITIUM adds a tamper-evident layer on top of any existing pipeline.
+These are complementary, not competing. AELITIUM adds governed evidence-consistency
+checks and can provide tamper evidence when expected hashes or signer identities
+are independently trusted.
 
 ---
 
 ## When teams use AELITIUM
 
 - Detect when recorded responses differ between runs for the same request hash
-- Prove recorded evidence wasn't modified after the fact
+- Detect changes inconsistent with the recorded evidence contract and a trusted external anchor
 - Investigate incidents involving AI agents ("what recorded evidence is available for this interaction?")
 - Produce verifiable records for compliance or audits (EU AI Act Art.12, SOC 2)
 - Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
@@ -312,15 +347,17 @@ These are complementary, not competing. AELITIUM adds a tamper-evident layer on 
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 | `compare <bundle_a> <bundle_b>` | Compare two bundles — detect changed recorded responses |
-| `verify-bundle <dir>` | Verify bundle: hash + signature + binding hash |
+| `verify-bundle <dir>` | Verify payload integrity and any present signature/binding evidence; optional flags can require them |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
-| `verify <dir>` | Verify integrity of a pack output dir |
+| `verify` with `--out=<dir>` | Verify integrity of a pack output dir |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
 | `canonicalize --input <file>` | Print deterministic hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 | `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
 
-Exit codes: `0` = success, `2` = failure. Designed for CI/CD pipelines.
+Exit codes are command-specific: verification uses `0` for valid and `2` for
+invalid; comparison also uses `1` for not comparable. The CLI is designed for
+CI/CD pipelines.
 
 ---
 
@@ -334,12 +371,12 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 - [Why AELITIUM](docs/WHY_AELITIUM.md) — problem statement, positioning, and what this is for
 - [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
 - [Security model](docs/SECURITY_MODEL.md) — threats addressed, guarantees, limitations
-- [Trust boundary](docs/TRUST_BOUNDARY.md) — what AELITIUM proves and what it does not
+- [Trust boundary](docs/TRUST_BOUNDARY.md) — what AELITIUM establishes and what it does not
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, and same-process boundary guidance
-- [Engine contract](docs/ENGINE_CONTRACT.md) — bundle schema and guarantees
-- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — open draft standard for verifiable AI output bundles; AELITIUM is the reference implementation
+- [Engine contract](docs/ENGINE_CONTRACT.md) — legacy generic bundle compatibility contract
+- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — conceptual, non-normative draft; it is not the current AI v1 runtime contract, and AELITIUM does not currently claim conformance or reference-implementation status
 - [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
 - [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — interoperability note: referencing AELITIUM bundles from Agent Action Receipts
 - [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — referencing AELITIUM bundles as `evidenceRef` in Agent Action Receipts (AAR v1.1)
@@ -348,29 +385,35 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 
 ## Design principles
 
-- **Deterministic** — same input produces the same hash in validated configurations
+- **Deterministic** — the same complete validated input object produces the same hash in validated configurations
 - **Offline-first** — verification never requires network access
 - **Fail-closed** — any verification error returns `rc=2`; no silent failures
 - **Auditable** — every pack includes a manifest with schema, timestamp, and hash
-- **Pipeline-friendly** — all output parseable (`STATUS=`, `AI_HASH_SHA256=`, `--json`)
+- **Pipeline-friendly** — key/value output is parseable; supported successful paths also offer `--json`
 
 ---
 
 ## Trust boundary
 
-AELITIUM provides **tamper-evidence**, not truth guarantees.
+AELITIUM v1 establishes **internal evidence consistency**, not truth or historical
+origin guarantees.
 
-**What AELITIUM proves:**
-- the bundle contents have not changed since packing
-- the canonicalized payload matches the recorded hash
-- (with capture adapter) the request hash matches the payload recorded by the capture path
+**What current verification can establish:**
+- the payload satisfies `ai_output_v1` and the governed canonical byte contract
+- manifest identifiers and `ai_hash_sha256` are consistent with the canonical payload
+- stored v1 binding fields are consistent when present
+- bundled Ed25519 material is mathematically valid when present
 
-**What AELITIUM does not prove:**
-- that the model output was correct or safe
-- that the system that packed the bundle was trustworthy
-- that the model actually produced the output (without capture adapter)
+**What current verification does not establish by itself:**
+- complete provider invocation identity or independent source reconstruction
+- historical non-modification without an independently trusted external anchor
+- trusted signer identity, freshness, or authorization
+- that the output is correct, safe, or actually produced by a claimed model
 
-**Integrity ≠ completeness.** AELITIUM proves that captured events were not altered. It does not guarantee that all events were captured. Capture completeness depends on the integration layer — SDK wrapper, proxy, or observer. If the agent controls its own logging, an observer-based capture pattern provides stronger guarantees. See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for the full analysis.
+**Integrity ≠ completeness.** Internal consistency does not guarantee that all
+events were captured. Capture completeness depends on the integration layer — SDK
+wrapper, proxy, or observer. See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for
+the full analysis.
 
 Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md).
 
@@ -378,16 +421,19 @@ Stronger provenance — signing authorities, hardware-backed keys — is the dir
 
 ## Compliance alignment
 
-AELITIUM provides tamper-evident evidence bundles that support the following regulatory and audit requirements:
+AELITIUM provides governed evidence bundles that can support the following
+regulatory and audit requirements when used with appropriate external controls:
 
 | Framework | Requirement | How AELITIUM helps |
 |-----------|-------------|-------------------|
-| **EU AI Act — Article 12** | Logging and traceability of high-risk AI system outputs | Evidence bundles provide immutable, verifiable records of AI outputs with deterministic hashes |
-| **SOC 2 — CC7** | System monitoring and integrity controls | Independent offline verification confirms records have not been altered after creation |
+| **EU AI Act — Article 12** | Logging and traceability of high-risk AI system outputs | Evidence bundles provide governed, internally verifiable records with deterministic hashes |
+| **SOC 2 — CC7** | System monitoring and integrity controls | Offline consistency checks can support controls when expected hashes or keys are independently trusted |
 | **ISO 42001** | AI management system auditability | Canonical bundles with schema versioning support third-party audits without infrastructure access |
-| **NIST AI RMF — MG 2.2** | Traceability of AI decisions and outputs | Each bundle contains a complete, reproducible record: payload, hash, timestamp, and optional signature |
+| **NIST AI RMF — MG 2.2** | Traceability of AI decisions and outputs | Each bundle records a validated payload, hash, timestamp fields, and optional signature material within the documented v1 scope |
 
-AELITIUM does not replace logging infrastructure. It adds **cryptographic integrity** on top of any existing pipeline — offline, without a server, without a blockchain.
+AELITIUM does not replace logging infrastructure. It adds **cryptographic
+evidence-consistency checks** to an existing pipeline — offline, without a server
+or blockchain.
 
 ---
 

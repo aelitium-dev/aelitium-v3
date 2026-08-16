@@ -14,7 +14,11 @@ You check your logs. The text is there. But you can't prove:
 
 **Logging records what happened. It doesn't prove the record wasn't changed.**
 
-Note: AELITIUM does not solve capture authenticity — it cannot prove that the capture path itself was honest, or that the bundle reflects exactly what the model produced. It provides cryptographic integrity for the evidence bundle you create. See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md).
+Note: AELITIUM does not solve capture authenticity — it cannot prove that the
+capture path itself was honest, or that the bundle reflects exactly what the model
+produced. It provides governed schema, canonicalization, and internal-consistency
+checks for the evidence bundle you create. See
+[TRUST_BOUNDARY.md](TRUST_BOUNDARY.md).
 
 ---
 
@@ -27,7 +31,9 @@ Note: AELITIUM does not solve capture authenticity — it cannot prove that the 
 | Audit logs | Records actions | Can be altered by admins |
 | Vector stores | Stores embeddings | Not designed for integrity guarantees |
 
-These tools are built for debugging and monitoring. None of them answer: *"Has this recorded output been modified since it was captured?"*
+These tools are built for debugging and monitoring. They do not, by themselves,
+provide a governed canonical bundle that can be checked against an independently
+trusted expected hash.
 
 ---
 
@@ -45,15 +51,18 @@ SHA-256 hash computed from canonical JSON
 Hash stored alongside the output
 ```
 
-Later, anyone can recompute the hash and check:
+Later, anyone can recompute the hash and check the inspected bundle's internal
+consistency:
 
 ```bash
 aelitium verify-bundle ./evidence
-# STATUS=VALID rc=0   ← bundle is intact
-# STATUS=INVALID rc=2 reason=HASH_MISMATCH  ← bundle was modified
+# STATUS=VALID rc=0   ← payload and recorded evidence are internally consistent
+# STATUS=INVALID rc=2 reason=HASH_MISMATCH  ← payload and manifest hash disagree
 ```
 
-No network required. No AELITIUM server required. Just math.
+No network or AELITIUM server is required. Historical non-modification additionally
+requires an independently trusted external hash, key identity, receipt, or
+equivalent anchor.
 
 ---
 
@@ -62,16 +71,16 @@ No network required. No AELITIUM server required. Just math.
 **For developers:**
 - Add integrity verification to any LLM pipeline in minutes
 - Get machine-readable exit codes (`rc=0` / `rc=2`) for CI/CD
-- Use the `--json` flag for structured output in any language
+- Parse key/value compatibility output, or JSON from supported successful command paths
 
 **For compliance:**
-- Produce evidence that AI outputs haven't been tampered with
+- Produce governed evidence whose consistency can be checked against trusted anchors
 - Attach timestamps and model identifiers to every output
 - Enable offline auditing by third parties
 
 **For teams:**
-- Establish a chain of custody for AI-generated content
-- Detect accidental or intentional modification of stored outputs
+- Add verifiable evidence references to a separately governed chain of custody
+- Detect modifications inconsistent with a separately trusted expected record
 - Build audit trails that survive system migrations
 
 ---
@@ -85,9 +94,14 @@ AELITIUM is not:
 - A content moderation layer
 - A guarantee that the model behaved correctly
 
-AELITIUM proves **bundle integrity** (the evidence wasn't changed after packaging), not **capture authenticity** (that the bundle faithfully represents what the model produced) and not **quality** (that the output was correct).
+AELITIUM establishes **bundle internal consistency** under the current contract,
+not **capture authenticity** (that the bundle faithfully represents what the model
+produced), historical non-modification without an external anchor, or **quality**
+(that the output was correct).
 
-These are separate problems. AELITIUM solves the integrity problem. See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) for the full boundary.
+These are separate problems. AELITIUM addresses governed bundle consistency; an
+external anchor is required for historical non-modification claims. See
+[TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) for the full boundary.
 
 ---
 
@@ -95,11 +109,16 @@ These are separate problems. AELITIUM solves the integrity problem. See [TRUST_B
 
 **Offline-first.** Verification works without any AELITIUM infrastructure. Anyone with the hash and the evidence bundle can verify, forever.
 
-**Deterministic.** The same AI output always produces the same hash. This is a property, not an accident — it's enforced by the canonicalization algorithm.
+**Deterministic.** The same complete validated `ai_output_v1` object produces the
+same hash under the governed canonicalization. Timestamp and metadata are part of
+that object; identical output text alone is insufficient.
 
-**Fail-closed.** If verification fails for any reason, the exit code is `2`. There is no "warning" state. Either the output is intact or it isn't.
+**Fail-closed.** Invalid evaluated evidence returns exit code `2`. Signature and
+binding absence are represented explicitly and remain accepted by default unless
+the caller uses `--require-signature` or `--require-binding`.
 
-**Small surface area.** The core is ~150 lines of Python with no exotic dependencies. It's auditable by any developer in an afternoon.
+**Reviewable surface.** The canonical verifier, contract identifiers, schema, and
+adversarial tests are repository-visible and can be reviewed together.
 
 ---
 
