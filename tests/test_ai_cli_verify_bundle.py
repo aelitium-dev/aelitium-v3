@@ -204,7 +204,9 @@ class TestVerifyBundleCapture(unittest.TestCase):
         # Also update the manifest hash so it matches the new canonical
         import hashlib
         new_text = (self.outdir / "ai_canonical.json").read_text()
-        new_hash = hashlib.sha256(new_text.rstrip("\n").encode()).hexdigest()
+        new_hash = hashlib.sha256(
+            new_text.removesuffix("\n").encode()
+        ).hexdigest()
         m = json.loads((self.outdir / "ai_manifest.json").read_text())
         m["ai_hash_sha256"] = new_hash
         (self.outdir / "ai_manifest.json").write_text(
@@ -257,7 +259,15 @@ class TestVerifyBundleTamper(unittest.TestCase):
         canon = self.outdir / "ai_canonical.json"
         obj = json.loads(canon.read_text())
         obj["output"] = "TAMPERED"
-        canon.write_text(json.dumps(obj) + "\n", encoding="utf-8")
+        canon.write_text(
+            json.dumps(
+                obj,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ) + "\n",
+            encoding="utf-8",
+        )
         r = _verify_bundle(self.outdir)
         self.assertEqual(r.returncode, 2)
         self.assertIn("HASH_MISMATCH", r.stdout)

@@ -10,12 +10,15 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .ai_canonical import AICanonicalError, canonicalize_ai_output
 from .ai_contract import (
+    AI_CANONICALIZATION,
     AI_CANONICAL_FILENAME,
     AI_MANIFEST_FILENAME,
     AI_MANIFEST_REQUIRED_FIELDS,
     AI_MANIFEST_SCHEMA,
     AI_MANIFEST_TS_PATTERN,
+    AI_OUTPUT_SCHEMA_VERSION,
     AI_VERIFICATION_KEYS_FILENAME,
 )
 
@@ -37,7 +40,6 @@ class AssuranceState(str, Enum):
 class AIVerificationOptions:
     """Select compatibility parsing and explicit evidence requirements."""
 
-    required_manifest_fields: tuple[str, ...] = AI_MANIFEST_REQUIRED_FIELDS
     validate_manifest_timestamp: bool = True
     require_signature: bool = False
     require_binding: bool = False
@@ -232,7 +234,8 @@ def verify_ai_bundle(
         )
 
     try:
-        canon_text = canon_path.read_text(encoding="utf-8")
+        canon_bytes = canon_path.read_bytes()
+        canon_text = canon_bytes.decode("utf-8")
         canonical = json.loads(canon_text)
     except Exception as exc:
         return _invalid(
@@ -255,7 +258,16 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
-    for field in selected.required_manifest_fields:
+    if not isinstance(manifest, dict):
+        return _invalid(
+            "MANIFEST_NOT_OBJECT",
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
+    for field in AI_MANIFEST_REQUIRED_FIELDS:
         if field not in manifest:
             return _invalid(
                 "MANIFEST_MISSING_FIELD",
@@ -276,9 +288,29 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
+    if manifest["input_schema"] != AI_OUTPUT_SCHEMA_VERSION:
+        return _invalid(
+            "MANIFEST_BAD_INPUT_SCHEMA",
+            manifest["input_schema"],
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
+    if manifest["canonicalization"] != AI_CANONICALIZATION:
+        return _invalid(
+            "MANIFEST_BAD_CANONICALIZATION",
+            manifest["canonicalization"],
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
     if selected.validate_manifest_timestamp and not re.match(
         AI_MANIFEST_TS_PATTERN,
-        manifest["ts_utc"],
+        manifest["ts_utc"] if isinstance(manifest["ts_utc"], str) else "",
     ):
         return _invalid(
             "MANIFEST_BAD_TS_UTC",
@@ -289,9 +321,43 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
-    actual_hash = hashlib.sha256(
-        canon_text.rstrip("\n").encode("utf-8")
-    ).hexdigest()
+    manifest_hash = manifest["ai_hash_sha256"]
+    if not isinstance(manifest_hash, str) or not _SHA256_HEX_PATTERN.fullmatch(
+        manifest_hash
+    ):
+        return _invalid(
+            "MANIFEST_BAD_AI_HASH_SHA256",
+            str(manifest_hash),
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
+    try:
+        expected_canonical, actual_hash = canonicalize_ai_output(canonical)
+    except AICanonicalError as exc:
+        return _invalid(
+            "CANONICAL_SCHEMA_INVALID",
+            str(exc),
+            error_message=str(exc),
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
+    expected_bytes = expected_canonical.encode("utf-8")
+    if canon_bytes not in (expected_bytes, expected_bytes + b"\n"):
+        return _invalid(
+            "CANONICAL_BYTES_MISMATCH",
+            "stored bytes are not canonical JSON with at most one terminal LF",
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+
     if actual_hash != manifest["ai_hash_sha256"]:
         return _invalid(
             "HASH_MISMATCH",

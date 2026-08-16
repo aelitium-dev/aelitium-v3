@@ -59,6 +59,14 @@ class TestCanonicalizeContract(unittest.TestCase):
         )
         self.assertEqual(hash1, hash2, "Hash must be deterministic")
 
+    def test_reference_v1_hash_is_unchanged(self):
+        r = _run()
+        self.assertIn(
+            "AI_CANON_SHA256="
+            "583eb45e736f16abc077e68ebdd4119d6149d4d7aa5c27a457e7a454c7987f83",
+            r.stdout.splitlines(),
+        )
+
     def test_print_flag_adds_canonical_json(self):
         r = _run("--print")
         lines = r.stdout.strip().splitlines()

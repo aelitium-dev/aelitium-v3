@@ -14,9 +14,9 @@ HASH_RE = re.compile(r"^AI_HASH_SHA256=([0-9a-f]{64})$")
 TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 
-def _run_pack(outdir: Path):
+def _run_pack(outdir: Path, input_path: Path = FIXTURE):
     return subprocess.run(
-        CLI + ["pack", "--input", str(FIXTURE), "--out", str(outdir)],
+        CLI + ["pack", "--input", str(input_path), "--out", str(outdir)],
         capture_output=True,
         text=True,
         cwd=ROOT,
@@ -93,7 +93,9 @@ class TestPackContract(unittest.TestCase):
         )
         content = (self.outdir / "ai_canonical.json").read_text(encoding="utf-8")
         # hash is over the canonical string (no trailing newline)
-        file_hash = hashlib.sha256(content.rstrip("\n").encode("utf-8")).hexdigest()
+        file_hash = hashlib.sha256(
+            content.removesuffix("\n").encode("utf-8")
+        ).hexdigest()
         self.assertEqual(stdout_hash, file_hash)
 
     # --- ai_manifest.json ---
@@ -149,6 +151,22 @@ class TestPackContract(unittest.TestCase):
         )
         m = json.loads((self.outdir / "ai_manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(m["ai_hash_sha256"], stdout_hash)
+
+    def test_schema_invalid_input_returns_rc2_without_artifacts(self):
+        invalid = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        invalid["undeclared"] = True
+        input_path = self.outdir / "invalid.json"
+        input_path.write_text(json.dumps(invalid), encoding="utf-8")
+        bundle = self.outdir / "bundle"
+
+        result = _run_pack(bundle, input_path)
+
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn(
+            "STATUS=INVALID rc=2 reason=AI_OUTPUT_SCHEMA_INVALID",
+            result.stdout,
+        )
+        self.assertFalse(bundle.exists())
 
 
 if __name__ == "__main__":

@@ -15,9 +15,6 @@ sys.path.insert(0, str(ROOT))
 from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
 
 
-STANDALONE_REQUIRED_FIELDS = ("schema", "ts_utc", "ai_hash_sha256")
-
-
 def verify_bundle(
     bundle_dir: Path,
     *,
@@ -27,7 +24,6 @@ def verify_bundle(
     """Returns (valid, reason, details)."""
     vk_path = bundle_dir / "verification_keys.json"
     options = AIVerificationOptions(
-        required_manifest_fields=STANDALONE_REQUIRED_FIELDS,
         validate_manifest_timestamp=False,
         require_signature=require_signature,
         require_binding=require_binding,

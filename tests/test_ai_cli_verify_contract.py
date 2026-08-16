@@ -108,7 +108,15 @@ class TestVerifyContract(unittest.TestCase):
         canon = self.outdir / "ai_canonical.json"
         obj = json.loads(canon.read_text(encoding="utf-8"))
         obj["output"] = "TAMPERED"
-        canon.write_text(json.dumps(obj) + "\n", encoding="utf-8")
+        canon.write_text(
+            json.dumps(
+                obj,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ) + "\n",
+            encoding="utf-8",
+        )
         r = _verify(self.outdir)
         self.assertEqual(r.returncode, 2)
         self.assertIn("reason=HASH_MISMATCH", r.stdout)

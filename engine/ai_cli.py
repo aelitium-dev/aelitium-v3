@@ -8,13 +8,13 @@ from pathlib import Path
 #  - running as a module (python -m engine.ai_cli)
 #  - running as a script   (python engine/ai_cli.py)
 if __package__:
-    from .ai_canonical import canonicalize_ai_output
+    from .ai_canonical import AICanonicalError, canonicalize_ai_output
     from .ai_verify import AIVerificationOptions, verify_ai_bundle
 else:
     import sys
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
-    from engine.ai_canonical import canonicalize_ai_output
+    from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
     from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
 
 
@@ -454,11 +454,19 @@ def cmd_pack(args: argparse.Namespace) -> int:
     from engine.ai_pack import ai_pack_from_obj
 
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    try:
+        res = ai_pack_from_obj(obj)
+    except AICanonicalError as exc:
+        reason = str(exc)
+        _out(
+            args,
+            [f"STATUS=INVALID rc=2 reason={reason}"],
+            {"status": "INVALID", "rc": 2, "reason": reason},
+        )
+        return 2
+
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
-
-    res = ai_pack_from_obj(obj)
-
     (outdir / "ai_canonical.json").write_text(res.canonical_json + "\n", encoding="utf-8")
     (outdir / "ai_manifest.json").write_text(json.dumps(res.manifest, sort_keys=True) + "\n", encoding="utf-8")
 

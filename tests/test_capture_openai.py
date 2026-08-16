@@ -218,7 +218,9 @@ class TestCaptureDeterminism(unittest.TestCase):
 
         # Reproduce the verify logic: hash must not match manifest
         canon_text = canon_path.read_text(encoding="utf-8")
-        actual_hash = hashlib.sha256(canon_text.rstrip("\n").encode("utf-8")).hexdigest()
+        actual_hash = hashlib.sha256(
+            canon_text.removesuffix("\n").encode("utf-8")
+        ).hexdigest()
         manifest = json.loads(manifest_path.read_text())
         self.assertNotEqual(actual_hash, manifest["ai_hash_sha256"],
                             "Tampered bundle should fail hash check")
