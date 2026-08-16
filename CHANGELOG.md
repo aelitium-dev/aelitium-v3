@@ -15,11 +15,13 @@ Release, or publish version 0.3.0 to PyPI.
 ### Changed
 - Centralized AI bundle verification into a single authoritative code path,
   eliminating divergent verification branches across CLI and library entry points
-- Explicit assurance states replace implicit pass/fail: verification results now
-  carry a declared status (`VALID`, `INVALID`, or `ABSENT`/`UNESTABLISHED`/
-  `NOT_EVALUATED` for signature and binding evidence). Unsigned and unbound
-  bundles remain `VALID` by default; the corresponding assurance evidence is
-  `ABSENT` unless `--require-signature` or `--require-binding` is used.
+- Explicit assurance states replace implicit pass/fail: verification reports
+  explicit states across assurance dimensions — `VALID`/`INVALID` where
+  evaluated; `ABSENT` for optional missing binding or signature evidence;
+  `UNESTABLISHED` for trusted signer identity under the current bundled-key
+  model; `NOT_EVALUATED` for freshness and authorization. Unsigned and unbound
+  bundles remain `VALID` by default unless `--require-signature` or
+  `--require-binding` is used.
 - Stricter v1 contract enforcement: bundles missing required v1 fields are
   rejected at verification time rather than silently passing
 - Capture metadata collision protection: adapter-owned metadata keys are
