@@ -244,5 +244,12 @@ def load_trust_store_text(text: str) -> TrustStore:
 def load_trust_store(path: str | Path) -> TrustStore:
     """Load and strictly validate a trust store from a local file path."""
 
-    text = Path(path).read_text(encoding="utf-8")
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise TrustStoreError(
+            "TRUST_STORE_IO_ERROR",
+            f"could not read {path!s} as UTF-8 text ({type(exc).__name__})",
+        ) from exc
+
     return load_trust_store_text(text)

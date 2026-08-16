@@ -7,7 +7,11 @@ independently cross-checked with `sha256sum` outside this test suite.
 """
 
 import copy
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from engine.trust import (
     ED25519_PUBLIC_KEY_LENGTH,
@@ -17,6 +21,7 @@ from engine.trust import (
     TrustStore,
     TrustStoreError,
     fingerprint_public_key,
+    load_trust_store,
     load_trust_store_text,
     parse_trust_store,
 )
@@ -280,13 +285,89 @@ class TestLoadFromText(unittest.TestCase):
         self.assertEqual(ctx.exception.reason, "TRUST_STORE_NOT_JSON")
 
     def test_valid_json_text_roundtrip(self):
-        import json
-
         text = json.dumps(_store([_signer(KEY_A_B64, label="ci-release")]))
         store = load_trust_store_text(text)
         self.assertEqual(len(store.signers), 1)
         self.assertEqual(store.signers[0].fingerprint, KEY_A_FINGERPRINT)
         self.assertEqual(store.signers[0].label, "ci-release")
+
+
+class TestLoadFromPath(unittest.TestCase):
+    """load_trust_store(path) file-read boundary.
+
+    Missing/unreadable/directory/non-UTF-8 -> TRUST_STORE_IO_ERROR.
+    Successfully-read text with malformed JSON -> TRUST_STORE_NOT_JSON
+    (unchanged, exercised via TestLoadFromText and not re-duplicated here).
+    """
+
+    def test_missing_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "does_not_exist.json"
+            with self.assertRaises(TrustStoreError) as ctx:
+                load_trust_store(missing)
+            self.assertEqual(ctx.exception.reason, "TRUST_STORE_IO_ERROR")
+
+    def test_path_is_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(TrustStoreError) as ctx:
+                load_trust_store(Path(tmp))
+            self.assertEqual(ctx.exception.reason, "TRUST_STORE_IO_ERROR")
+
+    def test_non_utf8_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bad_utf8 = Path(tmp) / "non_utf8.json"
+            # Deterministic invalid UTF-8: a lone continuation byte.
+            bad_utf8.write_bytes(b'{"trust_store_format": "aelitium-trust-v1"' + b"\xff\xfe")
+            with self.assertRaises(TrustStoreError) as ctx:
+                load_trust_store(bad_utf8)
+            self.assertEqual(ctx.exception.reason, "TRUST_STORE_IO_ERROR")
+
+    def test_read_failure_is_normalized(self):
+        # Mocked rather than chmod-based so this is reliable under root
+        # containers, CI, and WSL, none of which reliably enforce POSIX
+        # unreadable-file permissions the same way.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "unreadable.json"
+            path.write_text(
+                json.dumps(_store([_signer(KEY_A_B64)])), encoding="utf-8"
+            )
+            with patch.object(
+                Path, "read_text", side_effect=PermissionError("denied")
+            ):
+                with self.assertRaises(TrustStoreError) as ctx:
+                    load_trust_store(path)
+            self.assertEqual(ctx.exception.reason, "TRUST_STORE_IO_ERROR")
+
+    def test_valid_file_path_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trust_store.json"
+            path.write_text(
+                json.dumps(_store([_signer(KEY_A_B64, label="ci-release")])),
+                encoding="utf-8",
+            )
+            store = load_trust_store(path)
+            self.assertEqual(len(store.signers), 1)
+            self.assertEqual(store.signers[0].fingerprint, KEY_A_FINGERPRINT)
+            self.assertEqual(store.signers[0].label, "ci-release")
+
+    def test_malformed_json_via_path_still_not_json(self):
+        # Confirms the IO-error try/except does not swallow/collapse the
+        # existing, unrelated JSON-syntax failure mode.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "bad.json"
+            path.write_text("{not valid json", encoding="utf-8")
+            with self.assertRaises(TrustStoreError) as ctx:
+                load_trust_store(path)
+            self.assertEqual(ctx.exception.reason, "TRUST_STORE_NOT_JSON")
+
+    def test_accepts_str_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trust_store.json"
+            path.write_text(
+                json.dumps(_store([_signer(KEY_A_B64)])), encoding="utf-8"
+            )
+            store = load_trust_store(str(path))
+            self.assertEqual(len(store.signers), 1)
 
 
 class TestErrorTypeContract(unittest.TestCase):
