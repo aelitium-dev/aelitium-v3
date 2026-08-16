@@ -24,7 +24,6 @@ def verify_bundle(
     """Returns (valid, reason, details)."""
     vk_path = bundle_dir / "verification_keys.json"
     options = AIVerificationOptions(
-        validate_manifest_timestamp=False,
         require_signature=require_signature,
         require_binding=require_binding,
     )

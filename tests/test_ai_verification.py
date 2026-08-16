@@ -187,6 +187,49 @@ def _public_verifier_outputs(
 
 
 class TestAIVerificationParity(unittest.TestCase):
+    def test_malformed_manifest_timestamp_is_rejected_by_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ts_utc"] = ""
+            _write_manifest(bundle, manifest)
+
+            kernel = verify_ai_bundle(bundle)
+            self.assertFalse(kernel.valid)
+            self.assertEqual(kernel.reason, "MANIFEST_BAD_TS_UTC")
+
+            verify = _run_cli("verify", "--out", str(bundle), "--json")
+            self.assertEqual(verify.returncode, 2, verify.stdout + verify.stderr)
+            self.assertIn("reason=MANIFEST_BAD_TS_UTC", verify.stdout)
+
+            verify_bundle = _run_cli(
+                "verify-bundle",
+                str(bundle),
+                "--json",
+            )
+            self.assertEqual(
+                verify_bundle.returncode,
+                2,
+                verify_bundle.stdout + verify_bundle.stderr,
+            )
+            self.assertIn(
+                "reason=MANIFEST_BAD_TS_UTC",
+                verify_bundle.stdout,
+            )
+
+            standalone = _run_standalone(bundle)
+            self.assertEqual(
+                standalone.returncode,
+                2,
+                standalone.stdout + standalone.stderr,
+            )
+            self.assertEqual(
+                json.loads(standalone.stdout)["reason"],
+                "MANIFEST_BAD_TS_UTC",
+            )
+
     def test_valid_unsigned_bundle_is_accepted_by_every_entrypoint(self):
         with tempfile.TemporaryDirectory() as directory:
             bundle = Path(directory)
