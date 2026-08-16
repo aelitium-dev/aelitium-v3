@@ -144,6 +144,12 @@ class TestVerifyBundleValid(unittest.TestCase):
         self.assertIn("binding_hash", obj)
         self.assertEqual(obj["signature"], "NONE")
         self.assertEqual(obj["binding_hash"], "NONE")
+        self.assertEqual(obj["payload_integrity"], "VALID")
+        self.assertEqual(obj["binding_field_consistency"], "ABSENT")
+        self.assertEqual(obj["signature_validity"], "ABSENT")
+        self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
+        self.assertEqual(obj["freshness"], "NOT_EVALUATED")
+        self.assertEqual(obj["authorization"], "NOT_EVALUATED")
 
     def test_no_traceback_on_valid(self):
         r = _verify_bundle(self.outdir)
@@ -175,6 +181,7 @@ class TestVerifyBundleCapture(unittest.TestCase):
         obj = json.loads(r.stdout.strip())
         self.assertEqual(obj["binding_hash"], self.binding_hash)
         self.assertRegex(obj["binding_hash"], HASH_RE)
+        self.assertEqual(obj["binding_field_consistency"], "VALID")
 
     def test_tampered_binding_hash_in_manifest_gives_rc2(self):
         m = json.loads((self.outdir / "ai_manifest.json").read_text())
@@ -277,6 +284,8 @@ class TestVerifyBundleSigned(unittest.TestCase):
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["status"], "VALID")
             self.assertEqual(obj["signature"], "VALID")
+            self.assertEqual(obj["signature_validity"], "VALID")
+            self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
 
     def test_tampered_verification_keys_gives_signature_invalid(self):
         with tempfile.TemporaryDirectory() as d:

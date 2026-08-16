@@ -42,10 +42,16 @@ class TestVerifyContract(unittest.TestCase):
         r = _verify(self.outdir)
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_valid_stdout_exactly_three_lines(self):
+    def test_valid_stdout_preserves_three_lines_and_adds_assurance(self):
         r = _verify(self.outdir)
         lines = [l for l in r.stdout.strip().splitlines() if l]
-        self.assertEqual(len(lines), 3, f"Expected 3 lines, got: {lines}")
+        self.assertEqual(len(lines), 9, f"Expected 9 lines, got: {lines}")
+        self.assertEqual(lines[3], "PAYLOAD_INTEGRITY=VALID")
+        self.assertEqual(lines[4], "BINDING_FIELD_CONSISTENCY=ABSENT")
+        self.assertEqual(lines[5], "SIGNATURE_VALIDITY=ABSENT")
+        self.assertEqual(lines[6], "TRUSTED_SIGNER_IDENTITY=UNESTABLISHED")
+        self.assertEqual(lines[7], "FRESHNESS=NOT_EVALUATED")
+        self.assertEqual(lines[8], "AUTHORIZATION=NOT_EVALUATED")
 
     def test_valid_first_line(self):
         r = _verify(self.outdir)
@@ -138,6 +144,12 @@ class TestVerifyContract(unittest.TestCase):
         obj = json.loads(r.stdout.strip())
         self.assertIn("signature", obj)
         self.assertEqual(obj["signature"], "NONE")
+        self.assertEqual(obj["payload_integrity"], "VALID")
+        self.assertEqual(obj["binding_field_consistency"], "ABSENT")
+        self.assertEqual(obj["signature_validity"], "ABSENT")
+        self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
+        self.assertEqual(obj["freshness"], "NOT_EVALUATED")
+        self.assertEqual(obj["authorization"], "NOT_EVALUATED")
 
 
 class TestVerifySignatureEnforcement(unittest.TestCase):
@@ -202,6 +214,8 @@ class TestVerifySignatureEnforcement(unittest.TestCase):
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["status"], "VALID")
             self.assertEqual(obj["signature"], "VALID")
+            self.assertEqual(obj["signature_validity"], "VALID")
+            self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
 
     def test_unsigned_bundle_verify_returns_signature_none(self):
         """Bundle without verification_keys.json: verify returns signature=NONE."""
@@ -217,6 +231,7 @@ class TestVerifySignatureEnforcement(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["signature"], "NONE")
+            self.assertEqual(obj["signature_validity"], "ABSENT")
 
     def test_tampered_verification_keys_gives_signature_invalid(self):
         """Adultered verification_keys.json: verify must return SIGNATURE_INVALID."""
@@ -237,6 +252,7 @@ class TestVerifySignatureEnforcement(unittest.TestCase):
             self.assertEqual(r.returncode, 2)
             self.assertIn("STATUS=INVALID", r.stdout)
             self.assertIn("SIGNATURE_INVALID", r.stdout)
+            self.assertIn("SIGNATURE_VALIDITY=INVALID", r.stdout)
 
     def test_tampered_manifest_with_valid_keys_gives_signature_invalid(self):
         """Manifest tampered after signing: signature no longer matches bytes."""

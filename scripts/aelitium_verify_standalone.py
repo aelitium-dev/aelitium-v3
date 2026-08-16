@@ -15,18 +15,24 @@ sys.path.insert(0, str(ROOT))
 from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
 
 
-STANDALONE_OPTIONS = AIVerificationOptions(
-    required_manifest_fields=("schema", "ts_utc", "ai_hash_sha256"),
-    validate_manifest_timestamp=False,
-    verify_signature=False,
-    verify_binding=False,
-)
+STANDALONE_REQUIRED_FIELDS = ("schema", "ts_utc", "ai_hash_sha256")
 
 
-def verify_bundle(bundle_dir: Path) -> tuple:
+def verify_bundle(
+    bundle_dir: Path,
+    *,
+    require_signature: bool = False,
+    require_binding: bool = False,
+) -> tuple:
     """Returns (valid, reason, details)."""
     vk_path = bundle_dir / "verification_keys.json"
-    result = verify_ai_bundle(bundle_dir, options=STANDALONE_OPTIONS)
+    options = AIVerificationOptions(
+        required_manifest_fields=STANDALONE_REQUIRED_FIELDS,
+        validate_manifest_timestamp=False,
+        require_signature=require_signature,
+        require_binding=require_binding,
+    )
+    result = verify_ai_bundle(bundle_dir, options=options)
     if not result.valid:
         if result.reason in ("MISSING_CANONICAL", "MISSING_MANIFEST"):
             reason = result.reason
@@ -36,7 +42,7 @@ def verify_bundle(bundle_dir: Path) -> tuple:
             reason = f"{result.reason}: {result.detail}"
         else:
             reason = result.reason
-        return False, reason, {}
+        return False, reason, result.assurance_dict()
 
     canonical = result.canonical
     manifest = result.manifest
@@ -47,6 +53,7 @@ def verify_bundle(bundle_dir: Path) -> tuple:
         "ts_utc": canonical.get("ts_utc"),
         "has_binding_hash": "binding_hash" in manifest,
         "has_verification_keys": vk_path.exists(),
+        **result.assurance_dict(),
     }
 
     if "binding_hash" in manifest:
@@ -59,10 +66,18 @@ def main():
     ap = argparse.ArgumentParser(description="AELITIUM standalone bundle verifier")
     ap.add_argument("--bundle", required=True, help="Path to evidence bundle directory")
     ap.add_argument("--json", action="store_true", help="Output as JSON")
+    ap.add_argument("--require-signature", action="store_true",
+                    help="Reject bundles without signature material")
+    ap.add_argument("--require-binding", action="store_true",
+                    help="Reject bundles without v1 binding evidence")
     args = ap.parse_args()
 
     bundle_dir = Path(args.bundle)
-    valid, reason, details = verify_bundle(bundle_dir)
+    valid, reason, details = verify_bundle(
+        bundle_dir,
+        require_signature=args.require_signature,
+        require_binding=args.require_binding,
+    )
 
     if args.json:
         print(json.dumps({"status": "VALID" if valid else "INVALID", "reason": reason, **details}, sort_keys=True))
@@ -73,6 +88,8 @@ def main():
                 print(f"  {k}={v}")
         else:
             print(f"STATUS=INVALID reason={reason}")
+            for k, v in details.items():
+                print(f"  {k}={v}")
 
     sys.exit(0 if valid else 2)
 

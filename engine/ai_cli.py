@@ -26,6 +26,29 @@ def _out(args, text_lines: list[str], json_obj: dict) -> None:
             print(line)
 
 
+def _assurance_lines(result) -> list[str]:
+    return [
+        f"{name.upper()}={state}"
+        for name, state in result.assurance_dict().items()
+    ]
+
+
+def _verification_options(args: argparse.Namespace) -> AIVerificationOptions:
+    return AIVerificationOptions(
+        require_signature=getattr(args, "require_signature", False),
+        require_binding=getattr(args, "require_binding", False),
+    )
+
+
+def _verification_fail(result) -> int:
+    print(f"STATUS=INVALID rc=2 reason={result.reason}")
+    if result.detail:
+        print(f"DETAIL={result.detail}")
+    for line in _assurance_lines(result):
+        print(line)
+    return 2
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
     schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
@@ -54,22 +77,22 @@ def cmd_canonicalize(args: argparse.Namespace) -> int:
 def cmd_verify(args: argparse.Namespace) -> int:
     outdir = Path(args.out)
 
-    def fail(reason: str, detail: str = "") -> int:
-        print(f"STATUS=INVALID rc=2 reason={reason}")
-        if detail:
-            print(f"DETAIL={detail}")
-        return 2
-
     result = verify_ai_bundle(
         outdir,
-        options=AIVerificationOptions(verify_binding=False),
+        options=_verification_options(args),
     )
     if not result.valid:
-        return fail(result.reason, result.detail)
+        return _verification_fail(result)
 
     _out(args,
-         ["STATUS=VALID rc=0", f"AI_HASH_SHA256={result.ai_hash_sha256}", f"SIGNATURE={result.signature}"],
-         {"status": "VALID", "rc": 0, "ai_hash_sha256": result.ai_hash_sha256, "signature": result.signature})
+         ["STATUS=VALID rc=0",
+          f"AI_HASH_SHA256={result.ai_hash_sha256}",
+          f"SIGNATURE={result.signature}",
+          *_assurance_lines(result)],
+         {"status": "VALID", "rc": 0,
+          "ai_hash_sha256": result.ai_hash_sha256,
+          "signature": result.signature,
+          **result.assurance_dict()})
     return 0
 
 
@@ -161,25 +184,21 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
     """
     outdir = Path(args.bundle)
 
-    def fail(reason: str, detail: str = "") -> int:
-        print(f"STATUS=INVALID rc=2 reason={reason}")
-        if detail:
-            print(f"DETAIL={detail}")
-        return 2
-
-    result = verify_ai_bundle(outdir)
+    result = verify_ai_bundle(outdir, options=_verification_options(args))
     if not result.valid:
-        return fail(result.reason, result.detail)
+        return _verification_fail(result)
 
     _out(args,
          ["STATUS=VALID rc=0",
           f"AI_HASH_SHA256={result.ai_hash_sha256}",
           f"SIGNATURE={result.signature}",
-          f"BINDING_HASH={result.binding_hash}"],
+          f"BINDING_HASH={result.binding_hash}",
+          *_assurance_lines(result)],
          {"status": "VALID", "rc": 0,
           "ai_hash_sha256": result.ai_hash_sha256,
           "signature": result.signature,
-          "binding_hash": result.binding_hash})
+          "binding_hash": result.binding_hash,
+          **result.assurance_dict()})
     return 0
 
 
@@ -467,6 +486,10 @@ def main() -> int:
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
     ve.add_argument("--json", action="store_true", help="Output as JSON")
+    ve.add_argument("--require-signature", action="store_true",
+                    help="Reject bundles without signature material")
+    ve.add_argument("--require-binding", action="store_true",
+                    help="Reject bundles without v1 binding evidence")
     ve.set_defaults(fn=cmd_verify)
 
     vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
@@ -484,6 +507,10 @@ def main() -> int:
     vb = sub.add_parser("verify-bundle", help="Verify evidence bundle (hash + signature + binding hash)")
     vb.add_argument("bundle", help="Path to evidence bundle directory")
     vb.add_argument("--json", action="store_true", help="Output as JSON")
+    vb.add_argument("--require-signature", action="store_true",
+                    help="Reject bundles without signature material")
+    vb.add_argument("--require-binding", action="store_true",
+                    help="Reject bundles without v1 binding evidence")
     vb.set_defaults(fn=cmd_verify_bundle)
 
     cmp = sub.add_parser("compare", help="Compare two bundles to detect AI model behavior change")
