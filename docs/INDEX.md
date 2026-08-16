@@ -30,4 +30,4 @@
 - engine/repro.py (if present)
 
 ## Governance evidence
-- governance/authority/allowed_signers
+- docs/EVIDENCE_LOG.md
