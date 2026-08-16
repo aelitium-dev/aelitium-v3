@@ -27,6 +27,19 @@ The system does NOT guarantee:
 - temporal validity (freshness)
 - contextual correctness
 
+Current AI bundle verification reports these dimensions separately:
+
+- `payload_integrity`
+- `binding_field_consistency`
+- `signature_validity`
+- `trusted_signer_identity` (`UNESTABLISHED`)
+- `freshness` (`NOT_EVALUATED`)
+- `authorization` (`NOT_EVALUATED`)
+
+Mathematical signature validity must not be interpreted as signer identity. The
+current verifier uses verification material packaged with the artifact and does
+not establish an externally trusted key owner.
+
 ---
 
 ## Trusted Components
@@ -90,10 +103,15 @@ Untrusted data must always be verified before use.
 
 All guarantees apply **after canonicalization and inclusion in a verifiable bundle (pack step)**.
 
-The system assumes:
+For the current AI evidence bundle v1 surface, the verifier enforces:
 
-- canonicalization is deterministic
-- identical inputs produce identical canonical form
+- the authoritative `ai_output_v1` schema
+- the declared manifest schema, input schema, and canonicalization identifiers
+- lowercase 64-character hexadecimal SHA-256 fields governed by the contract
+- independent reconstruction of canonical JSON
+- stored canonical bytes equal to that reconstruction, with only an optional
+  single terminal LF permitted
+- hashing over the canonical serialization without that optional LF
 
 The system does NOT guarantee:
 
@@ -156,13 +174,13 @@ The system is NOT designed to detect:
 
 ## Failure Semantics
 
-The system is strictly fail-closed.
+The system is fail-closed for evaluated evidence and explicit caller requirements.
 
-It MUST return INVALID if:
+It returns `INVALID` if:
 
 - hash mismatch occurs
 - signature verification fails
-- required data is missing
+- contract-required data is missing
 - parsing fails
 - verification is incomplete
 
@@ -172,12 +190,13 @@ Additionally:
 - partial verification → INVALID
 - unexpected structure → INVALID
 
-No soft-fail behavior is permitted.
+Absence is not the same as invalidity. Unsigned and unbound v1 bundles remain valid
+by default and report `ABSENT` for those dimensions. `--require-signature` and
+`--require-binding` convert the corresponding absence into an invalid result.
 
-The verifier validates byte-level integrity and hash consistency of the packed artifact.
-
-It does NOT validate full schema correctness of the canonical payload.
-Unexpected but well-formed structures may still verify as VALID.
+The verifier validates full `ai_output_v1` schema correctness, the governed
+canonical byte representation, the manifest contract, and hash consistency of the
+packed artifact.
 
 ---
 

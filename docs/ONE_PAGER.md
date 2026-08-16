@@ -6,7 +6,7 @@ AI logs are mutable.
 
 When an LLM output influences a real decision — finance, healthcare, legal, compliance — someone eventually asks:
 
-> *"Can you prove that the recorded evidence was not modified after packing?"*
+> *"Can you check this record against a separately retained expected hash?"*
 
 Standard logging (databases, S3, observability tools) cannot answer this. An admin with access can edit records. A bucket can be overwritten. A breach can go undetected.
 
@@ -14,9 +14,13 @@ Standard logging (databases, S3, observability tools) cannot answer this. An adm
 
 ## Approach
 
-AELITIUM turns LLM outputs into **tamper-evident evidence bundles**.
+AELITIUM turns recorded LLM outputs into **governed, internally verifiable
+evidence bundles**.
 
-The bundle contains a canonical payload, a deterministic SHA-256 hash, and an optional Ed25519 signature. Anyone with the bundle can verify its integrity — no network, no server, no trust in the original infrastructure required.
+The bundle contains a canonical payload, a deterministic SHA-256 hash, and
+optional Ed25519 verification material. Anyone with the bundle can evaluate its
+internal consistency without a network or server. Historical non-modification and
+signer identity require independently trusted anchors outside the bundle.
 
 ```
 LLM call
@@ -37,10 +41,10 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ```bash
 pip install aelitium
 
-# Option A: capture directly from OpenAI (strongest — trust chain starts at call time)
+# Option A: capture through the native OpenAI adapter
 from engine.capture.openai import capture_chat_completion
 result = capture_chat_completion(client, "gpt-4o", messages, "./evidence")
-# result.ai_hash_sha256  →  same hash for the same input in validated configurations
+# result.ai_hash_sha256  →  hash of the complete validated canonical object
 
 # Option B: pack a JSON output manually
 aelitium pack --input output.json --out ./evidence
@@ -55,7 +59,13 @@ aelitium compare ./evidence_run1 ./evidence_run2
 # STATUS=CHANGED   rc=2   (same request_hash, different response_hash observed)
 ```
 
-Tamper detection:
+Unsigned and unbound bundles remain valid by default. `--require-signature` and
+`--require-binding` reject the corresponding absence. A mathematically valid
+signature under key material bundled with the artifact does not establish signer
+identity: `trusted_signer_identity` remains `UNESTABLISHED`; freshness and
+authorization remain `NOT_EVALUATED`.
+
+Detect an inconsistent edit:
 
 ```bash
 # modify the bundle, then verify:
@@ -65,21 +75,27 @@ aelitium verify-bundle ./evidence
 
 ---
 
-## What it proves
+## What current verification establishes
 
-| ✅ Proves | ❌ Does not prove |
+| ✅ Establishes | ❌ Does not establish |
 |-----------|-----------------|
-| Bundle has not been altered since packing | Model output was correct or safe |
-| Hash matches the canonical payload | Model actually produced the output (without capture layer) |
-| (With receipt) Authority signed this hash | Client was not compromised upstream |
+| Inspected payload and recorded hash are internally consistent | Model output was correct or safe |
+| Stored v1 binding fields are consistent when present | Complete provider invocation identity |
+| Bundled Ed25519 material is mathematically valid when present | Trusted signer identity, freshness, or authorization |
 
 ---
 
 ## Trust boundary
 
-The trust chain starts at **capture time** — when `capture_chat_completion()` intercepts the API call. From that point forward, any alteration is detectable.
+The native capture adapters reduce the manual handoff by recording selected v1
+request and response fields in the adapter-controlled call path. They do not
+establish every behavior-affecting invocation parameter or an externally trusted
+origin.
 
-Without the capture adapter, the chain starts at **pack time** — when the user runs `aelitium pack`. This is weaker but still useful: it proves the JSON has not changed since packing.
+Bundle verification detects changes that are inconsistent with the recorded
+contract, hashes, and any present signature material. A fully self-consistent
+replacement can still verify unless the verifier has an independently trusted
+external anchor or signer identity.
 
 ---
 
@@ -96,8 +112,8 @@ Without the capture adapter, the chain starts at **pack time** — when the user
 ## Current state
 
 - `pip install aelitium` — published to PyPI (v0.2.4)
-- OpenAI + Anthropic capture adapters — synchronous, minimal, production-ready
-- 206 tests passing in the current suite
+- Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
+- OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
 - Offline verification — no network, no SaaS, no blockchain
 - `compare` command for detecting changed recorded responses across bundles

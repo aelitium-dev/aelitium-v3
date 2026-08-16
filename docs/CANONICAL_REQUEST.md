@@ -1,15 +1,18 @@
-# Canonical Request Format
+# Canonical Request Format — v1 Selected-Field Identity
 
 **Version:** 1.0
 **Status:** Stable
 
-This document defines what fields are included in the `request_hash` computed by AELITIUM capture adapters, and why.
+This document defines the selected fields included in the v1 `request_hash`
+computed by AELITIUM capture adapters. It does not define a complete provider
+invocation identity.
 
 ---
 
 ## What is the request_hash?
 
-`request_hash` is a SHA-256 hash of the canonical form of the LLM request.
+`request_hash` is a SHA-256 hash of the canonical form of the fields selected by
+the current v1 capture model.
 
 Its purpose: allow two bundles to be compared and determine whether they came from the same hashed request within the implemented capture model.
 
@@ -28,27 +31,30 @@ If two bundles have the same `request_hash`, the compared bundles contain the sa
 
 | Field      | Type            | Description                             |
 |------------|-----------------|-----------------------------------------|
-| `messages` | array of objects | The exact message list sent to the API |
-| `model`    | string          | The model identifier as sent            |
+| `messages` | array of objects | The recorded message list selected for v1 identity |
+| `model`    | string          | The requested model identifier selected for v1 identity |
 
-These are the only two fields that define **what was asked** and **who was asked**.
+These two fields define the frozen v1 request identity. They are not a claim that
+all behavior-affecting provider arguments are represented.
 
 ---
 
 ## Fields excluded from request_hash
 
-| Field         | Reason excluded                                               |
-|---------------|---------------------------------------------------------------|
-| `temperature` | Sampling parameter — affects randomness, not the request itself |
-| `top_p`       | Same as temperature                                           |
-| `max_tokens`  | Output budget — doesn't change what was asked                |
-| `stream`      | Transport detail, not part of the request semantics           |
-| `n`           | Number of completions — not part of the single request        |
-| SDK defaults  | Vary across SDK versions; would break hash stability          |
-| Provider metadata | Added by the SDK, not by the caller                      |
-| `stop`        | Post-processing hint, not part of the request intent          |
+| Field | Current v1 treatment |
+|---|---|
+| `temperature` | Forwarded when supported but excluded from v1 `request_hash` |
+| `top_p` | Excluded from v1 `request_hash` |
+| `max_tokens` | Forwarded when supported but excluded from v1 `request_hash` |
+| `stream` | Excluded from v1 `request_hash` |
+| `n` | Excluded from v1 `request_hash` |
+| SDK defaults | Excluded from v1 `request_hash` |
+| Provider metadata | Excluded from v1 `request_hash` unless represented by a selected field |
+| `stop` | Excluded from v1 `request_hash` |
 
-**Rule:** if the field controls *how* the model answers but not *what* it was asked, it is excluded.
+These exclusions are frozen v1 compatibility behavior, not a statement that the
+parameters are semantically irrelevant. In particular, behavior-affecting values
+can differ while `request_hash` remains the same.
 
 ---
 
@@ -89,13 +95,18 @@ STATUS=CHANGED
 INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-If `REQUEST_HASH=DIFFERENT`, the requests are not equivalent and comparison is `NOT_COMPARABLE`.
+If `REQUEST_HASH=DIFFERENT`, the selected v1 request identity differs and
+comparison is `NOT_COMPARABLE`. Equality or inequality does not establish full
+invocation equivalence.
 
 ---
 
 ## Extending request_hash
 
-If you need to include additional fields (e.g. `temperature` for reproducibility experiments), pass them via the `metadata` argument to the capture adapter. They will be stored in the bundle but will **not** affect `request_hash`.
+If you need to record additional fields (for example `temperature` for a
+reproducibility experiment), pass unrelated custom values through the `metadata`
+argument. They are stored in the canonical bundle and affect `ai_hash_sha256`, but
+they do **not** affect `request_hash`.
 
 ```python
 result = capture_openai(
@@ -103,6 +114,9 @@ result = capture_openai(
     metadata={"temperature": 0.7}
 )
 ```
+
+Caller metadata cannot overwrite adapter-owned fields. A key collision fails with
+`CAPTURE_METADATA_RESERVED_KEY_COLLISION`.
 
 ---
 
@@ -117,7 +131,7 @@ response_hash = sha256_hash(canonical_json(response_data))
 
 | Field | Included | Reason |
 |-------|----------|--------|
-| `content` | ✅ | The actual model output — core of the evidence |
+| `content` | ✅ | Recorded response content — core of the selected response identity |
 | `model` | ✅ | Provider-confirmed model identifier |
 | `id` | ❌ | Response identifier — changes per call, not part of evidence |
 | `created` | ❌ | Timestamp — stored separately in metadata |
@@ -133,7 +147,7 @@ response_hash = sha256_hash(canonical_json(response_data))
 
 ## Reference implementation
 
-`engine/capture/openai.py`, line 107:
+The capture adapters construct the current v1 request payload equivalently to:
 
 ```python
 request_payload = {"messages": messages, "model": model}

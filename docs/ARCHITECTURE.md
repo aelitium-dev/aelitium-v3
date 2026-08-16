@@ -69,11 +69,11 @@ Required fields:
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema_version` | `"ai_output_v1"` | Identifies the schema |
-| `ts_utc` | ISO-8601 string | Generation timestamp |
+| `ts_utc` | ISO-8601 string | Recorded timestamp; freshness is not evaluated |
 | `model` | string | Model identifier |
 | `prompt` | string | Input prompt |
 | `output` | string | Recorded response content |
-| `metadata` | object | Arbitrary run metadata |
+| `metadata` | object | Metadata accepted by the schema; capture adapters reserve their owned fields |
 
 See `engine/schemas/ai_output_v1.json` for the full JSON Schema.
 
@@ -104,12 +104,31 @@ The manifest records what was hashed and how, making verification fully self-des
 
 ## Verification Protocol
 
-1. Read `ai_canonical.json`
-2. Recompute `sha256(canonical_text.rstrip("\n").encode("utf-8"))`
-3. Compare to `ai_manifest.json["ai_hash_sha256"]`
-4. If equal → `STATUS=VALID rc=0`; otherwise → `STATUS=INVALID rc=2 reason=HASH_MISMATCH`
+For the current AI evidence bundle v1 surface, verification:
 
-No network access required. No external state.
+1. parses `ai_canonical.json` and validates the authoritative `ai_output_v1` schema
+2. enforces manifest schema, input-schema, and canonicalization identifiers
+3. requires governed SHA-256 fields to be lowercase 64-character hexadecimal strings
+4. independently reconstructs canonical JSON with the governed serializer
+5. accepts stored canonical bytes only when they equal that serialization exactly,
+   optionally followed by one terminal LF
+6. hashes the canonical serialization without the optional LF and compares it to
+   `ai_manifest.json["ai_hash_sha256"]`
+7. evaluates stored v1 binding fields and bundled signature material when present
+
+No network access is required. The result distinguishes payload integrity,
+binding-field consistency, signature validity, signer identity, freshness, and
+authorization.
+
+Unsigned and unbound bundles remain valid by default. Callers can require those
+dimensions with `--require-signature` and `--require-binding`.
+
+### Bundled signature material
+
+A valid Ed25519 signature establishes mathematical validity under the public key
+packaged with the artifact. It does not establish an externally trusted signer
+identity: `trusted_signer_identity` remains `UNESTABLISHED`. Freshness and
+authorization remain `NOT_EVALUATED`.
 
 ---
 
@@ -149,11 +168,11 @@ aelitium verify-receipt --receipt receipt.json --pubkey authority.b64
 
 | Principle | Consequence |
 |-----------|-------------|
-| **Deterministic** | Same input → same hash in validated configurations |
+| **Deterministic** | Same complete validated input object → same hash in validated configurations |
 | **Offline-first** | Verification never requires network access |
 | **Fail-closed** | Any error returns `rc=2`; no silent success |
 | **Self-describing** | Manifest records schema, method, and timestamp |
-| **Pipeline-friendly** | Output parseable (`STATUS=`, `AI_HASH_SHA256=`, `--json`) |
+| **Pipeline-friendly** | Key/value output is parseable; supported successful command paths also offer `--json` |
 
 ---
 
@@ -161,11 +180,13 @@ aelitium verify-receipt --receipt receipt.json --pubkey authority.b64
 
 ```
 engine/
-├── ai_cli.py          CLI entry point (validate / canonicalize / pack / verify / verify-receipt)
-├── ai_canonical.py    Canonicalization + hash for ai_output_v1
+├── ai_cli.py          CLI entry point for the AI evidence surface
+├── ai_contract.py     Current AI evidence filenames and contract identifiers
+├── ai_canonical.py    ai_output_v1 validation, canonicalization, and hash
 ├── ai_pack.py         Pure pack function → AIPackResult
+├── ai_verify.py       Canonical AI bundle verification kernel
 ├── canonical.py       Generic canonical JSON helper
-├── signing.py         Ed25519 sign/verify (P1 release bundles)
+├── signing.py         Ed25519 sign/verify support
 ├── pack.py            P1 bundle packing
 ├── verify.py          P1 bundle verification
 ├── repro.py           Reproducibility check (two-run determinism)

@@ -1,6 +1,7 @@
 # Comparing Recorded Responses Across Runs with AELITIUM
 
-When outputs differ across runs, AELITIUM makes differences in recorded evidence detectable and provable.
+When outputs differ across runs, AELITIUM compares selected v1 request and response
+hashes from internally consistent recorded evidence.
 
 ---
 
@@ -21,15 +22,17 @@ Without cryptographic evidence, this question is hard to evaluate reliably. With
 
 ## How it works
 
-The capture adapter records three hashes at call time:
+The capture adapter records three v1 hashes in its controlled call path:
 
 | Hash | What it covers |
 |------|---------------|
 | `request_hash` | SHA256 of the recorded request payload (model + messages) |
 | `response_hash` | SHA256 of the recorded response artifact |
-| `binding_hash` | SHA256 linking request↔response as a single event |
+| `binding_hash` | SHA256 commitment over the stored request/response hash pair |
 
-These are written to the evidence bundle and cannot be altered without breaking verification.
+These are written to the evidence bundle and checked for stored-field consistency.
+A fully self-consistent replacement can still verify without an independently
+trusted external anchor.
 
 ---
 
@@ -40,7 +43,7 @@ These are written to the evidence bundle and cannot be altered without breaking 
 aelitium compare ./bundle_baseline ./bundle_today
 ```
 
-### Same request, same response
+### Same selected request and response hashes
 
 ```
 STATUS=UNCHANGED rc=0
@@ -50,9 +53,10 @@ BINDING_HASH=SAME
 INTERPRETATION=Same request_hash and response_hash observed
 ```
 
-Nothing changed.
+The selected v1 request and response hashes are unchanged. Other unbound invocation
+parameters or metadata may still differ.
 
-### Same request, different response
+### Same selected request hash, different response hash
 
 ```
 STATUS=CHANGED rc=2
@@ -65,7 +69,7 @@ INTERPRETATION=Same request_hash with different response_hash observed
 The compared bundles have the same `request_hash` and different `response_hash` values.
 This shows a changed recorded response for the same hashed request. It does not attribute the cause.
 
-### Different requests
+### Different selected request hashes
 
 ```
 STATUS=NOT_COMPARABLE rc=1
@@ -73,7 +77,9 @@ REQUEST_HASH=DIFFERENT
 INTERPRETATION=Requests differ — bundles are not comparable
 ```
 
-The requests differ — comparison is not meaningful.
+The selected v1 request identities differ, so comparison reports
+`NOT_COMPARABLE`. This does not establish full invocation equivalence or
+inequality.
 
 ---
 
@@ -120,12 +126,13 @@ Exit codes: `0` = unchanged, `1` = not comparable, `2` = changed or invalid.
 Store one bundle per request type as your behavioral baseline.
 Run `aelitium compare` against it in every CI run.
 
-If the recorded response changes, the pipeline fails with `STATUS=CHANGED rc=2` and you have cryptographic evidence of:
+If the recorded response hash changes, the pipeline fails with
+`STATUS=CHANGED rc=2` and reports:
 
-- what was asked (recorded request hash)
+- the selected v1 request hash fields
 - what was recorded before (previous response hash)
 - what is recorded now (new response hash)
-- that the request itself did not change
+- whether the selected v1 request identity changed
 
 This is offline comparison of recorded evidence, not provider attribution.
 
@@ -133,6 +140,6 @@ This is offline comparison of recorded evidence, not provider attribution.
 
 ## Related
 
-- [Capture layer](INTEGRATION_CAPTURE.md) — how to capture bundles from OpenAI and Anthropic
+- [Capture layer](INTEGRATION_CAPTURE.md) — native OpenAI and Anthropic capture plus LiteLLM capture
 - [Evidence Bundle Spec](EVIDENCE_BUNDLE_SPEC.md) — bundle format and field definitions
-- [Trust boundary](TRUST_BOUNDARY.md) — what AELITIUM proves and what it does not
+- [Trust boundary](TRUST_BOUNDARY.md) — current assurance scope and limitations

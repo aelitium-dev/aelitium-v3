@@ -1,113 +1,108 @@
 # AELITIUM — Messaging Guardrails
 
+This document is the public-claims guidance for the current AI evidence bundle v1
+surface. It summarizes implemented behavior; it is not a separate runtime,
+schema, or architecture authority.
 
 ---
 
-## Canonical claim
+## Canonical v1 claim
 
-> AELITIUM detects post-hoc modification of recorded LLM interactions,
-> offline and deterministically.
+> AELITIUM v1 verifies the internal consistency of the AI evidence bundle being
+> inspected, offline and under a governed schema and canonicalization contract.
 
-Longer form:
+Current verification can establish:
 
-> If a packed evidence bundle is modified after packing, you can prove it.
-> Verification is offline, fail-closed, and requires no AELITIUM server.
+- a valid `ai_output_v1` payload structure
+- governed canonical serialization and manifest identifiers
+- consistency between the canonical payload and `ai_hash_sha256`
+- consistency among stored v1 request, response, and binding hash fields when
+  binding evidence is present
+- mathematical Ed25519 signature validity when verification material is present
 
----
+It does not by itself establish:
 
-## What AELITIUM is
-
-A tamper-evidence primitive for LLM outputs.
-
-- Packs a request+response pair into a deterministic evidence bundle
-- Computes `binding_hash` — cryptographic link between request and response
-- Any modification after packing → `STATUS=INVALID rc=2`
-- Verification requires only the bundle and Python stdlib
-
----
-
-## Threat model (short form)
-
-```
-Assumption:  an attacker may modify stored bundles
-             the verifier does not trust the runtime that produced the bundle
-             the verifier does not trust the LLM provider
-             the verifier trusts SHA-256 and the canonicalization rules
-
-Guarantee:   any modification after bundle creation is detectable
-
-Non-goals:   execution authenticity
-             origin proof (without P3 authority)
-             semantic truth
-             model correctness
-```
-
-Full version: `docs/TRUST_BOUNDARY.md`, `docs/SECURITY_MODEL.md`
+- complete provider invocation identity
+- historical non-modification without an independently trusted external anchor
+- trusted signer identity
+- freshness or authorization
+- semantic truth, safety, or correctness of the AI output
 
 ---
 
-## ICP (who this is for)
+## Assurance dimensions
 
-**Primary:**
-- Teams with compliance or audit obligations (EU AI Act Art.12, SOC 2, ISO 42001)
-- Pipelines where AI outputs influence regulated decisions
-- Forensics / incident response (what exactly did the model say?)
-- Enterprise integrations requiring verifiable AI records
+Do not collapse the current assurance result into a single authenticity claim.
 
-**Secondary:**
-- Developers building accountability layers over LLM pipelines
-- ML teams tracking model behavior changes across versions
+| Dimension | Current meaning |
+|---|---|
+| `payload_integrity` | Schema, canonical bytes, manifest contract, and payload-hash consistency |
+| `binding_field_consistency` | Consistency among stored v1 binding fields, or `ABSENT` |
+| `signature_validity` | Mathematical validity of bundled Ed25519 material, or `ABSENT` |
+| `trusted_signer_identity` | `UNESTABLISHED` for current bundled verification material |
+| `freshness` | `NOT_EVALUATED` |
+| `authorization` | `NOT_EVALUATED` |
 
-**Not the primary audience:**
-- General-purpose developers / builders without accountability requirements
-- Teams already satisfied with logging + observability
+A valid bundled signature does not authenticate a producer or establish that its
+key belongs to an externally trusted party.
 
----
-
-## Recommended phrases
-
-| Use this | Instead of |
-|----------|-----------|
-| tamper-evident evidence bundles | proof of AI outputs |
-| detects post-hoc modification | proves the model said this |
-| integrity of captured interactions | truth of model outputs |
-| offline, fail-closed verification | secure AI / trusted AI |
-| binding_hash links request to response | cryptographic proof of LLM call |
+Unsigned and unbound bundles remain valid by default. Callers that require those
+dimensions must use `--require-signature` and `--require-binding`; absence then
+causes verification to fail.
 
 ---
 
-## Prohibited phrases
+## Request and binding boundary
 
-These create expectations AELITIUM cannot fulfill:
+`request_hash` is a v1 selected-field request identity. Current capture paths hash
+the model and messages used by that v1 path. Behavior-affecting parameters such as
+`temperature` and `max_tokens` can be forwarded without changing `request_hash`.
 
-| Do not say | Why |
-|------------|-----|
-| "proves the model produced this output" | AELITIUM proves the bundle wasn't modified — not that the packing was honest |
-| "trust your AI" / "trustworthy AI" | Conflates integrity with semantic correctness |
-| "execution authenticity" | Not provided without hardware attestation (P3+) |
-| "detects model hallucinations" | Not in scope — AELITIUM proves tampering, not quality |
-| "works for all developers" | Narrow ICP — overclaiming audience creates wrong expectations |
+`binding_hash` may be described as a cryptographic commitment over the stored
+`request_hash` and `response_hash` pair. Verification checks consistency among
+those stored fields. It does not independently reconstruct source request or
+response material, a provider invocation, an action, or an authorization decision.
 
 ---
 
-## Boundary statement (for README / site)
+## Historical trust boundary
 
-Use this verbatim when surfacing the trust boundary:
+Verification detects modifications that are inconsistent with the bundle's
+recorded contract, hashes, and any present signature material. A fully
+self-consistent artifact replacement can still verify unless the verifier has an
+independently trusted external hash, key identity, receipt, or equivalent anchor.
 
-```
-What this proves: bundle contents were not modified after packing.
-What this does not prove: that the model produced this output,
-that the output is correct, or that the capture process was honest.
-Verification is offline, deterministic, and fail-closed.
-```
+---
+
+## Recommended wording
+
+| Use this | Avoid |
+|---|---|
+| internal consistency of the inspected bundle | proof the bundle was never altered |
+| v1 selected-field request identity | exact request or full invocation identity |
+| stored binding-field consistency | proof that a real-world request produced a response |
+| mathematical signature validity | authentic origin or authenticated producer |
+| signer identity is not established by bundled key material | verified signer or trusted signer |
+| detects changes inconsistent with a trusted external anchor | tamper-proof or immutable record |
+| offline, fail-closed verification | secure AI or trustworthy AI |
+
+The phrase “no trust gap” is not approved: current v1 deliberately exposes trust
+dimensions that remain unestablished or unevaluated.
+
+---
+
+## Boundary statement for public surfaces
+
+> AELITIUM v1 validates the schema, canonical representation, and internal hash,
+> binding-field, and optional signature consistency of the bundle being inspected.
+> It does not by itself establish complete invocation identity, historical
+> non-modification, signer identity, freshness, authorization, or output truth.
 
 ---
 
 ## Demo framing
 
-- `demo_full.cast` — public/canonical: shows `enable_litellm()` → bundle created → VALID → tamper → INVALID
-- `demo_final.cast` — technical: tamper detection only, for audiences already familiar with the primitive
-
-When posting publicly, use `demo_full.cast` and frame as:
-
-> AELITIUM demo — zero-config tamper detection for LiteLLM calls
+Demonstrations may show that editing a canonical artifact without consistently
+updating its governed evidence causes verification to fail. They must not imply
+that bundle-only verification detects a fully self-consistent replacement or
+authenticates the original producer.

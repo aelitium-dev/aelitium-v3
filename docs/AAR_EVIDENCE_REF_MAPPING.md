@@ -1,7 +1,10 @@
 # AELITIUM ↔ AAR `evidenceRef` Mapping
 
 **Status:** Non-normative
-**Purpose:** Interoperability note between AELITIUM evidence bundles and AAR (Agent Action Receipt)
+**Purpose:** Documentation-only interoperability note between AELITIUM evidence bundles and AAR (Agent Action Receipt)
+
+This mapping does not implement AAR verification or add AAR assurance semantics to
+the current AELITIUM runtime.
 
 ---
 
@@ -9,8 +12,8 @@
 
 AELITIUM and AAR operate at different layers:
 
-- **AELITIUM** → proves the exact **request ↔ response pairing** at the LLM boundary
-- **AAR** → proves that an **agent action occurred** and can reference supporting evidence
+- **AELITIUM** → verifies internal consistency of stored v1 evidence fields
+- **AAR (conceptual in this repository)** → can represent an agent action and reference supporting evidence
 
 This document defines how an AELITIUM bundle can be referenced from an AAR receipt using the `evidenceRef` field.
 
@@ -65,17 +68,20 @@ Their roles:
 
 | Field | Meaning |
 |-------|---------|
-| `request_hash` | identifies the input only |
-| `response_hash` | identifies the output only |
-| `binding_hash` | identifies the request ↔ response pairing |
+| `request_hash` | v1 selected-field request identity |
+| `response_hash` | v1 selected-field recorded-response identity |
+| `binding_hash` | commitment over the stored request/response hash pair |
 
-The evidence object is the **pairing**, therefore:
+For a bound v1 artifact, this mapping uses the binding commitment as its
+interoperability reference:
 
 ```
 bundle_id = binding_hash
 ```
 
-Using `request_hash` or `response_hash` alone would not uniquely identify the interaction.
+This is an interop convention for bound artifacts, not proof that a source request
+caused a source response. Current AELITIUM verification checks stored-field
+consistency and does not independently reconstruct either source artifact.
 
 ---
 
@@ -107,16 +113,16 @@ AAR receipt referencing an AELITIUM bundle:
 
 ## Verification model
 
-### AAR-only verification
+### AAR-only verification (conceptual)
 
-The receipt can be verified independently:
+An AAR implementation may define independent receipt verification such as:
 
 ```
 - signature valid
 - inputHash / outputHash consistent
 ```
 
-No access to the AELITIUM bundle is required.
+This repository note does not implement or evaluate that AAR behavior.
 
 ### With AELITIUM bundle
 
@@ -130,9 +136,9 @@ aelitium compare bundle_a bundle_b
 # REQUEST_HASH=SAME / RESPONSE_HASH=DIFFERENT
 ```
 
-This enables:
+The AELITIUM commands can provide:
 
-- verification of the exact model output
+- verification of the recorded v1 bundle's internal consistency
 - drift detection across runs
 - offline audit without provider access
 
@@ -146,10 +152,10 @@ This enables:
 - define hashing and canonicalization
 - provide deterministic, offline verification
 
-### AELITIUM does NOT
+### AELITIUM does NOT define here
 
 - define receipt schemas
-- define signatures or identity
+- define AAR signatures or identity semantics
 - define transport or storage
 
 ---

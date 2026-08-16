@@ -1,9 +1,10 @@
 # AELITIUM AI Integrity — 5-minute demo
 
 > **Verifiable AI evidence infrastructure.**
-> Aelitium generates cryptographic evidence for recorded AI outputs so that integrity can be verified later — even offline.
+> Aelitium generates cryptographic evidence for recorded AI outputs so that bundle
+> consistency can be verified later — even offline.
 >
-> Pack → Verify → Detect tampering. No SaaS. No network required.
+> Pack → Verify → Detect inconsistent edits. No SaaS. No network required.
 
 ---
 
@@ -77,13 +78,24 @@ Output:
 ```
 STATUS=VALID rc=0
 AI_HASH_SHA256=3a7f9c...
+SIGNATURE=NONE
+BINDING_HASH=NONE
+PAYLOAD_INTEGRITY=VALID
+BINDING_FIELD_CONSISTENCY=ABSENT
+SIGNATURE_VALIDITY=ABSENT
+TRUSTED_SIGNER_IDENTITY=UNESTABLISHED
+FRESHNESS=NOT_EVALUATED
+AUTHORIZATION=NOT_EVALUATED
 ```
 
-The hash in `ai_manifest.json` matches the canonical content. Integrity confirmed.
+The payload satisfies `ai_output_v1`; its canonical bytes, manifest identifiers,
+and hash are internally consistent. Signature and binding evidence are absent and
+accepted by default. Use `--require-signature` or `--require-binding` when that
+absence must fail.
 
 ---
 
-## Step 4 — Tamper detection
+## Step 4 — Detect an inconsistent edit
 
 Edit one word in `evidence/ai_canonical.json` and verify again:
 
@@ -101,7 +113,9 @@ STATUS=INVALID rc=2 reason=HASH_MISMATCH
 DETAIL=expected=3a7f9c... got=d81b2e...
 ```
 
-Any modification — one character, one word — is caught. Exit code `2` for scripting.
+This edit is inconsistent with the recorded manifest hash and is rejected with exit
+code `2`. A fully self-consistent replacement requires an independently trusted
+external anchor to distinguish it from the expected artifact.
 
 ---
 
@@ -123,11 +137,11 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 
 ## What you get
 
-- **Deterministic hash** — same input produces the same hash in validated configurations
+- **Deterministic hash** — the same complete validated input object produces the same hash in validated configurations
 - **Offline verification** — no network, no third party
-- **Tamper-evident** — any change detected immediately
+- **Evidence consistency** — schema, canonical bytes, and recorded hash are checked
 - **Pipeline-friendly** — parse `STATUS=` and exit codes in CI/CD
-- **Auditable** — `ai_manifest.json` records schema, model, timestamp, hash
+- **Auditable** — the canonical payload and manifest record model, schema, timestamp fields, and hash
 
 ---
 
@@ -146,5 +160,7 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 
 ```bash
 python3 -m unittest discover -s tests -q
-# Ran 206 tests ... OK
 ```
+
+The maintained claim is that the suite passes; the documentation does not pin a
+test count that changes whenever coverage is added.
