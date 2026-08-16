@@ -6,6 +6,39 @@ Format: `[version] — date — description`
 
 ---
 
+## [0.3.0] — 2026-08-17 — repository/package baseline after P0 audit
+
+This is the current repository and package baseline established by the P0 AI
+Assurance hardening pass. It is not a PyPI release. No GitHub Release or PyPI
+publication exists for this version.
+
+### Changed
+- Centralized AI bundle verification into a single authoritative code path,
+  eliminating divergent verification branches across CLI and library entry points
+- Explicit assurance states replace implicit pass/fail: verification results now
+  carry a declared status (`VALID`, `INVALID`, `UNSIGNED`, `UNBOUND`) rather
+  than being inferred from exit code alone
+- Stricter v1 contract enforcement: bundles missing required v1 fields are
+  rejected at verification time rather than silently passing
+- Capture metadata collision protection: concurrent captures to the same output
+  directory no longer risk partial overwrites
+- Expanded adversarial verification coverage: test suite now covers bundle
+  substitution, field injection, hash-prefix collision, and timestamp replay
+  scenarios
+- Documentation and public-claim guardrails: public-facing docs now accurately
+  bound what current verification establishes and does not establish
+- Standalone verifier timestamp parity: `scripts/offline_verify.sh` now applies
+  the same timestamp checks as the in-process verifier
+
+### Boundaries (unchanged from 0.2.4)
+- `ai_output_v1` schema identifier is unchanged
+- v1 `request_hash` and `binding_hash` construction is unchanged
+- Request identity remains selected-field identity, not full invocation identity
+- `trusted_signer_identity` remains `UNESTABLISHED`
+- Freshness and authorization remain `NOT_EVALUATED`
+
+---
+
 ## [0.2.4] — 2026-03-14
 
 ### Added

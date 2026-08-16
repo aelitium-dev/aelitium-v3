@@ -111,7 +111,8 @@ external anchor or signer identity.
 
 ## Current state
 
-- `pip install aelitium` — published to PyPI (v0.2.4)
+- Repository/package version: **0.3.0** (current baseline; not yet published to PyPI)
+- Last confirmed PyPI publication: **v0.2.4** (historical; unverified in current repository evidence)
 - Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
