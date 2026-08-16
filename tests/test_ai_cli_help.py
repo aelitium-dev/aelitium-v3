@@ -42,6 +42,17 @@ class TestAICLIHelp(unittest.TestCase):
             "--require-binding Reject bundles without v1 binding evidence",
             help_text,
         )
+        self.assertIn(
+            "--trust-store PATH Use an explicit local trusted-signer store "
+            "for signer identity evaluation",
+            help_text,
+        )
+        self.assertIn(
+            "--require-trusted-signer Reject unless the valid bundle "
+            "signature corresponds to a key trusted by the supplied trust "
+            "store",
+            help_text,
+        )
 
     def test_verify_bundle_help_scopes_present_evidence(self):
         root_help = self._help()
@@ -61,6 +72,17 @@ class TestAICLIHelp(unittest.TestCase):
         )
         self.assertIn(
             "--require-binding Reject bundles without v1 binding evidence",
+            help_text,
+        )
+        self.assertIn(
+            "--trust-store PATH Use an explicit local trusted-signer store "
+            "for signer identity evaluation",
+            help_text,
+        )
+        self.assertIn(
+            "--require-trusted-signer Reject unless the valid bundle "
+            "signature corresponds to a key trusted by the supplied trust "
+            "store",
             help_text,
         )
 

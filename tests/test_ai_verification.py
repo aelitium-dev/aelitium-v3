@@ -1593,5 +1593,205 @@ class TestAITrustedSignerIdentity(unittest.TestCase):
             self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
 
 
+class TestAITrustedSignerPublicSurfaces(unittest.TestCase):
+    """P1.1c: CLI/standalone plumbing parity for trust-store options."""
+
+    def _other_public_key_b64(self) -> str:
+        other_key = Ed25519PrivateKey.generate()
+        return base64.b64encode(
+            other_key.public_key().public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw,
+            )
+        ).decode("ascii")
+
+    def test_standalone_help_describes_trust_options(self):
+        result = subprocess.run(
+            [sys.executable, str(STANDALONE), "--help"],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        help_text = " ".join(result.stdout.split())
+        self.assertIn(
+            "--trust-store PATH Use an explicit local trusted-signer store "
+            "for signer identity evaluation",
+            help_text,
+        )
+        self.assertIn(
+            "--require-trusted-signer Reject unless the valid bundle "
+            "signature corresponds to a key trusted by the supplied trust "
+            "store",
+            help_text,
+        )
+
+    def test_trusted_signer_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(trust_store_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 0, output.stdout + output.stderr
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["trusted_signer_identity"], "VALID"
+                    )
+
+    def test_unknown_signer_optional_trust_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(trust_store_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 0, output.stdout + output.stderr
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["trusted_signer_identity"], "UNESTABLISHED"
+                    )
+
+    def test_unknown_signer_required_trust_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"], "TRUSTED_SIGNER_NOT_FOUND"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=TRUSTED_SIGNER_NOT_FOUND", output.stdout
+                        )
+
+    def test_require_trusted_signer_without_trust_store_across_all_surfaces(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--require-trusted-signer"
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn(
+                            "TRUST_INPUT_NOT_PROVIDED", payload["reason"]
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_INPUT_NOT_PROVIDED", output.stdout
+                        )
+
+    def test_malformed_trust_store_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            bad_path = bundle / "bad.json"
+            bad_path.write_text("{not valid json", encoding="utf-8")
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(bad_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn("TRUST_STORE_INVALID", payload["reason"])
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_STORE_INVALID", output.stdout
+                        )
+
+    def test_missing_trust_store_path_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            missing_path = bundle / "does_not_exist_trust_store.json"
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(missing_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn("TRUST_STORE_INVALID", payload["reason"])
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_STORE_INVALID", output.stdout
+                        )
+
+    def test_unsigned_bundle_with_trust_store_and_requirement_across_all_surfaces(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(payload["reason"], "SIGNATURE_REQUIRED")
+                    else:
+                        self.assertIn("reason=SIGNATURE_REQUIRED", output.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -37,6 +37,8 @@ def _verification_options(args: argparse.Namespace) -> AIVerificationOptions:
     return AIVerificationOptions(
         require_signature=getattr(args, "require_signature", False),
         require_binding=getattr(args, "require_binding", False),
+        trust_store_path=getattr(args, "trust_store", None),
+        require_trusted_signer=getattr(args, "require_trusted_signer", False),
     )
 
 
@@ -502,6 +504,20 @@ def main() -> int:
                     help="Reject bundles without signature material")
     ve.add_argument("--require-binding", action="store_true",
                     help="Reject bundles without v1 binding evidence")
+    ve.add_argument(
+        "--trust-store",
+        metavar="PATH",
+        default=None,
+        help="Use an explicit local trusted-signer store for signer identity evaluation",
+    )
+    ve.add_argument(
+        "--require-trusted-signer",
+        action="store_true",
+        help=(
+            "Reject unless the valid bundle signature corresponds to a key "
+            "trusted by the supplied trust store"
+        ),
+    )
     ve.set_defaults(fn=cmd_verify)
 
     vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
@@ -530,6 +546,20 @@ def main() -> int:
                     help="Reject bundles without signature material")
     vb.add_argument("--require-binding", action="store_true",
                     help="Reject bundles without v1 binding evidence")
+    vb.add_argument(
+        "--trust-store",
+        metavar="PATH",
+        default=None,
+        help="Use an explicit local trusted-signer store for signer identity evaluation",
+    )
+    vb.add_argument(
+        "--require-trusted-signer",
+        action="store_true",
+        help=(
+            "Reject unless the valid bundle signature corresponds to a key "
+            "trusted by the supplied trust store"
+        ),
+    )
     vb.set_defaults(fn=cmd_verify_bundle)
 
     cmp = sub.add_parser(
