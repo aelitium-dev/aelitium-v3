@@ -1,4 +1,7 @@
-# AELITIUM v3 — Index
+# AELITIUM — Index
+
+<!-- "v3" in the repo name denotes the third-generation product codebase,
+     not a package semantic-version major. Current package version: 0.3.0 -->
 
 ## Entry
 - docs/ENTRYPOINT.md
@@ -27,4 +30,4 @@
 - engine/repro.py (if present)
 
 ## Governance evidence
-- governance/logs/EVIDENCE_LOG.md
+- docs/EVIDENCE_LOG.md

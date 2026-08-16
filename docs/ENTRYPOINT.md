@@ -1,4 +1,7 @@
-# AELITIUM v3 — ENTRYPOINT
+# AELITIUM — ENTRYPOINT
+
+<!-- "v3" in the repo name and directory denotes the third-generation product
+     codebase, not a package semantic-version major. Current package version: 0.3.0 -->
 
 ## Daily work (Machine A / dev)
 - Set signing key: `export AEL_ED25519_PRIVKEY_B64=<key>`

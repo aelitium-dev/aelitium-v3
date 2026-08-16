@@ -6,6 +6,47 @@ Format: `[version] — date — description`
 
 ---
 
+## [0.3.0] — 2026-08-17 — repository/package baseline after P0 audit
+
+This is the current repository and package baseline established by the P0 AI
+Assurance hardening pass. This reconciliation does not tag, create a GitHub
+Release, or publish version 0.3.0 to PyPI.
+
+### Changed
+- Centralized AI bundle verification into a single authoritative code path,
+  eliminating divergent verification branches across CLI and library entry points
+- Explicit assurance states replace implicit pass/fail: verification reports
+  explicit states across assurance dimensions — `VALID`/`INVALID` where
+  evaluated; `ABSENT` for optional missing binding or signature evidence;
+  `UNESTABLISHED` for trusted signer identity under the current bundled-key
+  model; `NOT_EVALUATED` for freshness and authorization. Unsigned and unbound
+  bundles remain `VALID` by default unless `--require-signature` or
+  `--require-binding` is used.
+- Stricter v1 contract enforcement: bundles missing required v1 fields are
+  rejected at verification time rather than silently passing
+- Capture metadata collision protection: adapter-owned metadata keys are
+  reserved; callers supplying a reserved key raise `CaptureMetadataCollisionError`
+  (`CAPTURE_METADATA_RESERVED_KEY_COLLISION`). This protects adapter-owned fields
+  from caller metadata collisions; it does not address filesystem concurrency.
+- Expanded adversarial verification coverage: test suite now covers malformed
+  governed hash matrix, signature stripping, binding stripping, attacker signer
+  substitution, unsupported version and signature algorithm, canonicalization
+  golden vectors, LiteLLM excluded behavior-parameter characterization, and
+  malformed manifest timestamp parity
+- Documentation and public-claim guardrails: public-facing docs now accurately
+  bound what current verification establishes and does not establish
+- Standalone manifest timestamp validation aligned with shared verifier behavior
+  (`scripts/aelitium_verify_standalone.py`)
+
+### Boundaries (unchanged from 0.2.4)
+- `ai_output_v1` schema identifier is unchanged
+- v1 `request_hash` and `binding_hash` construction is unchanged
+- Request identity remains selected-field identity, not full invocation identity
+- `trusted_signer_identity` remains `UNESTABLISHED`
+- Freshness and authorization remain `NOT_EVALUATED`
+
+---
+
 ## [0.2.4] — 2026-03-14
 
 ### Added
