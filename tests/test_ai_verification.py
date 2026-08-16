@@ -121,13 +121,15 @@ def _make_bound_bundle(bundle: Path) -> None:
     _write_manifest(bundle, manifest)
 
 
-def _sign_bundle(bundle: Path) -> None:
-    private_key = Ed25519PrivateKey.generate()
+def _verification_material_for_key(
+    bundle: Path,
+    private_key: Ed25519PrivateKey,
+) -> dict:
     private_key_b64 = base64.b64encode(private_key.private_bytes_raw()).decode()
     old_key = os.environ.get("AEL_ED25519_PRIVKEY_B64")
     os.environ["AEL_ED25519_PRIVKEY_B64"] = private_key_b64
     try:
-        verification_material = build_verification_material(
+        return build_verification_material(
             (bundle / "ai_manifest.json").read_bytes()
         )
     finally:
@@ -136,6 +138,12 @@ def _sign_bundle(bundle: Path) -> None:
         else:
             os.environ["AEL_ED25519_PRIVKEY_B64"] = old_key
 
+
+def _sign_bundle(bundle: Path) -> None:
+    verification_material = _verification_material_for_key(
+        bundle,
+        Ed25519PrivateKey.generate(),
+    )
     (bundle / "verification_keys.json").write_text(
         json.dumps(verification_material, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -153,6 +161,28 @@ def _entrypoint_acceptance(bundle: Path) -> dict[str, bool]:
         "verify-bundle": verify_bundle.returncode == 0,
         "compare-prevalidation": "STATUS=INVALID_BUNDLE" not in compare.stdout,
         "standalone": standalone.returncode == 0,
+    }
+
+
+def _public_verifier_outputs(
+    bundle: Path,
+    *extra: str,
+) -> dict[str, subprocess.CompletedProcess]:
+    return {
+        "verify": _run_cli(
+            "verify",
+            "--out",
+            str(bundle),
+            "--json",
+            *extra,
+        ),
+        "verify-bundle": _run_cli(
+            "verify-bundle",
+            str(bundle),
+            "--json",
+            *extra,
+        ),
+        "standalone": _run_standalone(bundle, *extra),
     }
 
 
@@ -291,48 +321,89 @@ class TestAIV1ManifestContract(unittest.TestCase):
                         AssuranceState.INVALID,
                     )
 
-    def test_malformed_ai_hash_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            bundle = Path(directory)
-            _pack(bundle)
-            manifest_path = bundle / "ai_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["ai_hash_sha256"] = "not-a-sha256"
-            _write_manifest(bundle, manifest)
+    def test_manifest_ai_hash_malformation_matrix_is_rejected(self):
+        malformed_values = (
+            ("non_hex", "g" * 64),
+            ("wrong_length", "a" * 63),
+            ("uppercase_hex", "A" * 64),
+        )
+        for case, value in malformed_values:
+            with self.subTest(case=case):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _pack(bundle)
+                    manifest_path = bundle / "ai_manifest.json"
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding="utf-8")
+                    )
+                    manifest["ai_hash_sha256"] = value
+                    _write_manifest(bundle, manifest)
 
-            result = verify_ai_bundle(bundle)
+                    result = verify_ai_bundle(bundle)
 
-            self.assertFalse(result.valid)
-            self.assertEqual(result.reason, "MANIFEST_BAD_AI_HASH_SHA256")
+                    self.assertFalse(result.valid)
+                    self.assertEqual(
+                        result.reason,
+                        "MANIFEST_BAD_AI_HASH_SHA256",
+                    )
 
-    def test_uppercase_ai_hash_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            bundle = Path(directory)
-            _pack(bundle)
-            manifest_path = bundle / "ai_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["ai_hash_sha256"] = manifest["ai_hash_sha256"].upper()
-            _write_manifest(bundle, manifest)
+    def test_binding_field_malformation_matrix_is_rejected(self):
+        locations = (
+            ("manifest.binding_hash", "manifest", "binding_hash"),
+            (
+                "canonical.metadata.request_hash",
+                "metadata",
+                "request_hash",
+            ),
+            (
+                "canonical.metadata.response_hash",
+                "metadata",
+                "response_hash",
+            ),
+            (
+                "canonical.metadata.binding_hash",
+                "metadata",
+                "binding_hash",
+            ),
+        )
+        malformed_values = (
+            ("non_hex", "g" * 64),
+            ("wrong_length", "a" * 63),
+            ("uppercase_hex", "A" * 64),
+        )
+        for location, container, field in locations:
+            for case, value in malformed_values:
+                with self.subTest(location=location, case=case):
+                    with tempfile.TemporaryDirectory() as directory:
+                        bundle = Path(directory)
+                        _make_bound_bundle(bundle)
+                        manifest_path = bundle / "ai_manifest.json"
+                        manifest = json.loads(
+                            manifest_path.read_text(encoding="utf-8")
+                        )
 
-            result = verify_ai_bundle(bundle)
+                        if container == "manifest":
+                            manifest[field] = value
+                        else:
+                            canonical_path = bundle / "ai_canonical.json"
+                            canonical = json.loads(
+                                canonical_path.read_text(encoding="utf-8")
+                            )
+                            canonical["metadata"][field] = value
+                            manifest["ai_hash_sha256"] = _rewrite_canonical(
+                                bundle,
+                                canonical,
+                            )
+                        _write_manifest(bundle, manifest)
 
-            self.assertFalse(result.valid)
-            self.assertEqual(result.reason, "MANIFEST_BAD_AI_HASH_SHA256")
+                        result = verify_ai_bundle(bundle)
 
-    def test_uppercase_binding_hash_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            bundle = Path(directory)
-            _make_bound_bundle(bundle)
-            manifest_path = bundle / "ai_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["binding_hash"] = manifest["binding_hash"].upper()
-            _write_manifest(bundle, manifest)
-
-            result = verify_ai_bundle(bundle)
-
-            self.assertFalse(result.valid)
-            self.assertEqual(result.reason, "BINDING_FIELD_MALFORMED")
-            self.assertEqual(result.detail, "manifest.binding_hash")
+                        self.assertFalse(result.valid)
+                        self.assertEqual(
+                            result.reason,
+                            "BINDING_FIELD_MALFORMED",
+                        )
+                        self.assertEqual(result.detail, location)
 
     def test_unknown_manifest_metadata_is_accepted_without_semantics(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -436,6 +507,29 @@ class TestAIV1CanonicalBytes(unittest.TestCase):
                 ensure_ascii=False,
             ).encode("utf-8")
             _write_canonical_bytes_with_raw_hash(bundle, raw)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_SCHEMA_INVALID")
+
+    def test_unsupported_canonical_schema_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(
+                canonical_path.read_text(encoding="utf-8")
+            )
+            canonical["schema_version"] = "ai_output_v2"
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
 
             result = verify_ai_bundle(bundle)
 
@@ -712,6 +806,248 @@ class TestAIAssuranceResults(unittest.TestCase):
 
 class TestAIVerificationDowngradeControls(unittest.TestCase):
     """Evidence that is present cannot be ignored by an entrypoint."""
+
+    def test_signature_stripping_requires_caller_declared_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            signed = verify_ai_bundle(bundle)
+            self.assertTrue(signed.valid)
+            self.assertEqual(
+                signed.signature_validity,
+                AssuranceState.VALID,
+            )
+
+            (bundle / "verification_keys.json").unlink()
+
+            default = verify_ai_bundle(bundle)
+            self.assertTrue(default.valid)
+            self.assertEqual(
+                default.signature_validity,
+                AssuranceState.ABSENT,
+            )
+            self.assertEqual(
+                default.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            for name, output in _public_verifier_outputs(bundle).items():
+                with self.subTest(surface=name, mode="default"):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["signature_validity"], "ABSENT")
+                    self.assertEqual(
+                        payload["trusted_signer_identity"],
+                        "UNESTABLISHED",
+                    )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_signature=True),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "SIGNATURE_REQUIRED")
+            self.assertEqual(
+                required.signature_validity,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-signature",
+            ).items():
+                with self.subTest(surface=name, mode="required"):
+                    self.assertEqual(output.returncode, 2)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"],
+                            "SIGNATURE_REQUIRED",
+                        )
+                        self.assertEqual(
+                            payload["signature_validity"],
+                            "ABSENT",
+                        )
+                    else:
+                        self.assertIn("reason=SIGNATURE_REQUIRED", output.stdout)
+                        self.assertIn(
+                            "SIGNATURE_VALIDITY=ABSENT",
+                            output.stdout,
+                        )
+
+    def test_binding_stripping_requires_caller_declared_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            bound = verify_ai_bundle(bundle)
+            self.assertTrue(bound.valid)
+            self.assertEqual(
+                bound.binding_field_consistency,
+                AssuranceState.VALID,
+            )
+
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(
+                canonical_path.read_text(encoding="utf-8")
+            )
+            for field in ("request_hash", "response_hash", "binding_hash"):
+                canonical["metadata"].pop(field)
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            manifest.pop("binding_hash")
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            default = verify_ai_bundle(bundle)
+            self.assertTrue(default.valid)
+            self.assertEqual(
+                default.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(bundle).items():
+                with self.subTest(surface=name, mode="default"):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["binding_field_consistency"],
+                        "ABSENT",
+                    )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_binding=True),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "BINDING_REQUIRED")
+            self.assertEqual(
+                required.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-binding",
+            ).items():
+                with self.subTest(surface=name, mode="required"):
+                    self.assertEqual(output.returncode, 2)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"],
+                            "BINDING_REQUIRED",
+                        )
+                        self.assertEqual(
+                            payload["binding_field_consistency"],
+                            "ABSENT",
+                        )
+                    else:
+                        self.assertIn("reason=BINDING_REQUIRED", output.stdout)
+                        self.assertIn(
+                            "BINDING_FIELD_CONSISTENCY=ABSENT",
+                            output.stdout,
+                        )
+
+    def test_valid_signer_substitution_establishes_no_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            verification_path = bundle / "verification_keys.json"
+            original = json.loads(
+                verification_path.read_text(encoding="utf-8")
+            )
+
+            attacker_material = _verification_material_for_key(
+                bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            self.assertNotEqual(
+                attacker_material["keys"][0]["public_key_b64"],
+                original["keys"][0]["public_key_b64"],
+            )
+            verification_path.write_text(
+                json.dumps(attacker_material, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            result = verify_ai_bundle(bundle)
+            self.assertTrue(result.valid)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+            self.assertEqual(
+                result.authorization,
+                AssuranceState.NOT_EVALUATED,
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-signature",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["signature_validity"], "VALID")
+                    self.assertEqual(
+                        payload["trusted_signer_identity"],
+                        "UNESTABLISHED",
+                    )
+                    self.assertEqual(payload["freshness"], "NOT_EVALUATED")
+                    self.assertEqual(
+                        payload["authorization"],
+                        "NOT_EVALUATED",
+                    )
+
+    def test_unsupported_signing_contract_values_are_rejected(self):
+        cases = (
+            ("keyring_format", "BAD_KEYRING_FORMAT"),
+            ("signature_algorithm", "BAD_SIGNATURE_ALGORITHM"),
+        )
+        for case, expected_detail in cases:
+            with self.subTest(case=case):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    _sign_bundle(bundle)
+                    verification_path = bundle / "verification_keys.json"
+                    verification = json.loads(
+                        verification_path.read_text(encoding="utf-8")
+                    )
+                    if case == "keyring_format":
+                        verification["keyring_format"] = "ed25519-v2"
+                    else:
+                        verification["signatures"][0]["algorithm"] = "ed448"
+                    verification_path.write_text(
+                        json.dumps(verification, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+
+                    result = verify_ai_bundle(bundle)
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, "SIGNATURE_INVALID")
+                    self.assertEqual(result.detail, expected_detail)
+                    self.assertEqual(
+                        result.signature_validity,
+                        AssuranceState.INVALID,
+                    )
 
     def test_malformed_signature_is_rejected_by_every_entrypoint(self):
         with tempfile.TemporaryDirectory() as directory:

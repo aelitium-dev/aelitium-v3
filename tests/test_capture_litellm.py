@@ -44,12 +44,20 @@ class TestCaptureLiteLLM(unittest.TestCase):
         self.mock_response = _make_mock_response(self.model, "The answer is 4.")
         _litellm_stub.completion.return_value = self.mock_response
 
-    def _call(self, model=None, messages=None, out_dir=None, metadata=None):
+    def _call(
+        self,
+        model=None,
+        messages=None,
+        out_dir=None,
+        metadata=None,
+        **litellm_kwargs,
+    ):
         return capture_completion(
             model=model or self.model,
             messages=messages or self.messages,
             out_dir=out_dir or self.tmp,
             metadata=metadata,
+            **litellm_kwargs,
         )
 
     def test_returns_capture_result(self):
@@ -119,6 +127,45 @@ class TestCaptureLiteLLM(unittest.TestCase):
             m1["metadata"]["binding_hash"],
             m2["metadata"]["binding_hash"],
         )
+
+    def test_v1_request_hash_excludes_forwarded_behavior_parameters(self):
+        """Characterize frozen v1 identity, not desired future semantics."""
+        _litellm_stub.completion.reset_mock()
+        with tempfile.TemporaryDirectory() as first_dir, tempfile.TemporaryDirectory() as second_dir:
+            self._call(
+                out_dir=first_dir,
+                temperature=0.0,
+                max_tokens=32,
+            )
+            self._call(
+                out_dir=second_dir,
+                temperature=1.0,
+                max_tokens=128,
+            )
+
+            calls = _litellm_stub.completion.call_args_list
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[0].kwargs["temperature"], 0.0)
+            self.assertEqual(calls[0].kwargs["max_tokens"], 32)
+            self.assertEqual(calls[1].kwargs["temperature"], 1.0)
+            self.assertEqual(calls[1].kwargs["max_tokens"], 128)
+
+            first_metadata = json.loads(
+                (Path(first_dir) / "ai_canonical.json").read_text(
+                    encoding="utf-8"
+                )
+            )["metadata"]
+            second_metadata = json.loads(
+                (Path(second_dir) / "ai_canonical.json").read_text(
+                    encoding="utf-8"
+                )
+            )["metadata"]
+            self.assertEqual(
+                first_metadata["request_hash"],
+                second_metadata["request_hash"],
+            )
+            self.assertTrue(verify_ai_bundle(first_dir).valid)
+            self.assertTrue(verify_ai_bundle(second_dir).valid)
 
     def test_extra_metadata_merged(self):
         self._call(metadata={"experiment": "test-run-1"})
