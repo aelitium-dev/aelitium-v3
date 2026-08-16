@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from engine.ai_verify import (
@@ -17,7 +18,12 @@ from engine.ai_verify import (
     AssuranceState,
     verify_ai_bundle,
 )
-from engine.signing import build_verification_material
+from engine.signing import (
+    VerifiedManifestSignature,
+    build_verification_material,
+    verify_manifest_signature,
+)
+from engine.trust import TRUST_STORE_FORMAT
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -148,6 +154,40 @@ def _sign_bundle(bundle: Path) -> None:
         json.dumps(verification_material, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _sign_bundle_with_key(bundle: Path, private_key: Ed25519PrivateKey) -> str:
+    """Sign `bundle` with `private_key` and return its public_key_b64."""
+
+    verification_material = _verification_material_for_key(bundle, private_key)
+    (bundle / "verification_keys.json").write_text(
+        json.dumps(verification_material, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return verification_material["keys"][0]["public_key_b64"]
+
+
+def _write_trust_store(
+    directory: Path,
+    public_key_b64_values: list[str],
+    filename: str = "trust_store.json",
+) -> Path:
+    path = directory / filename
+    path.write_text(
+        json.dumps(
+            {
+                "trust_store_format": TRUST_STORE_FORMAT,
+                "signers": [
+                    {"algorithm": "ed25519", "public_key_b64": value}
+                    for value in public_key_b64_values
+                ],
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 def _entrypoint_acceptance(bundle: Path) -> dict[str, bool]:
@@ -1204,6 +1244,353 @@ class TestAIVerificationDowngradeControls(unittest.TestCase):
                 result.binding_field_consistency,
                 AssuranceState.INVALID,
             )
+
+
+class TestAITrustedSignerIdentity(unittest.TestCase):
+    """P1.1b: trust-store-backed trusted_signer_identity evaluation."""
+
+    def test_verify_manifest_signature_returns_verified_public_key_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+
+            vk = json.loads(
+                (bundle / "verification_keys.json").read_text(encoding="utf-8")
+            )
+            manifest_bytes = (bundle / "ai_manifest.json").read_bytes()
+
+            result = verify_manifest_signature(manifest_bytes, vk)
+
+            self.assertIsInstance(result, VerifiedManifestSignature)
+            self.assertEqual(
+                result.public_key_bytes,
+                base64.b64decode(public_key_b64),
+            )
+            self.assertEqual(
+                result.public_key_bytes,
+                private_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                ),
+            )
+
+    def test_no_trust_input_preserves_current_behavior(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(result.trusted_signer_reason, "")
+
+    def test_trust_store_with_signer_key_establishes_valid_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_reason, "")
+
+    def test_trust_store_without_signer_key_stays_unestablished(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(
+                result.trusted_signer_reason, "TRUSTED_SIGNER_NOT_FOUND"
+            )
+
+    def test_require_trusted_signer_with_trusted_key_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
+
+    def test_require_trusted_signer_with_unknown_key_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUSTED_SIGNER_NOT_FOUND")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_require_trusted_signer_without_trust_store_path_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_trusted_signer=True),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_INPUT_NOT_PROVIDED")
+
+    def test_malformed_trust_store_is_invalid_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            trust_store_path = bundle / "trust_store.json"
+            trust_store_path.write_text("{not valid json", encoding="utf-8")
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_STORE_INVALID")
+            self.assertEqual(result.detail, "TRUST_STORE_NOT_JSON")
+
+    def test_missing_trust_store_path_is_invalid_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            missing_path = bundle / "does_not_exist_trust_store.json"
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=missing_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_STORE_INVALID")
+            self.assertEqual(result.detail, "TRUST_STORE_IO_ERROR")
+
+    def test_unsigned_bundle_with_trust_store_no_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_unsigned_bundle_with_trust_store_and_requirement_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_REQUIRED")
+
+    def test_invalid_signature_from_trusted_key_does_not_establish_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            verification_path = bundle / "verification_keys.json"
+            verification = json.loads(
+                verification_path.read_text(encoding="utf-8")
+            )
+            sig_bytes = bytearray(
+                base64.b64decode(verification["signatures"][0]["sig_b64"])
+            )
+            sig_bytes[0] ^= 0xFF
+            verification["signatures"][0]["sig_b64"] = base64.b64encode(
+                bytes(sig_bytes)
+            ).decode("ascii")
+            verification_path.write_text(
+                json.dumps(verification, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_INVALID")
+            self.assertEqual(result.signature_validity, AssuranceState.INVALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_attacker_key_substitution_unestablished_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = _sign_bundle_with_key(bundle, legit_key)
+            trust_store_path = _write_trust_store(bundle, [legit_public_key_b64])
+
+            attacker_key = Ed25519PrivateKey.generate()
+            attacker_public_key_b64 = _sign_bundle_with_key(bundle, attacker_key)
+            self.assertNotEqual(attacker_public_key_b64, legit_public_key_b64)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_attacker_key_substitution_rejected_with_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = _sign_bundle_with_key(bundle, legit_key)
+            trust_store_path = _write_trust_store(bundle, [legit_public_key_b64])
+
+            attacker_key = Ed25519PrivateKey.generate()
+            _sign_bundle_with_key(bundle, attacker_key)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUSTED_SIGNER_NOT_FOUND")
+
+    def test_trusted_identity_independent_of_binding_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["binding_hash"] = "b" * 64
+            _write_manifest(bundle, manifest)
+            # Re-sign over the mutated manifest bytes so signature_validity
+            # itself stays VALID and only binding consistency is broken.
+            _sign_bundle_with_key(bundle, private_key)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "BINDING_HASH_MISMATCH")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
 
 
 if __name__ == "__main__":
