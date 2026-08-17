@@ -52,7 +52,7 @@ aelitium verify-bundle ./bundle
 - That capture was complete
 - Complete provider invocation identity
 - Trusted signer identity, unless an external trust store is explicitly
-  supplied and required (see [Trust boundary](#trust-boundary))
+  supplied for evaluation (see [Trust boundary](#trust-boundary))
 - Freshness or authorization
 - That semantic equivalence implies hash equivalence
 

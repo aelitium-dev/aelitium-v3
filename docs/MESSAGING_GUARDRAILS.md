@@ -60,10 +60,10 @@ causes verification to fail.
 ## Trusted signer identity (explicit external trust store)
 
 `--trust-store PATH` supplies a strict, local `aelitium-trust-v1` JSON file
-of trusted Ed25519 public-key fingerprints, independent of the inspected
-bundle. Records contain `algorithm` (`ed25519`), `public_key_b64`, and an
-optional, non-authoritative `label`; the verifier derives the fingerprint
-itself from the raw key bytes — it never reads a stored fingerprint field,
+containing trusted Ed25519 public keys, independent of the inspected bundle.
+Records contain `algorithm` (`ed25519`), `public_key_b64`, and an optional,
+non-authoritative `label`; the verifier derives each fingerprint itself from
+the decoded raw key bytes — it never reads a stored fingerprint field,
 because the format has none. There is no signer_id, revocation, expiry,
 delegation, remote distribution, or ambient/default trust-store discovery.
 
