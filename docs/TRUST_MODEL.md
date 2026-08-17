@@ -32,13 +32,19 @@ Current AI bundle verification reports these dimensions separately:
 - `payload_integrity`
 - `binding_field_consistency`
 - `signature_validity`
-- `trusted_signer_identity` (`UNESTABLISHED`)
+- `trusted_signer_identity` (`UNESTABLISHED` by default; `VALID` only when an
+  external trust store is explicitly supplied to the verification call and
+  the verified signing key's fingerprint is present in it)
 - `freshness` (`NOT_EVALUATED`)
 - `authorization` (`NOT_EVALUATED`)
 
-Mathematical signature validity must not be interpreted as signer identity. The
-current verifier uses verification material packaged with the artifact and does
-not establish an externally trusted key owner.
+Mathematical signature validity must not be interpreted as signer identity. By
+default the verifier compares only against verification material packaged
+with the artifact, and cannot establish an externally trusted key owner from
+that alone. An external trust store, explicitly supplied to the verification
+call independently of the inspected bundle, is required before
+`trusted_signer_identity` can become `VALID`. See TRUST_BOUNDARY.md for the
+trust-store contract.
 
 ---
 
@@ -253,9 +259,11 @@ and documented procedures (see REPRO_CHECKLIST.md and EVIDENCE_LOG.md).
 
 The system does NOT attempt to provide:
 
-- identity verification
+- identity verification (human, legal, or organizational — not established by
+  comparing a verified signing key's fingerprint against an explicitly
+  supplied external trust store; see "Object of Guarantee" above)
 - organizational trust
-- key lifecycle management
+- key lifecycle management (no revocation, rotation, or expiry semantics)
 - semantic equivalence detection
 - policy enforcement
 - security beyond integrity verification
