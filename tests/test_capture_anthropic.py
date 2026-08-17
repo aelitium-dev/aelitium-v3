@@ -9,6 +9,11 @@ try:
     from engine.capture.anthropic import capture_message, CaptureResult
     from engine.capture.common import CaptureMetadataCollisionError
     from engine.ai_verify import verify_ai_bundle
+    from engine.invocation import (
+        MODE_SYNC_NON_STREAMING,
+        SURFACE_ANTHROPIC_MESSAGES,
+        parse_invocation_identity,
+    )
     _ANTHROPIC_AVAILABLE = True
 except ImportError:
     _ANTHROPIC_AVAILABLE = False
@@ -86,6 +91,7 @@ class TestCaptureAnthropic(unittest.TestCase):
             "finish_reason",
             "usage",
             "captured_at_utc",
+            "invocation_identity",
         )
         for key in reserved_keys:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
@@ -128,3 +134,73 @@ class TestCaptureAnthropic(unittest.TestCase):
             self.assertEqual(custom["provider"], "anthropic")
             self.assertEqual(custom["run_id"], "anthropic-123")
             self.assertTrue(verify_ai_bundle(custom_dir).valid)
+
+
+@anthropic_required
+class TestCaptureAnthropicInvocationIdentity(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.model = "claude-3-5-sonnet-20241022"
+        self.messages = [{"role": "user", "content": "What is 2+2?"}]
+        self.client, self.response = _make_mock_anthropic_client(
+            self.model, "The answer is 4."
+        )
+
+    def test_invocation_identity_present_and_parses(self):
+        capture_message(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        stored = canon["metadata"]["invocation_identity"]
+
+        identity = parse_invocation_identity(stored)
+        self.assertEqual(identity.surface, SURFACE_ANTHROPIC_MESSAGES)
+        self.assertEqual(identity.mode, MODE_SYNC_NON_STREAMING)
+        request = identity.to_stored_object()["request"]
+        self.assertEqual(request["model"], self.model)
+        self.assertEqual(request["messages"], self.messages)
+
+    def test_omitted_max_tokens_records_adapter_default_1024(self):
+        # No max_tokens argument supplied by the caller -- the adapter's own
+        # default (1024) is what is actually emitted to the SDK call, and
+        # must be recorded as such, not treated as absent.
+        capture_message(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        stored = canon["metadata"]["invocation_identity"]
+        self.assertEqual(
+            stored["request"]["parameters"]["max_tokens"], 1024
+        )
+        self.client.messages.create.assert_called_once_with(
+            model=self.model, messages=self.messages, max_tokens=1024
+        )
+
+    def test_explicit_max_tokens_changes_invocation_hash_not_request_hash(self):
+        with tempfile.TemporaryDirectory() as dir_a, tempfile.TemporaryDirectory() as dir_b:
+            client_a, _ = _make_mock_anthropic_client(self.model, "The answer is 4.")
+            client_b, _ = _make_mock_anthropic_client(self.model, "The answer is 4.")
+            capture_message(
+                client_a, self.model, self.messages, dir_a, max_tokens=128
+            )
+            capture_message(
+                client_b, self.model, self.messages, dir_b, max_tokens=4096
+            )
+            client_a.messages.create.assert_called_once_with(
+                model=self.model, messages=self.messages, max_tokens=128
+            )
+            client_b.messages.create.assert_called_once_with(
+                model=self.model, messages=self.messages, max_tokens=4096
+            )
+
+            meta_a = json.loads(
+                (Path(dir_a) / "ai_canonical.json").read_text()
+            )["metadata"]
+            meta_b = json.loads(
+                (Path(dir_b) / "ai_canonical.json").read_text()
+            )["metadata"]
+            self.assertEqual(meta_a["request_hash"], meta_b["request_hash"])
+            self.assertNotEqual(
+                meta_a["invocation_identity"]["hash_sha256"],
+                meta_b["invocation_identity"]["hash_sha256"],
+            )
+
+    def test_bundle_with_invocation_identity_verifies(self):
+        capture_message(self.client, self.model, self.messages, self.tmp)
+        self.assertTrue(verify_ai_bundle(self.tmp).valid)

@@ -18,6 +18,12 @@ from engine.capture.openai import (
     capture_chat_completion,
     capture_chat_completion_stream,
 )
+from engine.invocation import (
+    MODE_SYNC_NON_STREAMING,
+    MODE_SYNC_STREAMING,
+    SURFACE_OPENAI_CHAT_COMPLETIONS,
+    parse_invocation_identity,
+)
 
 
 def _make_mock_client(model: str = "gpt-4o", content: str = "Hello, world!") -> MagicMock:
@@ -114,6 +120,7 @@ class TestCaptureOpenAI(unittest.TestCase):
             "finish_reason",
             "usage",
             "captured_at_utc",
+            "invocation_identity",
         )
         for key in reserved_keys:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
@@ -320,6 +327,65 @@ class TestCaptureDeterminism(unittest.TestCase):
                             "Tampered bundle should fail hash check")
 
 
+class TestCaptureOpenAIInvocationIdentity(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.model = "gpt-4o"
+        self.messages = [{"content": "Explain quantum computing.", "role": "user"}]
+        self.client = _make_mock_client(
+            model=self.model, content="Quantum computing uses qubits."
+        )
+
+    def test_non_streaming_invocation_identity_present_and_valid(self):
+        capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        stored = canon["metadata"]["invocation_identity"]
+
+        identity = parse_invocation_identity(stored)
+        self.assertEqual(identity.surface, SURFACE_OPENAI_CHAT_COMPLETIONS)
+        self.assertEqual(identity.mode, MODE_SYNC_NON_STREAMING)
+        request = identity.to_stored_object()["request"]
+        self.assertEqual(request["model"], self.model)
+        self.assertEqual(request["messages"], self.messages)
+
+    def test_streaming_invocation_identity_has_streaming_mode(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            capture_chat_completion_stream(
+                _make_mock_stream_client(), self.model, self.messages, out_dir
+            )
+            canon = json.loads((Path(out_dir) / "ai_canonical.json").read_text())
+            stored = canon["metadata"]["invocation_identity"]
+            identity = parse_invocation_identity(stored)
+            self.assertEqual(identity.mode, MODE_SYNC_STREAMING)
+
+    def test_request_hash_same_but_invocation_hash_differs_stream_vs_non_stream(self):
+        with tempfile.TemporaryDirectory() as non_stream_dir, tempfile.TemporaryDirectory() as stream_dir:
+            capture_chat_completion(
+                self.client, self.model, self.messages, non_stream_dir
+            )
+            capture_chat_completion_stream(
+                _make_mock_stream_client(), self.model, self.messages, stream_dir
+            )
+            non_stream_meta = json.loads(
+                (Path(non_stream_dir) / "ai_canonical.json").read_text()
+            )["metadata"]
+            stream_meta = json.loads(
+                (Path(stream_dir) / "ai_canonical.json").read_text()
+            )["metadata"]
+
+            self.assertEqual(
+                non_stream_meta["request_hash"], stream_meta["request_hash"]
+            )
+            self.assertNotEqual(
+                non_stream_meta["invocation_identity"]["hash_sha256"],
+                stream_meta["invocation_identity"]["hash_sha256"],
+            )
+
+    def test_bundle_with_invocation_identity_verifies(self):
+        capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        self.assertTrue(verify_ai_bundle(self.tmp).valid)
+
+
 class TestCaptureOpenAIStreaming(unittest.TestCase):
     def setUp(self):
         self.model = "gpt-4o"
@@ -336,6 +402,20 @@ class TestCaptureOpenAIStreaming(unittest.TestCase):
                     metadata={"streaming": False},
                 )
             self.assertEqual(context.exception.offending_keys, ("streaming",))
+
+    def test_streaming_invocation_identity_collision_raises(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            with self.assertRaises(CaptureMetadataCollisionError) as context:
+                capture_chat_completion_stream(
+                    _make_mock_stream_client(),
+                    self.model,
+                    self.messages,
+                    out_dir,
+                    metadata={"invocation_identity": {"format": "spoofed"}},
+                )
+            self.assertEqual(
+                context.exception.offending_keys, ("invocation_identity",)
+            )
 
     def test_streaming_custom_metadata_round_trips_and_verifies(self):
         with tempfile.TemporaryDirectory() as out_dir:

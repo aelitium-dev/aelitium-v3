@@ -15,6 +15,11 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from ..invocation import (
+    MODE_SYNC_NON_STREAMING,
+    SURFACE_ANTHROPIC_MESSAGES,
+    build_invocation_identity,
+)
 from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
 
@@ -85,6 +90,18 @@ def capture_message(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
+    # Invocation identity (P1.2b): `max_tokens` here is the adapter's own
+    # local variable value -- whatever was actually emitted to
+    # client.messages.create() above, whether caller-supplied or the
+    # adapter's default (1024). It is never treated as absent.
+    invocation_identity = build_invocation_identity(
+        surface=SURFACE_ANTHROPIC_MESSAGES,
+        mode=MODE_SYNC_NON_STREAMING,
+        model=model,
+        messages=messages,
+        parameters={"max_tokens": max_tokens},
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "anthropic",
         "sdk": "anthropic-python",
@@ -95,6 +112,7 @@ def capture_message(
         "finish_reason": getattr(response, "stop_reason", None),
         "usage": usage,
         "captured_at_utc": ts,
+        "invocation_identity": invocation_identity,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
