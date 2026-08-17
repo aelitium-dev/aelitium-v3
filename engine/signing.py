@@ -1,5 +1,6 @@
 import base64
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
@@ -17,6 +18,19 @@ DEFAULT_KEY_ID = "local-ed25519"
 
 class SigningConfigError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class VerifiedManifestSignature:
+    """The exact key material that produced a successfully verified signature.
+
+    `public_key_bytes` is the raw public-key bytes that were actually passed
+    to `Ed25519PublicKey.from_public_bytes(...).verify(...)` and found valid
+    for the given manifest bytes -- never re-derived or re-parsed elsewhere.
+    """
+
+    key_id: str
+    public_key_bytes: bytes
 
 
 def _decode_b64(value: str, reason: str) -> bytes:
@@ -83,7 +97,9 @@ def build_verification_material(manifest_bytes: bytes) -> dict:
     }
 
 
-def verify_manifest_signature(manifest_bytes: bytes, vk_obj: dict) -> None:
+def verify_manifest_signature(
+    manifest_bytes: bytes, vk_obj: dict
+) -> VerifiedManifestSignature:
     if vk_obj.get("keyring_format") != KEYRING_FORMAT:
         raise ValueError("BAD_KEYRING_FORMAT")
 
@@ -129,3 +145,5 @@ def verify_manifest_signature(manifest_bytes: bytes, vk_obj: dict) -> None:
         public_key.verify(signature_bytes, manifest_bytes)
     except (ValueError, InvalidSignature) as exc:
         raise ValueError("SIGNATURE_INVALID") from exc
+
+    return VerifiedManifestSignature(key_id=key_id, public_key_bytes=public_key_bytes)

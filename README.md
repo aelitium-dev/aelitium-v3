@@ -51,7 +51,9 @@ aelitium verify-bundle ./bundle
 - That the response is correct or truthful
 - That capture was complete
 - Complete provider invocation identity
-- Trusted signer identity, freshness, or authorization
+- Trusted signer identity, unless an external trust store is explicitly
+  supplied for evaluation (see [Trust boundary](#trust-boundary))
+- Freshness or authorization
 - That semantic equivalence implies hash equivalence
 
 ---
@@ -132,9 +134,12 @@ Verification reports separate assurance dimensions: `payload_integrity`,
 `binding_field_consistency`, `signature_validity`, `trusted_signer_identity`,
 `freshness`, and `authorization`. Unsigned and unbound bundles remain valid by
 default; `--require-signature` and `--require-binding` reject the corresponding
-absence. Bundled key material can establish mathematical signature validity, but
-`trusted_signer_identity` remains `UNESTABLISHED`; freshness and authorization
-remain `NOT_EVALUATED`.
+absence. Bundled key material alone does not establish trusted signer identity —
+mathematical signature validity is a separate property. `trusted_signer_identity`
+remains `UNESTABLISHED` by default, and becomes `VALID` only when the caller
+explicitly supplies a local trust store (`--trust-store PATH`) containing the
+verified signing key's fingerprint. Freshness and authorization remain
+`NOT_EVALUATED`.
 
 ---
 
@@ -403,12 +408,27 @@ origin guarantees.
 - manifest identifiers and `ai_hash_sha256` are consistent with the canonical payload
 - stored v1 binding fields are consistent when present
 - bundled Ed25519 material is mathematically valid when present
+- a verified signing key's fingerprint against an explicitly supplied
+  external trust store, when one is provided
 
 **What current verification does not establish by itself:**
 - complete provider invocation identity or independent source reconstruction
 - historical non-modification without an independently trusted external anchor
-- trusted signer identity, freshness, or authorization
+- trusted signer identity beyond an explicitly supplied external trust store
+- freshness or authorization
 - that the output is correct, safe, or actually produced by a claimed model
+
+An explicit trust store makes `trusted_signer_identity` observable instead of
+always `UNESTABLISHED`. A caller cannot obtain `trusted_signer_identity=VALID`
+without supplying one, and cannot enforce membership without also passing
+`--require-trusted-signer`:
+
+```bash
+aelitium verify --out ./bundle --trust-store ./trust-store
+aelitium verify --out ./bundle \
+    --trust-store ./trust-store \
+    --require-trusted-signer
+```
 
 **Integrity ≠ completeness.** Internal consistency does not guarantee that all
 events were captured. Capture completeness depends on the integration layer — SDK

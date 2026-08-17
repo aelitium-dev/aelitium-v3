@@ -25,12 +25,86 @@ The assurance dimensions must be interpreted separately:
 | `payload_integrity` | Payload/schema/canonical/manifest/hash consistency |
 | `binding_field_consistency` | Stored v1 binding fields are `VALID`, `INVALID`, or `ABSENT` |
 | `signature_validity` | Mathematical signature result, or `ABSENT` |
-| `trusted_signer_identity` | `UNESTABLISHED` |
+| `trusted_signer_identity` | `UNESTABLISHED` by default; `VALID` only when an explicitly supplied external trust store contains the verified signing key's fingerprint |
 | `freshness` | `NOT_EVALUATED` |
 | `authorization` | `NOT_EVALUATED` |
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` let callers reject absence for their verification context.
+
+---
+
+## `trusted_signer_identity`: explicit external trust store
+
+`trusted_signer_identity` is evaluated only when a caller explicitly supplies
+a local trust store for that verification invocation. There is no ambient,
+default, or environment-variable trust-store discovery.
+
+**Core property:** given a valid Ed25519 signature over the bundle manifest,
+and an explicitly supplied external local trust store, AELITIUM can establish
+that the signature corresponds to a public key explicitly trusted by that
+verifier invocation.
+
+`trusted_signer_identity = VALID` means the verified signature's public-key
+fingerprint is present in the external trust store supplied to this
+verification invocation. It does not mean verified human identity, verified
+legal identity, verified organizational employment or role, authorization,
+freshness, revocation status, provider identity, or model execution proof.
+
+### Bundled key vs. external trust store
+
+A bundled public key in `verification_keys.json` alone can establish
+mathematical signature validity. It cannot, by itself, establish trusted
+signer identity, and `verification_keys.json` is not a trust anchor.
+`trusted_signer_identity` reaches `VALID` only through comparison against a
+trust store supplied independently of the inspected bundle.
+
+### Trust-store contract (`aelitium-trust-v1`)
+
+An explicit local JSON path, supplied per invocation. Records contain
+`algorithm` (`ed25519`), `public_key_b64` (raw public-key bytes), and an
+optional, non-authoritative `label`. The verifier derives the fingerprint
+from the raw public-key bytes — `ed25519:sha256:<64 lowercase hex>` — never
+from a stored fingerprint field, since none exists in this format. The
+current contract does not include a signer_id, revocation, expiry,
+delegation, remote distribution, or ambient/default discovery.
+
+### Optional vs. required evaluation
+
+Supplying a trust store alone performs evaluation without requiring
+membership: a validly signed bundle whose key is absent from the supplied
+trust store remains `STATUS=VALID` with
+`trusted_signer_identity=UNESTABLISHED`. A bundle is not made invalid merely
+because the caller did not additionally require this dimension.
+
+A bundle cannot report `trusted_signer_identity=VALID` under
+`--require-trusted-signer` without an exact fingerprint match, and cannot
+pass verification under that flag at all without a trust store being
+supplied:
+
+| Failure reason | Meaning |
+|---|---|
+| `TRUST_INPUT_NOT_PROVIDED` | `--require-trusted-signer` was requested but no trust store was supplied |
+| `TRUST_STORE_INVALID` | the explicitly supplied trust store could not be read, parsed, or validated |
+| `TRUSTED_SIGNER_NOT_FOUND` | a valid trust store and a valid signature exist, but the verified key is not in it |
+| `SIGNATURE_REQUIRED` | `trusted_signer_identity` enforcement was required but the bundle is unsigned |
+| `SIGNATURE_INVALID` | signature material exists but cryptographic verification failed |
+
+These are distinct failure reasons and are never collapsed into one generic
+trust failure.
+
+### Self-consistent rewrite: a boundary this mechanism does not cross
+
+`payload_integrity=VALID` means the stored canonical payload is consistent
+with the manifest/hash contract currently being verified. It does not
+establish that the artifact is historically unchanged from an earlier
+external state, that a specific provider produced the payload, that the
+payload is truthful, or that an attacker could not construct a new
+internally-consistent artifact and sign it with a key of their own choosing.
+Requiring an exact fingerprint match, as described above, can reject such a
+self-consistent rewrite when it is signed by a key absent from the supplied
+trust store, but this still does not create an independent historical
+timestamp or anchor — see "Levels of provenance" below for what would.
 
 ---
 
@@ -130,7 +204,8 @@ or other metadata may still make the complete bundle bytes differ.
 | Mitigation | What it adds |
 |-----------|-------------|
 | Capture adapter (P2) | Records selected v1 request and response fields in the adapter-controlled call path; verification checks their stored hash consistency |
-| Operator signing (P2+) | Ed25519 material in `verification_keys.json` can establish mathematical signature validity; bundled key material does not establish trusted signer identity |
+| Operator signing (P2+) | Ed25519 material in `verification_keys.json` can establish mathematical signature validity; bundled key material alone does not establish trusted signer identity |
+| Operator signing + external trust store | An explicitly supplied local trust store lets a matching verified key reach `trusted_signer_identity=VALID`; a bundle cannot reach that state under stricter enforcement without a match against it |
 | Authority receipt (P3) | External timestamp and signature prove the authority saw this hash at a specific time — forgery would require the authority's private key |
 | Observer-based capture | Independent process intercepts the API call; the agent cannot forge what it did not control |
 

@@ -20,12 +20,16 @@ def verify_bundle(
     *,
     require_signature: bool = False,
     require_binding: bool = False,
+    trust_store_path: str | None = None,
+    require_trusted_signer: bool = False,
 ) -> tuple:
     """Returns (valid, reason, details)."""
     vk_path = bundle_dir / "verification_keys.json"
     options = AIVerificationOptions(
         require_signature=require_signature,
         require_binding=require_binding,
+        trust_store_path=trust_store_path,
+        require_trusted_signer=require_trusted_signer,
     )
     result = verify_ai_bundle(bundle_dir, options=options)
     if not result.valid:
@@ -65,6 +69,20 @@ def main():
                     help="Reject bundles without signature material")
     ap.add_argument("--require-binding", action="store_true",
                     help="Reject bundles without v1 binding evidence")
+    ap.add_argument(
+        "--trust-store",
+        metavar="PATH",
+        default=None,
+        help="Use an explicit local trusted-signer store for signer identity evaluation",
+    )
+    ap.add_argument(
+        "--require-trusted-signer",
+        action="store_true",
+        help=(
+            "Reject unless the valid bundle signature corresponds to a key "
+            "trusted by the supplied trust store"
+        ),
+    )
     args = ap.parse_args()
 
     bundle_dir = Path(args.bundle)
@@ -72,6 +90,8 @@ def main():
         bundle_dir,
         require_signature=args.require_signature,
         require_binding=args.require_binding,
+        trust_store_path=args.trust_store,
+        require_trusted_signer=args.require_trusted_signer,
     )
 
     if args.json:

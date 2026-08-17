@@ -45,9 +45,25 @@ The hash in `ai_manifest.json` is `sha256(canonical_json)`.
 ### Signature layers
 
 Current AI bundles can include Ed25519 signature material in
-`verification_keys.json`. Verification establishes mathematical signature validity
-under the bundled public key. It does not establish an externally trusted signer
-identity; `trusted_signer_identity` remains `UNESTABLISHED`.
+`verification_keys.json`. Verification establishes mathematical signature
+validity under the bundled public key alone; a bundled key is not itself a
+trust anchor. By default `trusted_signer_identity` remains `UNESTABLISHED`.
+
+A caller can explicitly supply a local trust store (`--trust-store PATH`) —
+a strict `aelitium-trust-v1` JSON file containing trusted Ed25519 public-key
+material, independent of the inspected bundle. Each record stores the raw
+public key (and an optional, non-authoritative label); the verifier derives
+the fingerprint itself, `ed25519:sha256:<64 lowercase hex>`, from the decoded
+key bytes — no fingerprint field is stored in the file. Supplying a trust
+store alone is sufficient for evaluation: `trusted_signer_identity` becomes
+`VALID` only if the verified signing key's derived fingerprint matches a
+trust-store entry's derived fingerprint; otherwise it stays `UNESTABLISHED`,
+and the bundle still verifies normally. A bundle cannot pass verification
+under `--require-trusted-signer` without that match, and cannot pass at all
+under that flag without a trust store being supplied
+(`TRUST_INPUT_NOT_PROVIDED`) — that flag turns evaluation into an
+enforced requirement. See TRUST_BOUNDARY.md for the full contract
+and failure-reason vocabulary.
 
 Unsigned bundles remain valid by default. `--require-signature` lets a caller make
 absence invalid for a particular verification context. Signature verification does

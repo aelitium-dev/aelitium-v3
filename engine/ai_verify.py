@@ -21,6 +21,7 @@ from .ai_contract import (
     AI_OUTPUT_SCHEMA_VERSION,
     AI_VERIFICATION_KEYS_FILENAME,
 )
+from .trust import TrustStore, TrustStoreError, fingerprint_public_key, load_trust_store
 
 
 class AssuranceState(str, Enum):
@@ -38,11 +39,19 @@ class AssuranceState(str, Enum):
 
 @dataclass(frozen=True)
 class AIVerificationOptions:
-    """Select compatibility parsing and explicit evidence requirements."""
+    """Select compatibility parsing and explicit evidence requirements.
+
+    `trust_store_path` and `require_trusted_signer` are additive and both
+    default to "no trust input" -- there is no ambient/default trust-store
+    discovery (no environment variable, no default filesystem location).
+    Trust is evaluated only when a trust store path is explicitly supplied.
+    """
 
     validate_manifest_timestamp: bool = True
     require_signature: bool = False
     require_binding: bool = False
+    trust_store_path: str | Path | None = None
+    require_trusted_signer: bool = False
 
 
 @dataclass(frozen=True)
@@ -62,6 +71,7 @@ class AIVerificationResult:
     binding_field_consistency: AssuranceState = AssuranceState.NOT_EVALUATED
     signature_validity: AssuranceState = AssuranceState.NOT_EVALUATED
     trusted_signer_identity: AssuranceState = AssuranceState.UNESTABLISHED
+    trusted_signer_reason: str = ""
     freshness: AssuranceState = AssuranceState.NOT_EVALUATED
     authorization: AssuranceState = AssuranceState.NOT_EVALUATED
 
@@ -91,6 +101,8 @@ def _invalid(
     payload_integrity: AssuranceState = AssuranceState.NOT_EVALUATED,
     binding_field_consistency: AssuranceState = AssuranceState.NOT_EVALUATED,
     signature_validity: AssuranceState = AssuranceState.NOT_EVALUATED,
+    trusted_signer_identity: AssuranceState = AssuranceState.UNESTABLISHED,
+    trusted_signer_reason: str = "",
 ) -> AIVerificationResult:
     return AIVerificationResult(
         valid=False,
@@ -105,6 +117,8 @@ def _invalid(
         payload_integrity=payload_integrity,
         binding_field_consistency=binding_field_consistency,
         signature_validity=signature_validity,
+        trusted_signer_identity=trusted_signer_identity,
+        trusted_signer_reason=trusted_signer_reason,
     )
 
 
@@ -208,6 +222,26 @@ def verify_ai_bundle(
     """Verify a v1 AI evidence bundle and report distinct assurance states."""
 
     selected = options or AIVerificationOptions()
+
+    trust_store: TrustStore | None = None
+    if selected.trust_store_path is None:
+        if selected.require_trusted_signer:
+            return _invalid(
+                "TRUST_INPUT_NOT_PROVIDED",
+                "require_trusted_signer=True requires trust_store_path",
+            )
+    else:
+        try:
+            trust_store = load_trust_store(selected.trust_store_path)
+        except TrustStoreError as exc:
+            return _invalid(
+                "TRUST_STORE_INVALID",
+                exc.reason,
+                error_message=str(exc),
+                trusted_signer_identity=AssuranceState.UNESTABLISHED,
+                trusted_signer_reason="TRUST_STORE_INVALID",
+            )
+
     outdir = Path(bundle_dir)
     canon_path = outdir / AI_CANONICAL_FILENAME
     manifest_path = outdir / AI_MANIFEST_FILENAME
@@ -374,17 +408,29 @@ def verify_ai_bundle(
     signature = "NONE"
     signature_validity = AssuranceState.ABSENT
     signature_error = ""
+    verified_signature = None
     if vk_path.exists():
         try:
             from .signing import verify_manifest_signature
 
             vk = json.loads(vk_path.read_text(encoding="utf-8"))
-            verify_manifest_signature(manifest_path.read_bytes(), vk)
+            verified_signature = verify_manifest_signature(
+                manifest_path.read_bytes(), vk
+            )
             signature = "VALID"
             signature_validity = AssuranceState.VALID
         except Exception as exc:
             signature_validity = AssuranceState.INVALID
             signature_error = str(exc)
+
+    trusted_signer_identity = AssuranceState.UNESTABLISHED
+    trusted_signer_reason = ""
+    if trust_store is not None and signature_validity is AssuranceState.VALID:
+        fingerprint = fingerprint_public_key(verified_signature.public_key_bytes)
+        if fingerprint in trust_store:
+            trusted_signer_identity = AssuranceState.VALID
+        else:
+            trusted_signer_reason = "TRUSTED_SIGNER_NOT_FOUND"
 
     binding = _evaluate_binding_fields(canonical, manifest)
 
@@ -400,8 +446,12 @@ def verify_ai_bundle(
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
             signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
         )
-    if selected.require_signature and signature_validity is AssuranceState.ABSENT:
+    if (
+        selected.require_signature or selected.require_trusted_signer
+    ) and signature_validity is AssuranceState.ABSENT:
         return _invalid(
             "SIGNATURE_REQUIRED",
             ai_hash_sha256=actual_hash,
@@ -411,6 +461,8 @@ def verify_ai_bundle(
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
             signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
         )
     if binding.reason:
         return _invalid(
@@ -423,6 +475,8 @@ def verify_ai_bundle(
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
             signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
         )
     if selected.require_binding and binding.state is AssuranceState.ABSENT:
         return _invalid(
@@ -434,6 +488,25 @@ def verify_ai_bundle(
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
             signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
+        )
+    if (
+        selected.require_trusted_signer
+        and trusted_signer_identity is not AssuranceState.VALID
+    ):
+        return _invalid(
+            trusted_signer_reason,
+            ai_hash_sha256=actual_hash,
+            signature=signature,
+            binding_hash=binding.binding_hash,
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.VALID,
+            binding_field_consistency=binding.state,
+            signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
         )
 
     return AIVerificationResult(
@@ -447,4 +520,6 @@ def verify_ai_bundle(
         payload_integrity=AssuranceState.VALID,
         binding_field_consistency=binding.state,
         signature_validity=signature_validity,
+        trusted_signer_identity=trusted_signer_identity,
+        trusted_signer_reason=trusted_signer_reason,
     )
