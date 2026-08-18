@@ -22,6 +22,13 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from ..invocation import (
+    MODE_SYNC_NON_STREAMING,
+    MODE_SYNC_STREAMING,
+    SURFACE_OPENAI_CHAT_COMPLETIONS,
+    build_invocation_identity,
+)
+from ..invocation_binding import build_invocation_binding
 from .common import merge_capture_metadata
 
 
@@ -157,6 +164,24 @@ def capture_chat_completion(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
+    # 6.5. Invocation identity (P1.2b) -- additive metadata, not part of
+    # request_hash/response_hash/binding_hash. The OpenAI adapter exposes no
+    # additional semantic parameters, so `parameters` stays omitted.
+    invocation_identity = build_invocation_identity(
+        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+        mode=MODE_SYNC_NON_STREAMING,
+        model=model,
+        messages=messages,
+    ).to_stored_object()
+
+    # Invocation binding (P1.2d2): links the invocation identity above to
+    # this same call's response_hash. Built exclusively from already-derived
+    # values -- never reconstructed from provider/model/messages directly.
+    invocation_binding = build_invocation_binding(
+        invocation_hash=invocation_identity["hash_sha256"],
+        response_hash=response_hash,
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
@@ -168,6 +193,8 @@ def capture_chat_completion(
         "finish_reason": finish_reason,
         "usage": usage,
         "captured_at_utc": ts,
+        "invocation_identity": invocation_identity,
+        "invocation_binding": invocation_binding,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
@@ -262,6 +289,23 @@ def capture_chat_completion_stream(
     # 5. Build payload
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
+
+    # Invocation identity (P1.2b): mode=sync_streaming ensures this has a
+    # different hash than an equivalent non-streaming call for the same
+    # model/messages -- mode is part of the hash material.
+    invocation_identity = build_invocation_identity(
+        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+        mode=MODE_SYNC_STREAMING,
+        model=model,
+        messages=messages,
+    ).to_stored_object()
+
+    # Invocation binding (P1.2d2): see capture_chat_completion for rationale.
+    invocation_binding = build_invocation_binding(
+        invocation_hash=invocation_identity["hash_sha256"],
+        response_hash=response_hash,
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
@@ -271,6 +315,8 @@ def capture_chat_completion_stream(
         "finish_reason": finish_reason,
         "captured_at_utc": ts,
         "streaming": True,
+        "invocation_identity": invocation_identity,
+        "invocation_binding": invocation_binding,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 

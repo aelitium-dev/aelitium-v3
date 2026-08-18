@@ -25,8 +25,50 @@ from typing import Any, Dict, List, Optional
 
 from ..canonical import canonical_json, sha256_hash
 from ..ai_pack import ai_pack_from_obj
+from ..invocation import (
+    InvocationIdentityError,
+    MODE_SYNC_NON_STREAMING,
+    SURFACE_LITELLM_COMPLETION,
+    build_invocation_identity,
+)
+from ..invocation_binding import build_invocation_binding
 from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
+
+
+def _build_litellm_invocation_identity(
+    model: str,
+    messages: List[Dict[str, str]],
+    litellm_kwargs: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    """Best-effort invocation-identity construction for a LiteLLM call.
+
+    Returns the stored invocation-identity object, or `None` if this call
+    cannot be fully represented by the current aelitium-invocation-v1
+    grammar (an unsupported kwarg, an unrepresentable value, or an explicit
+    `stream=True`). Never raises: an unrepresentable call simply has no
+    recorded invocation identity, rather than a misleading partial one or a
+    failed capture. The LLM call itself and normal bundle capture are
+    unaffected either way.
+    """
+
+    candidates = dict(litellm_kwargs)
+    # stream=False is already fully represented by mode=sync_non_streaming;
+    # stream=True cannot be represented by this (non-streaming) surface at
+    # all. Either way, "stream" itself is not an invocation-identity
+    # parameter candidate.
+    if candidates.pop("stream", False):
+        return None
+    try:
+        return build_invocation_identity(
+            surface=SURFACE_LITELLM_COMPLETION,
+            mode=MODE_SYNC_NON_STREAMING,
+            model=model,
+            messages=messages,
+            parameters=candidates,
+        ).to_stored_object()
+    except InvocationIdentityError:
+        return None
 
 
 def capture_completion(
@@ -141,6 +183,14 @@ def capture_completion(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     prompt_str = canonical_json(messages)
 
+    # Invocation identity (P1.2b): best-effort over the allowlisted
+    # temperature/max_tokens/top_p/seed/stop parameters this adapter
+    # forwards. Absent from metadata entirely if litellm_kwargs contains
+    # anything outside that grammar (see _build_litellm_invocation_identity).
+    invocation_identity = _build_litellm_invocation_identity(
+        model, messages, litellm_kwargs
+    )
+
     base_metadata: Dict[str, Any] = {
         "provider": "litellm",
         "sdk": "litellm",
@@ -154,6 +204,15 @@ def capture_completion(
         "usage": usage,
         "captured_at_utc": ts,
     }
+    if invocation_identity is not None:
+        base_metadata["invocation_identity"] = invocation_identity
+        # Invocation binding (P1.2d2): only constructed when an invocation
+        # identity was itself representable -- absence of identity implies
+        # absence of binding, never a partial/best-effort binding.
+        base_metadata["invocation_binding"] = build_invocation_binding(
+            invocation_hash=invocation_identity["hash_sha256"],
+            response_hash=response_hash,
+        ).to_stored_object()
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {
@@ -274,11 +333,27 @@ def enable(
         # failure cannot suppress or alter the response the caller receives
         tmp_dir = base_out_dir / f"_tmp_{uuid.uuid4().hex}"
         try:
+            # Forward the same provider-call kwargs used for the real LLM
+            # call above, so a representable invocation identity reflects
+            # what was actually sent (P1.2b). This cannot trigger a second
+            # LLM call: capture_completion uses _pre_response and never
+            # re-invokes litellm.completion() when it is supplied.
+            # "metadata" is excluded: in this wrapped-call context it is
+            # LiteLLM's own optional call-tagging kwarg, distinct from
+            # capture_completion's own `metadata` parameter (AELITIUM's
+            # evidence-bundle metadata) -- forwarding it unchanged would
+            # conflate the two.
+            capture_kwargs = {
+                key: value
+                for key, value in extra_kwargs.items()
+                if key != "metadata"
+            }
             result = capture_completion(
                 model=model,
                 messages=messages,
                 out_dir=tmp_dir,
                 _pre_response=response,
+                **capture_kwargs,
             )
             manifest = json.loads((tmp_dir / "ai_manifest.json").read_text())
             binding_hash = manifest["binding_hash"]

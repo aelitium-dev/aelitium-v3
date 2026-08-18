@@ -146,6 +146,8 @@ class TestVerifyBundleValid(unittest.TestCase):
         self.assertEqual(obj["binding_hash"], "NONE")
         self.assertEqual(obj["payload_integrity"], "VALID")
         self.assertEqual(obj["binding_field_consistency"], "ABSENT")
+        self.assertEqual(obj["invocation_identity_consistency"], "ABSENT")
+        self.assertEqual(obj["invocation_binding_consistency"], "ABSENT")
         self.assertEqual(obj["signature_validity"], "ABSENT")
         self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
         self.assertEqual(obj["freshness"], "NOT_EVALUATED")
@@ -182,6 +184,8 @@ class TestVerifyBundleCapture(unittest.TestCase):
         self.assertEqual(obj["binding_hash"], self.binding_hash)
         self.assertRegex(obj["binding_hash"], HASH_RE)
         self.assertEqual(obj["binding_field_consistency"], "VALID")
+        self.assertEqual(obj["invocation_identity_consistency"], "VALID")
+        self.assertEqual(obj["invocation_binding_consistency"], "VALID")
 
     def test_tampered_binding_hash_in_manifest_gives_rc2(self):
         m = json.loads((self.outdir / "ai_manifest.json").read_text())
@@ -220,6 +224,107 @@ class TestVerifyBundleCapture(unittest.TestCase):
             "BINDING_HASH_MISMATCH" in r.stdout or "SIGNATURE_INVALID" in r.stdout,
             f"Expected BINDING_HASH_MISMATCH or SIGNATURE_INVALID, got: {r.stdout!r}",
         )
+
+    def test_stale_invocation_identity_hash_gives_rc2(self):
+        # Tamper a stored invocation-identity semantic field without
+        # recomputing its own internal hash_sha256, then repair the outer
+        # canonical/manifest hash so payload_integrity stays VALID.
+        import hashlib
+
+        canon_path = self.outdir / "ai_canonical.json"
+        canon = json.loads(canon_path.read_text())
+        canon["metadata"]["invocation_identity"]["request"]["model"] = "tampered-model"
+        canon_text = json.dumps(
+            canon, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ) + "\n"
+        canon_path.write_text(canon_text, encoding="utf-8")
+        new_hash = hashlib.sha256(
+            canon_text.removesuffix("\n").encode()
+        ).hexdigest()
+
+        manifest_path = self.outdir / "ai_manifest.json"
+        m = json.loads(manifest_path.read_text())
+        m["ai_hash_sha256"] = new_hash
+        manifest_path.write_text(
+            json.dumps(m, sort_keys=True) + "\n", encoding="utf-8"
+        )
+
+        r = _verify_bundle(self.outdir)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("INVOCATION_HASH_MISMATCH", r.stdout)
+        self.assertIn("INVOCATION_IDENTITY_CONSISTENCY=INVALID", r.stdout)
+
+        r_json = _verify_bundle(self.outdir, ["--json"])
+        self.assertEqual(r_json.returncode, 2)
+
+    def test_stale_invocation_binding_hash_gives_rc2(self):
+        # Tamper the stored invocation-binding's own invocation_hash field
+        # without recomputing its hash_sha256, then repair the outer
+        # canonical/manifest hash so payload_integrity stays VALID.
+        import hashlib
+
+        canon_path = self.outdir / "ai_canonical.json"
+        canon = json.loads(canon_path.read_text())
+        canon["metadata"]["invocation_binding"]["invocation_hash"] = "c" * 64
+        canon_text = json.dumps(
+            canon, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ) + "\n"
+        canon_path.write_text(canon_text, encoding="utf-8")
+        new_hash = hashlib.sha256(
+            canon_text.removesuffix("\n").encode()
+        ).hexdigest()
+
+        manifest_path = self.outdir / "ai_manifest.json"
+        m = json.loads(manifest_path.read_text())
+        m["ai_hash_sha256"] = new_hash
+        manifest_path.write_text(
+            json.dumps(m, sort_keys=True) + "\n", encoding="utf-8"
+        )
+
+        r = _verify_bundle(self.outdir)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("INVOCATION_BINDING_HASH_MISMATCH", r.stdout)
+        self.assertIn("INVOCATION_BINDING_CONSISTENCY=INVALID", r.stdout)
+
+        r_json = _verify_bundle(self.outdir, ["--json"])
+        self.assertEqual(r_json.returncode, 2)
+
+    def test_invocation_binding_referencing_wrong_identity_gives_rc2(self):
+        # The binding object is internally valid on its own, but its
+        # invocation_hash does not match this bundle's stored
+        # invocation_identity.hash_sha256 -- a cross-field mismatch, not a
+        # primitive-level structural error.
+        import hashlib
+
+        from engine.invocation_binding import build_invocation_binding
+
+        canon_path = self.outdir / "ai_canonical.json"
+        canon = json.loads(canon_path.read_text())
+        response_hash = canon["metadata"]["invocation_binding"]["response_hash"]
+        rewritten_binding = build_invocation_binding(
+            invocation_hash="b" * 64,
+            response_hash=response_hash,
+        ).to_stored_object()
+        canon["metadata"]["invocation_binding"] = rewritten_binding
+        canon_text = json.dumps(
+            canon, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ) + "\n"
+        canon_path.write_text(canon_text, encoding="utf-8")
+        new_hash = hashlib.sha256(
+            canon_text.removesuffix("\n").encode()
+        ).hexdigest()
+
+        manifest_path = self.outdir / "ai_manifest.json"
+        m = json.loads(manifest_path.read_text())
+        m["ai_hash_sha256"] = new_hash
+        manifest_path.write_text(
+            json.dumps(m, sort_keys=True) + "\n", encoding="utf-8"
+        )
+
+        r = _verify_bundle(self.outdir)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("INVOCATION_BINDING_INPUT_MISMATCH", r.stdout)
+        self.assertIn("INVOCATION_BINDING_CONSISTENCY=INVALID", r.stdout)
 
 
 class TestVerifyBundleMissing(unittest.TestCase):
@@ -294,6 +399,8 @@ class TestVerifyBundleSigned(unittest.TestCase):
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["status"], "VALID")
             self.assertEqual(obj["signature"], "VALID")
+            self.assertEqual(obj["invocation_identity_consistency"], "VALID")
+            self.assertEqual(obj["invocation_binding_consistency"], "VALID")
             self.assertEqual(obj["signature_validity"], "VALID")
             self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
 
