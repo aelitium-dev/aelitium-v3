@@ -18,6 +18,11 @@ from engine.ai_verify import (
     AssuranceState,
     verify_ai_bundle,
 )
+from engine.invocation import (
+    MODE_SYNC_NON_STREAMING,
+    SURFACE_OPENAI_CHAT_COMPLETIONS,
+    build_invocation_identity,
+)
 from engine.signing import (
     VerifiedManifestSignature,
     build_verification_material,
@@ -85,6 +90,23 @@ def _write_manifest(bundle: Path, manifest: dict) -> None:
         json.dumps(manifest, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _inject_invocation_identity(bundle: Path, stored_object: dict) -> None:
+    """Insert a stored invocation-identity object into an existing bundle's
+    canonical metadata and recompute the outer payload/manifest hash so
+    payload_integrity remains internally consistent -- independent of
+    whether `stored_object` itself is a well-formed invocation identity.
+    """
+    canonical_path = bundle / "ai_canonical.json"
+    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+    canonical.setdefault("metadata", {})["invocation_identity"] = stored_object
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
 
 
 def _write_canonical_bytes_with_raw_hash(bundle: Path, raw: bytes) -> None:
@@ -666,6 +688,7 @@ class TestAIAssuranceResults(unittest.TestCase):
         expected = {
             "payload_integrity": "VALID",
             "binding_field_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
             "signature_validity": "ABSENT",
             "trusted_signer_identity": "UNESTABLISHED",
             "freshness": "NOT_EVALUATED",
@@ -915,6 +938,7 @@ class TestAIAssuranceResults(unittest.TestCase):
                 {
                     "payload_integrity",
                     "binding_field_consistency",
+                    "invocation_identity_consistency",
                     "signature_validity",
                     "trusted_signer_identity",
                     "freshness",
@@ -2004,6 +2028,183 @@ class TestAITrustedSignerAdversarial(unittest.TestCase):
             )
             self.assertFalse(required.valid)
             self.assertEqual(required.reason, "TRUSTED_SIGNER_NOT_FOUND")
+
+
+class TestAIInvocationIdentityConsistency(unittest.TestCase):
+    """P1.2c: invocation_identity_consistency assurance dimension.
+
+    This dimension proves only that a stored invocation-identity object is
+    structurally valid under its declared versioned format and that its
+    stored hash matches recomputation from its stored semantic fields. It
+    does not prove provider receipt/execution, provider identity, response
+    causation, authorization, freshness, or historical occurrence.
+    """
+
+    def _build_openai_identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def test_legacy_bundle_without_invocation_identity_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+
+    def test_valid_stored_invocation_identity_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _inject_invocation_identity(bundle, self._build_openai_identity())
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+
+    def test_invocation_hash_mismatch_is_rejected_independent_of_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            # Tamper one stored semantic field WITHOUT recomputing the
+            # invocation identity's own internal hash_sha256. This proves
+            # invocation consistency is independent of outer payload
+            # integrity: the outer canonical/manifest hash is recomputed
+            # below so payload_integrity stays VALID.
+            identity["request"]["model"] = "gpt-4o-tampered"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_malformed_invocation_hash_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["hash_sha256"] = identity["hash_sha256"].upper()
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_HASH")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_bad_format_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["format"] = "aelitium-invocation-v2"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_FORMAT")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_unsupported_surface_structural_error_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["surface"] = "cohere.chat"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_SURFACE")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_outer_payload_tamper_leaves_invocation_not_evaluated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _inject_invocation_identity(bundle, self._build_openai_identity())
+
+            # Tamper the canonical payload WITHOUT updating the manifest --
+            # payload_integrity fails before invocation identity is ever
+            # evaluated.
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "TAMPERED"
+            _rewrite_canonical(bundle, canonical)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency,
+                AssuranceState.NOT_EVALUATED,
+            )
+
+    def test_invalid_invocation_identity_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["hash_sha256"] = "0" * 64
+            _inject_invocation_identity(bundle, identity)
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 2, output.stdout)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertTrue(
+                            payload["reason"].startswith(
+                                "INVOCATION_HASH_MISMATCH"
+                            )
+                        )
+                        self.assertEqual(
+                            payload["invocation_identity_consistency"], "INVALID"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=INVOCATION_HASH_MISMATCH", output.stdout
+                        )
+                        self.assertIn(
+                            "INVOCATION_IDENTITY_CONSISTENCY=INVALID",
+                            output.stdout,
+                        )
 
 
 if __name__ == "__main__":

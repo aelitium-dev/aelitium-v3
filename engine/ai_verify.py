@@ -21,6 +21,7 @@ from .ai_contract import (
     AI_OUTPUT_SCHEMA_VERSION,
     AI_VERIFICATION_KEYS_FILENAME,
 )
+from .invocation import InvocationIdentityError, parse_invocation_identity
 from .trust import TrustStore, TrustStoreError, fingerprint_public_key, load_trust_store
 
 
@@ -69,6 +70,7 @@ class AIVerificationResult:
     manifest: Any = None
     payload_integrity: AssuranceState = AssuranceState.NOT_EVALUATED
     binding_field_consistency: AssuranceState = AssuranceState.NOT_EVALUATED
+    invocation_identity_consistency: AssuranceState = AssuranceState.NOT_EVALUATED
     signature_validity: AssuranceState = AssuranceState.NOT_EVALUATED
     trusted_signer_identity: AssuranceState = AssuranceState.UNESTABLISHED
     trusted_signer_reason: str = ""
@@ -81,6 +83,7 @@ class AIVerificationResult:
         return {
             "payload_integrity": self.payload_integrity.value,
             "binding_field_consistency": self.binding_field_consistency.value,
+            "invocation_identity_consistency": self.invocation_identity_consistency.value,
             "signature_validity": self.signature_validity.value,
             "trusted_signer_identity": self.trusted_signer_identity.value,
             "freshness": self.freshness.value,
@@ -100,6 +103,7 @@ def _invalid(
     manifest: Any = None,
     payload_integrity: AssuranceState = AssuranceState.NOT_EVALUATED,
     binding_field_consistency: AssuranceState = AssuranceState.NOT_EVALUATED,
+    invocation_identity_consistency: AssuranceState = AssuranceState.NOT_EVALUATED,
     signature_validity: AssuranceState = AssuranceState.NOT_EVALUATED,
     trusted_signer_identity: AssuranceState = AssuranceState.UNESTABLISHED,
     trusted_signer_reason: str = "",
@@ -116,6 +120,7 @@ def _invalid(
         manifest=manifest,
         payload_integrity=payload_integrity,
         binding_field_consistency=binding_field_consistency,
+        invocation_identity_consistency=invocation_identity_consistency,
         signature_validity=signature_validity,
         trusted_signer_identity=trusted_signer_identity,
         trusted_signer_reason=trusted_signer_reason,
@@ -212,6 +217,48 @@ def _evaluate_binding_fields(canonical: Any, manifest: Any) -> _BindingEvaluatio
         AssuranceState.VALID,
         binding_hash=manifest_binding,
     )
+
+
+@dataclass(frozen=True)
+class _InvocationIdentityEvaluation:
+    state: AssuranceState
+    reason: str = ""
+    detail: str = ""
+
+
+def _evaluate_invocation_identity(canonical: Any) -> _InvocationIdentityEvaluation:
+    """Evaluate the stored invocation-identity object, if present.
+
+    `engine.invocation` is the sole authority for grammar, surface/mode
+    validation, parameter allowlists, and hash recomputation -- this
+    function never trusts a stored hash_sha256 on its own and never
+    duplicates that primitive's logic; it only calls
+    `parse_invocation_identity`, which always recomputes.
+
+    VALID here means only: the stored invocation-identity object is
+    structurally valid under its declared versioned format and its stored
+    hash matches recomputation from its stored semantic fields. It does not
+    mean the provider received or executed the request, provider identity,
+    response causation, authorization, freshness, or historical occurrence.
+    """
+
+    metadata = canonical.get("metadata", {}) if isinstance(canonical, dict) else {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    if "invocation_identity" not in metadata:
+        return _InvocationIdentityEvaluation(AssuranceState.ABSENT)
+
+    try:
+        parse_invocation_identity(metadata["invocation_identity"])
+    except InvocationIdentityError as exc:
+        return _InvocationIdentityEvaluation(
+            AssuranceState.INVALID,
+            reason=exc.reason,
+            detail=exc.detail,
+        )
+
+    return _InvocationIdentityEvaluation(AssuranceState.VALID)
 
 
 def verify_ai_bundle(
@@ -433,6 +480,7 @@ def verify_ai_bundle(
             trusted_signer_reason = "TRUSTED_SIGNER_NOT_FOUND"
 
     binding = _evaluate_binding_fields(canonical, manifest)
+    invocation = _evaluate_invocation_identity(canonical)
 
     if signature_error:
         return _invalid(
@@ -445,6 +493,7 @@ def verify_ai_bundle(
             manifest=manifest,
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
@@ -460,6 +509,7 @@ def verify_ai_bundle(
             manifest=manifest,
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
@@ -474,6 +524,7 @@ def verify_ai_bundle(
             manifest=manifest,
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
@@ -487,6 +538,7 @@ def verify_ai_bundle(
             manifest=manifest,
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
@@ -504,6 +556,23 @@ def verify_ai_bundle(
             manifest=manifest,
             payload_integrity=AssuranceState.VALID,
             binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
+            signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
+        )
+    if invocation.state is AssuranceState.INVALID:
+        return _invalid(
+            invocation.reason,
+            invocation.detail,
+            ai_hash_sha256=actual_hash,
+            signature=signature,
+            binding_hash=binding.binding_hash,
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.VALID,
+            binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
@@ -519,6 +588,7 @@ def verify_ai_bundle(
         manifest=manifest,
         payload_integrity=AssuranceState.VALID,
         binding_field_consistency=binding.state,
+        invocation_identity_consistency=invocation.state,
         signature_validity=signature_validity,
         trusted_signer_identity=trusted_signer_identity,
         trusted_signer_reason=trusted_signer_reason,
