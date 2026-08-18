@@ -232,8 +232,8 @@ historically executed by any provider.
 
 ## Signatures and Trust
 
-Consistency dimensions, signature validity, and trusted signer identity are
-kept strictly separate and are never conflated:
+Signature validity does not establish trusted signer identity. Consistency
+checks, signature validity, and signer-trust evaluation remain separate:
 
 - `payload_integrity`, `invocation_identity_consistency`, and
   `invocation_binding_consistency` are deterministic, stored-field
