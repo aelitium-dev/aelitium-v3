@@ -18,7 +18,7 @@ _litellm_stub = MagicMock()
 _litellm_stub.__name__ = "litellm"
 sys.modules.setdefault("litellm", _litellm_stub)
 
-from engine.ai_verify import verify_ai_bundle  # noqa: E402
+from engine.ai_verify import AssuranceState, verify_ai_bundle  # noqa: E402
 from engine.capture.common import CaptureMetadataCollisionError  # noqa: E402
 from engine.capture.litellm import capture_completion, CaptureResult  # noqa: E402
 from engine.invocation import (  # noqa: E402
@@ -26,6 +26,7 @@ from engine.invocation import (  # noqa: E402
     SURFACE_LITELLM_COMPLETION,
     parse_invocation_identity,
 )
+from engine.invocation_binding import parse_invocation_binding  # noqa: E402
 
 
 def _make_mock_response(model="openai/gpt-4o", content="Hello from LiteLLM"):
@@ -191,6 +192,7 @@ class TestCaptureLiteLLM(unittest.TestCase):
             "usage",
             "captured_at_utc",
             "invocation_identity",
+            "invocation_binding",
         )
         for key in reserved_keys:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
@@ -337,6 +339,7 @@ class TestCaptureLiteLLMInvocationIdentity(unittest.TestCase):
 
         canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
         self.assertNotIn("invocation_identity", canon["metadata"])
+        self.assertNotIn("invocation_binding", canon["metadata"])
         self.assertTrue(verify_ai_bundle(self.tmp).valid)
 
     def test_secret_like_unknown_kwarg_not_written_to_evidence(self):
@@ -360,6 +363,55 @@ class TestCaptureLiteLLMInvocationIdentity(unittest.TestCase):
     def test_bundle_with_invocation_identity_verifies(self):
         self._call(temperature=0.3, max_tokens=100)
         self.assertTrue(verify_ai_bundle(self.tmp).valid)
+
+
+class TestCaptureLiteLLMInvocationBinding(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.model = "openai/gpt-4o"
+        self.messages = [{"role": "user", "content": "What is 2+2?"}]
+        self.mock_response = _make_mock_response(self.model, "The answer is 4.")
+        _litellm_stub.completion.reset_mock(return_value=True, side_effect=True)
+        _litellm_stub.completion.return_value = self.mock_response
+
+    def _call(self, out_dir=None, **litellm_kwargs):
+        return capture_completion(
+            model=self.model,
+            messages=self.messages,
+            out_dir=out_dir or self.tmp,
+            **litellm_kwargs,
+        )
+
+    def test_invocation_binding_present_and_matches_when_identity_representable(self):
+        self._call(temperature=0.3, max_tokens=100)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        meta = canon["metadata"]
+
+        binding = parse_invocation_binding(meta["invocation_binding"])
+        self.assertEqual(
+            binding.invocation_hash, meta["invocation_identity"]["hash_sha256"]
+        )
+        self.assertEqual(binding.response_hash, meta["response_hash"])
+
+    def test_invocation_binding_absent_when_identity_unrepresentable(self):
+        # An unsupported kwarg makes the invocation identity itself
+        # unrepresentable -- absence of identity must imply absence of
+        # binding, never a partial/best-effort binding.
+        self._call(custom_llm_provider="azure")
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        self.assertNotIn("invocation_identity", canon["metadata"])
+        self.assertNotIn("invocation_binding", canon["metadata"])
+
+    def test_bundle_with_invocation_binding_verifies_as_valid(self):
+        self._call(temperature=0.3, max_tokens=100)
+        result = verify_ai_bundle(self.tmp)
+        self.assertTrue(result.valid)
+        self.assertEqual(
+            result.invocation_identity_consistency, AssuranceState.VALID
+        )
+        self.assertEqual(
+            result.invocation_binding_consistency, AssuranceState.VALID
+        )
 
 
 class TestCaptureLiteLLMEnableInvocationIdentity(unittest.TestCase):

@@ -11,7 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from engine.ai_verify import verify_ai_bundle
+from engine.ai_verify import AssuranceState, verify_ai_bundle
 from engine.capture.common import CaptureMetadataCollisionError
 from engine.capture.openai import (
     CaptureResult,
@@ -24,6 +24,7 @@ from engine.invocation import (
     SURFACE_OPENAI_CHAT_COMPLETIONS,
     parse_invocation_identity,
 )
+from engine.invocation_binding import parse_invocation_binding
 
 
 def _make_mock_client(model: str = "gpt-4o", content: str = "Hello, world!") -> MagicMock:
@@ -121,6 +122,7 @@ class TestCaptureOpenAI(unittest.TestCase):
             "usage",
             "captured_at_utc",
             "invocation_identity",
+            "invocation_binding",
         )
         for key in reserved_keys:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
@@ -386,6 +388,49 @@ class TestCaptureOpenAIInvocationIdentity(unittest.TestCase):
         self.assertTrue(verify_ai_bundle(self.tmp).valid)
 
 
+class TestCaptureOpenAIInvocationBinding(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.model = "gpt-4o"
+        self.messages = [{"content": "Explain quantum computing.", "role": "user"}]
+        self.client = _make_mock_client(
+            model=self.model, content="Quantum computing uses qubits."
+        )
+
+    def test_non_streaming_invocation_binding_present_and_matches(self):
+        capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        meta = canon["metadata"]
+
+        binding = parse_invocation_binding(meta["invocation_binding"])
+        self.assertEqual(binding.invocation_hash, meta["invocation_identity"]["hash_sha256"])
+        self.assertEqual(binding.response_hash, meta["response_hash"])
+
+    def test_streaming_invocation_binding_present_and_matches(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            capture_chat_completion_stream(
+                _make_mock_stream_client(), self.model, self.messages, out_dir
+            )
+            canon = json.loads((Path(out_dir) / "ai_canonical.json").read_text())
+            meta = canon["metadata"]
+            binding = parse_invocation_binding(meta["invocation_binding"])
+            self.assertEqual(
+                binding.invocation_hash, meta["invocation_identity"]["hash_sha256"]
+            )
+            self.assertEqual(binding.response_hash, meta["response_hash"])
+
+    def test_bundle_with_invocation_binding_verifies_as_valid(self):
+        capture_chat_completion(self.client, self.model, self.messages, self.tmp)
+        result = verify_ai_bundle(self.tmp)
+        self.assertTrue(result.valid)
+        self.assertEqual(
+            result.invocation_identity_consistency, AssuranceState.VALID
+        )
+        self.assertEqual(
+            result.invocation_binding_consistency, AssuranceState.VALID
+        )
+
+
 class TestCaptureOpenAIStreaming(unittest.TestCase):
     def setUp(self):
         self.model = "gpt-4o"
@@ -415,6 +460,20 @@ class TestCaptureOpenAIStreaming(unittest.TestCase):
                 )
             self.assertEqual(
                 context.exception.offending_keys, ("invocation_identity",)
+            )
+
+    def test_streaming_invocation_binding_collision_raises(self):
+        with tempfile.TemporaryDirectory() as out_dir:
+            with self.assertRaises(CaptureMetadataCollisionError) as context:
+                capture_chat_completion_stream(
+                    _make_mock_stream_client(),
+                    self.model,
+                    self.messages,
+                    out_dir,
+                    metadata={"invocation_binding": {"format": "spoofed"}},
+                )
+            self.assertEqual(
+                context.exception.offending_keys, ("invocation_binding",)
             )
 
     def test_streaming_custom_metadata_round_trips_and_verifies(self):

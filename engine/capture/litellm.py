@@ -31,6 +31,7 @@ from ..invocation import (
     SURFACE_LITELLM_COMPLETION,
     build_invocation_identity,
 )
+from ..invocation_binding import build_invocation_binding
 from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
 
@@ -205,6 +206,13 @@ def capture_completion(
     }
     if invocation_identity is not None:
         base_metadata["invocation_identity"] = invocation_identity
+        # Invocation binding (P1.2d2): only constructed when an invocation
+        # identity was itself representable -- absence of identity implies
+        # absence of binding, never a partial/best-effort binding.
+        base_metadata["invocation_binding"] = build_invocation_binding(
+            invocation_hash=invocation_identity["hash_sha256"],
+            response_hash=response_hash,
+        ).to_stored_object()
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
     payload = {

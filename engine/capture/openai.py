@@ -28,6 +28,7 @@ from ..invocation import (
     SURFACE_OPENAI_CHAT_COMPLETIONS,
     build_invocation_identity,
 )
+from ..invocation_binding import build_invocation_binding
 from .common import merge_capture_metadata
 
 
@@ -173,6 +174,14 @@ def capture_chat_completion(
         messages=messages,
     ).to_stored_object()
 
+    # Invocation binding (P1.2d2): links the invocation identity above to
+    # this same call's response_hash. Built exclusively from already-derived
+    # values -- never reconstructed from provider/model/messages directly.
+    invocation_binding = build_invocation_binding(
+        invocation_hash=invocation_identity["hash_sha256"],
+        response_hash=response_hash,
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
@@ -185,6 +194,7 @@ def capture_chat_completion(
         "usage": usage,
         "captured_at_utc": ts,
         "invocation_identity": invocation_identity,
+        "invocation_binding": invocation_binding,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
@@ -290,6 +300,12 @@ def capture_chat_completion_stream(
         messages=messages,
     ).to_stored_object()
 
+    # Invocation binding (P1.2d2): see capture_chat_completion for rationale.
+    invocation_binding = build_invocation_binding(
+        invocation_hash=invocation_identity["hash_sha256"],
+        response_hash=response_hash,
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "openai",
         "sdk": "openai-python",
@@ -300,6 +316,7 @@ def capture_chat_completion_stream(
         "captured_at_utc": ts,
         "streaming": True,
         "invocation_identity": invocation_identity,
+        "invocation_binding": invocation_binding,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 

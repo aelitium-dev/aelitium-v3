@@ -23,6 +23,7 @@ from engine.invocation import (
     SURFACE_OPENAI_CHAT_COMPLETIONS,
     build_invocation_identity,
 )
+from engine.invocation_binding import build_invocation_binding
 from engine.signing import (
     VerifiedManifestSignature,
     build_verification_material,
@@ -101,6 +102,23 @@ def _inject_invocation_identity(bundle: Path, stored_object: dict) -> None:
     canonical_path = bundle / "ai_canonical.json"
     canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
     canonical.setdefault("metadata", {})["invocation_identity"] = stored_object
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
+
+
+def _inject_metadata_fields(bundle: Path, fields: dict) -> None:
+    """Merge arbitrary key/value pairs into an existing bundle's canonical
+    metadata and recompute the outer payload/manifest hash so
+    payload_integrity remains internally consistent -- independent of
+    whether the injected values themselves are well-formed.
+    """
+    canonical_path = bundle / "ai_canonical.json"
+    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+    canonical.setdefault("metadata", {}).update(fields)
     canonical_hash = _rewrite_canonical(bundle, canonical)
 
     manifest_path = bundle / "ai_manifest.json"
@@ -689,6 +707,7 @@ class TestAIAssuranceResults(unittest.TestCase):
             "payload_integrity": "VALID",
             "binding_field_consistency": "ABSENT",
             "invocation_identity_consistency": "ABSENT",
+            "invocation_binding_consistency": "ABSENT",
             "signature_validity": "ABSENT",
             "trusted_signer_identity": "UNESTABLISHED",
             "freshness": "NOT_EVALUATED",
@@ -939,6 +958,7 @@ class TestAIAssuranceResults(unittest.TestCase):
                     "payload_integrity",
                     "binding_field_consistency",
                     "invocation_identity_consistency",
+                    "invocation_binding_consistency",
                     "signature_validity",
                     "trusted_signer_identity",
                     "freshness",
@@ -2203,6 +2223,305 @@ class TestAIInvocationIdentityConsistency(unittest.TestCase):
                         )
                         self.assertIn(
                             "INVOCATION_IDENTITY_CONSISTENCY=INVALID",
+                            output.stdout,
+                        )
+
+
+class TestAIInvocationBindingConsistency(unittest.TestCase):
+    """P1.2d2: invocation_binding_consistency assurance dimension.
+
+    This dimension proves only that the stored invocation-binding object is
+    internally consistent under its declared versioned format AND that its
+    invocation_hash/response_hash fields match this same bundle's stored,
+    already-VALID invocation identity and response hash. It does not prove
+    provider receipt/execution, provider identity, response causation,
+    authorization, freshness, or historical occurrence. A binding can never
+    be VALID unless the invocation identity it references is itself VALID.
+    """
+
+    # Matches _make_bound_bundle's hardcoded metadata.response_hash.
+    _RESPONSE_HASH = "2" * 64
+
+    def _build_openai_identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def _valid_binding_bundle(self, bundle: Path) -> dict:
+        """Build a bundle with a valid v1 binding, a valid invocation
+        identity, and a valid invocation binding referencing it. Returns
+        the stored invocation_binding object for further tampering."""
+        _make_bound_bundle(bundle)
+        identity = self._build_openai_identity()
+        binding = build_invocation_binding(
+            invocation_hash=identity["hash_sha256"],
+            response_hash=self._RESPONSE_HASH,
+        ).to_stored_object()
+        _inject_metadata_fields(
+            bundle,
+            {"invocation_identity": identity, "invocation_binding": binding},
+        )
+        return binding
+
+    def test_no_invocation_binding_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            _inject_metadata_fields(bundle, {"invocation_identity": identity})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.ABSENT
+            )
+
+    def test_valid_invocation_binding_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            self._valid_binding_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.VALID
+            )
+
+    def test_binding_present_but_identity_absent_is_input_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            binding = build_invocation_binding(
+                invocation_hash="a" * 64,
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(bundle, {"invocation_binding": binding})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISSING")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_present_but_response_hash_missing_is_input_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="f" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISSING")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_identity_invalid_makes_binding_invalid_but_reason_is_root_cause(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            # Tamper identity's semantic field without recomputing its own
+            # hash_sha256 -- makes invocation_identity_consistency INVALID.
+            identity["request"]["model"] = "gpt-4o-tampered"
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            # Root cause reason takes precedence over the derived binding
+            # diagnostic -- the overall failure reason must point at the
+            # invocation identity itself, never be masked by
+            # INVOCATION_BINDING_INPUT_INVALID.
+            self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_invocation_hash_mismatch_against_stored_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            other_identity = self._build_openai_identity(
+                messages=[{"role": "user", "content": "different"}]
+            )
+            invocation_binding = build_invocation_binding(
+                invocation_hash=other_identity["hash_sha256"],
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_response_hash_mismatch_against_stored_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="d" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_own_hash_mismatch_is_rejected_by_primitive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            # Retamper the already-injected, otherwise-valid binding: change
+            # its own stored invocation_hash without recomputing hash_sha256
+            # -- must be rejected by the primitive itself
+            # (INVOCATION_BINDING_HASH_MISMATCH), before any bundle-level
+            # cross-field comparison is even reached.
+            tampered = dict(binding)
+            tampered["invocation_hash"] = "c" * 64
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_bad_format_is_rejected_by_primitive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            tampered = dict(binding)
+            tampered["format"] = "aelitium-invocation-binding-v2"
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_BAD_FORMAT")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_valid_invocation_binding_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            self._valid_binding_bundle(bundle)
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 0, output.stdout)
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["invocation_binding_consistency"], "VALID"
+                    )
+
+    def test_invalid_invocation_binding_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            tampered = dict(binding)
+            tampered["invocation_hash"] = "c" * 64
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 2, output.stdout)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertTrue(
+                            payload["reason"].startswith(
+                                "INVOCATION_BINDING_HASH_MISMATCH"
+                            )
+                        )
+                        self.assertEqual(
+                            payload["invocation_binding_consistency"], "INVALID"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=INVOCATION_BINDING_HASH_MISMATCH",
+                            output.stdout,
+                        )
+                        self.assertIn(
+                            "INVOCATION_BINDING_CONSISTENCY=INVALID",
                             output.stdout,
                         )
 

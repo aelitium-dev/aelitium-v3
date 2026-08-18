@@ -8,12 +8,13 @@ from unittest.mock import MagicMock
 try:
     from engine.capture.anthropic import capture_message, CaptureResult
     from engine.capture.common import CaptureMetadataCollisionError
-    from engine.ai_verify import verify_ai_bundle
+    from engine.ai_verify import AssuranceState, verify_ai_bundle
     from engine.invocation import (
         MODE_SYNC_NON_STREAMING,
         SURFACE_ANTHROPIC_MESSAGES,
         parse_invocation_identity,
     )
+    from engine.invocation_binding import parse_invocation_binding
     _ANTHROPIC_AVAILABLE = True
 except ImportError:
     _ANTHROPIC_AVAILABLE = False
@@ -92,6 +93,7 @@ class TestCaptureAnthropic(unittest.TestCase):
             "usage",
             "captured_at_utc",
             "invocation_identity",
+            "invocation_binding",
         )
         for key in reserved_keys:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as out_dir:
@@ -204,3 +206,36 @@ class TestCaptureAnthropicInvocationIdentity(unittest.TestCase):
     def test_bundle_with_invocation_identity_verifies(self):
         capture_message(self.client, self.model, self.messages, self.tmp)
         self.assertTrue(verify_ai_bundle(self.tmp).valid)
+
+
+@anthropic_required
+class TestCaptureAnthropicInvocationBinding(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.model = "claude-3-5-sonnet-20241022"
+        self.messages = [{"role": "user", "content": "What is 2+2?"}]
+        self.client, self.response = _make_mock_anthropic_client(
+            self.model, "The answer is 4."
+        )
+
+    def test_invocation_binding_present_and_matches(self):
+        capture_message(self.client, self.model, self.messages, self.tmp)
+        canon = json.loads((Path(self.tmp) / "ai_canonical.json").read_text())
+        meta = canon["metadata"]
+
+        binding = parse_invocation_binding(meta["invocation_binding"])
+        self.assertEqual(
+            binding.invocation_hash, meta["invocation_identity"]["hash_sha256"]
+        )
+        self.assertEqual(binding.response_hash, meta["response_hash"])
+
+    def test_bundle_with_invocation_binding_verifies_as_valid(self):
+        capture_message(self.client, self.model, self.messages, self.tmp)
+        result = verify_ai_bundle(self.tmp)
+        self.assertTrue(result.valid)
+        self.assertEqual(
+            result.invocation_identity_consistency, AssuranceState.VALID
+        )
+        self.assertEqual(
+            result.invocation_binding_consistency, AssuranceState.VALID
+        )

@@ -45,14 +45,15 @@ class TestVerifyContract(unittest.TestCase):
     def test_valid_stdout_preserves_three_lines_and_adds_assurance(self):
         r = _verify(self.outdir)
         lines = [l for l in r.stdout.strip().splitlines() if l]
-        self.assertEqual(len(lines), 10, f"Expected 10 lines, got: {lines}")
+        self.assertEqual(len(lines), 11, f"Expected 11 lines, got: {lines}")
         self.assertEqual(lines[3], "PAYLOAD_INTEGRITY=VALID")
         self.assertEqual(lines[4], "BINDING_FIELD_CONSISTENCY=ABSENT")
         self.assertEqual(lines[5], "INVOCATION_IDENTITY_CONSISTENCY=ABSENT")
-        self.assertEqual(lines[6], "SIGNATURE_VALIDITY=ABSENT")
-        self.assertEqual(lines[7], "TRUSTED_SIGNER_IDENTITY=UNESTABLISHED")
-        self.assertEqual(lines[8], "FRESHNESS=NOT_EVALUATED")
-        self.assertEqual(lines[9], "AUTHORIZATION=NOT_EVALUATED")
+        self.assertEqual(lines[6], "INVOCATION_BINDING_CONSISTENCY=ABSENT")
+        self.assertEqual(lines[7], "SIGNATURE_VALIDITY=ABSENT")
+        self.assertEqual(lines[8], "TRUSTED_SIGNER_IDENTITY=UNESTABLISHED")
+        self.assertEqual(lines[9], "FRESHNESS=NOT_EVALUATED")
+        self.assertEqual(lines[10], "AUTHORIZATION=NOT_EVALUATED")
 
     def test_valid_first_line(self):
         r = _verify(self.outdir)
@@ -156,6 +157,7 @@ class TestVerifyContract(unittest.TestCase):
         self.assertEqual(obj["payload_integrity"], "VALID")
         self.assertEqual(obj["binding_field_consistency"], "ABSENT")
         self.assertEqual(obj["invocation_identity_consistency"], "ABSENT")
+        self.assertEqual(obj["invocation_binding_consistency"], "ABSENT")
         self.assertEqual(obj["signature_validity"], "ABSENT")
         self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
         self.assertEqual(obj["freshness"], "NOT_EVALUATED")
@@ -225,6 +227,7 @@ class TestVerifySignatureEnforcement(unittest.TestCase):
             self.assertEqual(obj["status"], "VALID")
             self.assertEqual(obj["signature"], "VALID")
             self.assertEqual(obj["invocation_identity_consistency"], "VALID")
+            self.assertEqual(obj["invocation_binding_consistency"], "VALID")
             self.assertEqual(obj["signature_validity"], "VALID")
             self.assertEqual(obj["trusted_signer_identity"], "UNESTABLISHED")
 
@@ -243,6 +246,7 @@ class TestVerifySignatureEnforcement(unittest.TestCase):
             obj = json.loads(r.stdout.strip())
             self.assertEqual(obj["signature"], "NONE")
             self.assertEqual(obj["invocation_identity_consistency"], "ABSENT")
+            self.assertEqual(obj["invocation_binding_consistency"], "ABSENT")
             self.assertEqual(obj["signature_validity"], "ABSENT")
 
     def test_tampered_verification_keys_gives_signature_invalid(self):

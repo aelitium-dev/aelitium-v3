@@ -20,6 +20,7 @@ from ..invocation import (
     SURFACE_ANTHROPIC_MESSAGES,
     build_invocation_identity,
 )
+from ..invocation_binding import build_invocation_binding
 from .common import merge_capture_metadata
 from .openai import CaptureResult, _try_sign
 
@@ -102,6 +103,14 @@ def capture_message(
         parameters={"max_tokens": max_tokens},
     ).to_stored_object()
 
+    # Invocation binding (P1.2d2): links the invocation identity above to
+    # this same call's response_hash. Built exclusively from already-derived
+    # values -- never reconstructed from provider/model/messages directly.
+    invocation_binding = build_invocation_binding(
+        invocation_hash=invocation_identity["hash_sha256"],
+        response_hash=response_hash,
+    ).to_stored_object()
+
     base_metadata: Dict[str, Any] = {
         "provider": "anthropic",
         "sdk": "anthropic-python",
@@ -113,6 +122,7 @@ def capture_message(
         "usage": usage,
         "captured_at_utc": ts,
         "invocation_identity": invocation_identity,
+        "invocation_binding": invocation_binding,
     }
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
