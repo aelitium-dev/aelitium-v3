@@ -184,6 +184,22 @@ print(result.ai_hash_sha256)
 
 See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, LiteLLM, streaming, and signing.
 
+### Invocation assurance
+
+Capture bundles also store a versioned **invocation identity**
+(`aelitium-invocation-v1`) — the semantic model/messages/parameters emitted
+at the provider/SDK call boundary — and an **invocation binding**
+(`aelitium-invocation-binding-v1`) linking that identity's hash to the
+stored `response_hash`. The verifier reports both as separate,
+deterministic consistency dimensions: `invocation_identity_consistency` and
+`invocation_binding_consistency`.
+
+These are consistency assurances only — they establish that the stored
+fields are internally consistent with each other, not that a provider
+received or executed the invocation, nor that the response was historically
+caused by it. See [Invocation assurance](docs/INVOCATION_ASSURANCE.md) for
+the full claim boundary.
+
 ---
 
 ## Zero-config with LiteLLM
@@ -380,6 +396,7 @@ See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-bounda
 - [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
 - [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
 - [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, and same-process boundary guidance
+- [Invocation assurance](docs/INVOCATION_ASSURANCE.md) — versioned invocation identity/binding, their consistency dimensions, and explicit claim boundaries
 - [Engine contract](docs/ENGINE_CONTRACT.md) — legacy generic bundle compatibility contract
 - [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — conceptual, non-normative draft; it is not the current AI v1 runtime contract, and AELITIUM does not currently claim conformance or reference-implementation status
 - [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning

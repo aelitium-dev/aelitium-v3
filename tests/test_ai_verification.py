@@ -2526,5 +2526,282 @@ class TestAIInvocationBindingConsistency(unittest.TestCase):
                         )
 
 
+class TestAIInvocationAssuranceAdversarial(unittest.TestCase):
+    """P1.2e: adversarial demonstrations of what invocation identity/binding
+    consistency does and does not prove.
+
+    Every scenario here operates on unsigned bundles using only the
+    authoritative primitives (`build_invocation_identity`,
+    `build_invocation_binding`) and existing test helpers -- no production
+    hashing/grammar logic is duplicated. See docs/INVOCATION_ASSURANCE.md
+    for the normative claim-boundary writeup this class enforces the
+    presence of.
+
+    Deliberately NOT implemented here (see P1.2e RETURN report): a
+    response-side self-consistent rewrite. Reconstructing a valid
+    response_hash for changed output content would require duplicating the
+    capture adapters' own response_hash formula
+    (sha256_hash(canonical_json({"content": ..., "model": ...}))) inside
+    test code, or adding a new production helper solely for test
+    convenience -- both are out of scope for this slice.
+    """
+
+    # Matches _make_bound_bundle's hardcoded metadata.response_hash.
+    _RESPONSE_HASH = "2" * 64
+
+    def _identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def _binding(self, identity: dict, response_hash: str) -> dict:
+        return build_invocation_binding(
+            invocation_hash=identity["hash_sha256"],
+            response_hash=response_hash,
+        ).to_stored_object()
+
+    def test_full_self_consistent_rewrite_remains_internally_valid(self):
+        """LOAD-BEARING (P1.2e section 5).
+
+        An attacker with write access to an unsigned bundle can rewrite the
+        semantic invocation identity, then use the SAME authoritative
+        primitives a legitimate adapter would use to recompute the
+        invocation identity hash, the invocation binding, and the outer
+        canonical/manifest hash -- producing a brand-new bundle that is
+        indistinguishable, under every deterministic consistency dimension
+        this system currently offers, from a bundle that was legitimately
+        captured.
+
+        This demonstrates that internal consistency does NOT establish
+        historical occurrence, provider receipt/execution, or response
+        causation. Detecting this class of rewrite requires a signature
+        over the manifest (see TestVerifyBundleSigned-style coverage and
+        docs/INVOCATION_ASSURANCE.md's "Signatures and Trust" section) --
+        it is explicitly out of scope for the consistency dimensions alone.
+
+        Do NOT alter production code to make this test fail: the result
+        below (valid=True) is the correct, intended behavior of P1.2's
+        claim boundary, not a bug.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            original_identity = self._identity(model="gpt-4o")
+            original_binding = self._binding(original_identity, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": original_identity,
+                    "invocation_binding": original_binding,
+                },
+            )
+            baseline = verify_ai_bundle(bundle)
+            self.assertTrue(baseline.valid)
+            self.assertEqual(
+                baseline.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                baseline.invocation_binding_consistency, AssuranceState.VALID
+            )
+
+            # --- Attacker rewrite: substitute the semantic model, then
+            # recompute every derived field using the authoritative
+            # primitives, exactly as a legitimate adapter would.
+            rewritten_identity = self._identity(model="gpt-4o-attacker-substituted")
+            rewritten_binding = self._binding(rewritten_identity, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": rewritten_identity,
+                    "invocation_binding": rewritten_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.VALID
+            )
+            # Existing v1 binding fields are untouched by this rewrite and
+            # remain internally valid -- not a bug: v1 binding_hash only
+            # commits request_hash/response_hash, neither of which this
+            # rewrite touched.
+            self.assertEqual(
+                result.binding_field_consistency, AssuranceState.VALID
+            )
+
+    def test_cross_bundle_binding_swap_is_rejected(self):
+        """P1.2e section 7.
+
+        A fully internally-valid invocation_binding object legitimately
+        captured for one bundle's invocation identity cannot be
+        transplanted into a different bundle and pass as consistent --
+        binding validity is bundle-local, not merely object-local. This is
+        a genuine two-bundle variant of the single-bundle mismatch already
+        covered by TestAIInvocationBindingConsistency
+        .test_binding_invocation_hash_mismatch_against_stored_identity: here
+        both `invocation_binding` objects are real, independently captured,
+        internally-valid objects -- not hand-assembled in-memory mismatches.
+        """
+        with tempfile.TemporaryDirectory() as dir_a, tempfile.TemporaryDirectory() as dir_b:
+            bundle_a = Path(dir_a)
+            bundle_b = Path(dir_b)
+
+            identity_a = self._identity(model="gpt-4o")
+            identity_b = self._identity(
+                messages=[{"role": "user", "content": "a completely different prompt"}]
+            )
+
+            _make_bound_bundle(bundle_a)
+            binding_a = self._binding(identity_a, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle_a,
+                {"invocation_identity": identity_a, "invocation_binding": binding_a},
+            )
+
+            _make_bound_bundle(bundle_b)
+            binding_b = self._binding(identity_b, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle_b,
+                {"invocation_identity": identity_b, "invocation_binding": binding_b},
+            )
+
+            self.assertTrue(verify_ai_bundle(bundle_a).valid)
+            self.assertTrue(verify_ai_bundle(bundle_b).valid)
+
+            # Swap: transplant bundle B's real, internally-valid
+            # invocation_binding into bundle A, which still stores identity
+            # A and A's own response_hash.
+            _inject_metadata_fields(bundle_a, {"invocation_binding": binding_b})
+
+            result = verify_ai_bundle(bundle_a)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_root_cause_precedence_holds_for_non_hash_identity_failure(self):
+        """P1.2e section 9 adversarial variation.
+
+        The existing P1.2d2 root-cause-precedence test
+        (TestAIInvocationBindingConsistency
+        .test_identity_invalid_makes_binding_invalid_but_reason_is_root_cause)
+        already proves the rule for an INVOCATION_HASH_MISMATCH identity
+        failure. This proves the SAME precedence rule generalizes to a
+        different InvocationIdentityError reason family --
+        INVOCATION_BAD_HASH (a malformed stored hash format, not a stored
+        semantic-field/hash mismatch) -- so the overall reason is never
+        replaced by the derived INVOCATION_BINDING_INPUT_INVALID diagnostic
+        regardless of *why* the identity is invalid.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            identity = self._identity()
+            # Binding built against the identity's ORIGINAL, correctly
+            # formatted hash -- the binding object itself is internally
+            # valid. The identity's own stored hash is tampered afterward,
+            # simulating an attacker corrupting the identity in place
+            # without touching the already-computed binding.
+            invocation_binding = self._binding(identity, self._RESPONSE_HASH)
+            identity["hash_sha256"] = identity["hash_sha256"].upper()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_HASH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_both_absent_on_otherwise_valid_bound_bundle_is_backward_compatible(
+        self,
+    ):
+        """P1.2e section 10.B.
+
+        A bundle with fully valid v1 binding fields but no P1.2 invocation
+        identity/binding at all remains fully valid. This is
+        backward-compatible ABSENCE -- it is NOT proof that no invocation
+        evidence was ever captured or could have been captured for this
+        call; it only means none is present in THIS bundle. No requirement
+        flag is added in response to this behavior.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.ABSENT
+            )
+
+    def test_invocation_assurance_doc_contains_required_boundary_concepts(self):
+        """P1.2e section 15: positive documentation contract.
+
+        Asserts presence of required claim-boundary concepts and stable
+        identifiers in docs/INVOCATION_ASSURANCE.md -- not a prose linter.
+        This guards against the claim-boundary section being accidentally
+        deleted or the document being renamed, not against wording choices.
+        """
+        doc_path = ROOT / "docs" / "INVOCATION_ASSURANCE.md"
+        text = doc_path.read_text(encoding="utf-8")
+        lowered = text.lower()
+
+        for phrase in (
+            "consistency",
+            "historical occurrence",
+            "provider",
+            "execution",
+            "causation",
+            "freshness",
+            "authorization",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+        for identifier in (
+            "invocation_identity_consistency",
+            "invocation_binding_consistency",
+            "aelitium-invocation-v1",
+            "aelitium-invocation-binding-v1",
+        ):
+            with self.subTest(identifier=identifier):
+                self.assertIn(identifier, text)
+
+
 if __name__ == "__main__":
     unittest.main()
