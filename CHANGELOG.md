@@ -4,46 +4,134 @@ All notable changes to AELITIUM are documented here.
 
 Format: `[version] — date — description`
 
+A dated `[version]` heading in this file means that version was released and
+tagged. The current line under development appears under `[Unreleased]` and is
+converted to a dated heading in the release commit that immediately precedes its
+annotated tag.
+
+Entries below `[0.2.4]` are historical and are retained as originally written.
+Two known artefacts of that history are preserved rather than rewritten: a legacy
+`[unreleased] — 2026-03-10` heading whose work shipped in the 0.2.x line, and a
+`[0.2.1]` entry recorded after `[0.1.0]`. Neither refers to the current
+`[Unreleased]` section at the top of this file.
+
 ---
 
-## [0.3.0] — 2026-08-17 — repository/package baseline after P0 audit
+## [Unreleased] — planned release: 0.3.0
 
-This is the current repository and package baseline established by the P0 AI
-Assurance hardening pass. This reconciliation does not tag, create a GitHub
-Release, or publish version 0.3.0 to PyPI.
+**Release status.** The repository and package baseline is `0.3.0`. No `v0.3.0`
+tag, GitHub Release, or PyPI publication exists. The latest released and tagged
+version remains `v0.2.4` (2026-03-14). This section is converted to
+`## [0.3.0] — <release date>` in the release commit that immediately precedes the
+annotated `v0.3.0` tag.
+
+The entries below cover all material work on the 0.3.0 line through
+`14c8202626f85637d44bc7209ed64f3ba7f646ce` (merge of PR #21).
+
+### Breaking
+
+These change the verification and capture surface relative to 0.2.4. Bundles and
+callers accepted under 0.2.4 may now be rejected.
+
+- **Fail-closed v1 contract enforcement** — bundles missing required v1 fields are
+  rejected at verification time rather than silently passing. Bundles that
+  verified under 0.2.4 solely because a required field was absent now fail.
+- **Fail-closed `compare`** — `compare` no longer reports a comparison result when
+  a bundle cannot be established as valid; it fails closed instead.
+- **Reserved capture-metadata keys** — adapter-owned metadata keys are reserved.
+  A caller supplying a reserved key now raises `CaptureMetadataCollisionError`
+  (`CAPTURE_METADATA_RESERVED_KEY_COLLISION`) instead of silently overwriting
+  adapter-owned fields. This protects adapter-owned fields from caller metadata
+  collisions; it does not address filesystem concurrency.
+
+### Added
+
+- **Explicit assurance-state model** — verification reports explicit states across
+  assurance dimensions: `VALID`/`INVALID` where evaluated; `ABSENT` for optional
+  missing binding or signature evidence; `UNESTABLISHED` for trusted signer
+  identity under the bundled-key model; `NOT_EVALUATED` for dimensions the current
+  system does not evaluate. Unsigned and unbound bundles remain `VALID` by default
+  unless `--require-signature` or `--require-binding` is used.
+- **Trusted signer store** — a local trusted signer store primitive
+  (`engine/trust.py`), with normalized handling of trust store read failures.
+- **Trusted signer identity evaluation** — the verifier evaluates trusted signer
+  identity against an explicitly supplied external trust store, exposed on
+  `verify` and `verify-bundle` as `--trust-store` and `--require-trusted-signer`.
+  Without such a store, `trusted_signer_identity` remains `UNESTABLISHED`.
+- **Invocation identity** — a versioned invocation-identity primitive
+  (`engine/invocation.py`), recorded by the capture adapters and checked for
+  consistency by the verifier. Invocation identity is recorded separately from
+  `request_hash`; recording it does not change v1 `request_hash` construction.
+- **Invocation binding** — a versioned invocation-binding primitive
+  (`engine/invocation_binding.py`) binding invocation identity to the response
+  hash, consulted by the bundle verifier for parsing and recomputation.
 
 ### Changed
-- Centralized AI bundle verification into a single authoritative code path,
-  eliminating divergent verification branches across CLI and library entry points
-- Explicit assurance states replace implicit pass/fail: verification reports
-  explicit states across assurance dimensions — `VALID`/`INVALID` where
-  evaluated; `ABSENT` for optional missing binding or signature evidence;
-  `UNESTABLISHED` for trusted signer identity under the current bundled-key
-  model; `NOT_EVALUATED` for freshness and authorization. Unsigned and unbound
-  bundles remain `VALID` by default unless `--require-signature` or
-  `--require-binding` is used.
-- Stricter v1 contract enforcement: bundles missing required v1 fields are
-  rejected at verification time rather than silently passing
-- Capture metadata collision protection: adapter-owned metadata keys are
-  reserved; callers supplying a reserved key raise `CaptureMetadataCollisionError`
-  (`CAPTURE_METADATA_RESERVED_KEY_COLLISION`). This protects adapter-owned fields
-  from caller metadata collisions; it does not address filesystem concurrency.
-- Expanded adversarial verification coverage: test suite now covers malformed
-  governed hash matrix, signature stripping, binding stripping, attacker signer
-  substitution, unsupported version and signature algorithm, canonicalization
-  golden vectors, LiteLLM excluded behavior-parameter characterization, and
-  malformed manifest timestamp parity
-- Documentation and public-claim guardrails: public-facing docs now accurately
-  bound what current verification establishes and does not establish
-- Standalone manifest timestamp validation aligned with shared verifier behavior
-  (`scripts/aelitium_verify_standalone.py`)
 
-### Boundaries (unchanged from 0.2.4)
-- `ai_output_v1` schema identifier is unchanged
-- v1 `request_hash` and `binding_hash` construction is unchanged
-- Request identity remains selected-field identity, not full invocation identity
-- `trusted_signer_identity` remains `UNESTABLISHED`
-- Freshness and authorization remain `NOT_EVALUATED`
+- **Centralized authoritative AI bundle verification** — a single authoritative
+  verification code path replaces divergent verification branches across the CLI
+  and library entry points.
+- Standalone manifest timestamp validation aligned with shared verifier behaviour
+  (`scripts/aelitium_verify_standalone.py`).
+- Documentation and public-claim guardrails: public-facing docs bound what current
+  verification does and does not establish, with an executable public-claims
+  guardrail (`scripts/guardrail_public_claims.sh`) gated in CI.
+
+### Capture adapters
+
+- **OpenAI** — native adapter (`engine/capture/openai.py`) covering synchronous and
+  streaming chat completions, with optional Ed25519 signing at capture time.
+  Records invocation identity and invocation binding.
+- **LiteLLM** — capture adapter plus `enable_litellm()` auto-capture, with strict
+  and verbose modes; auto-capture bundles are written under `binding_hash`.
+  Synchronous and non-streaming.
+- **Anthropic** — adapter (`engine/capture/anthropic.py`) is supported and records
+  invocation identity and invocation binding. Synchronous and non-streaming. It
+  requires the `anthropic` extra; its tests skip when the extra is absent locally
+  and are required to execute in CI (see below).
+
+### Tests and CI
+
+- **CI test-suite gate (PR #21)** — the assurance test suite is gated across
+  supported Python versions. `.github/workflows/tests.yml` runs the suite on
+  Python 3.10, 3.11 and 3.12 with provider extras installed (`pip install -e
+  ".[all]"`), and fails the job if any test is skipped, so provider adapter tests
+  cannot silently stop executing. The end-to-end matrix
+  (`scripts/run_test_matrix.sh`) runs in the same workflow.
+- **459 tests** across Python 3.10 / 3.11 / 3.12 with provider extras, up from 177
+  at 0.2.4.
+- Expanded adversarial verification coverage: malformed governed hash matrix,
+  signature stripping, binding stripping, attacker signer substitution,
+  unsupported version and signature algorithm, canonicalization golden vectors,
+  LiteLLM excluded behaviour-parameter characterization, and malformed manifest
+  timestamp parity.
+- `.github/workflows/release-audit.yml` gates `scripts/audit_release.sh` on push
+  and pull request.
+
+### Assurance boundaries (unchanged from 0.2.4)
+
+Verification establishes internal consistency of recorded evidence on the
+validated surface. It does not establish:
+
+- **Historical occurrence** — that the model actually executed, or that the
+  provider was honest.
+- **Causation** — that a real-world request caused the recorded response.
+  Verification checks stored binding-field consistency only.
+- That the response is correct, truthful, complete, or that capture was complete.
+
+Additionally, and unchanged:
+
+- The `ai_output_v1` schema identifier is unchanged.
+- v1 `request_hash` and `binding_hash` construction is unchanged.
+- Request identity remains selected-field identity, not full invocation identity.
+- `trusted_signer_identity` remains `UNESTABLISHED` unless an external trust store
+  is explicitly supplied for evaluation.
+- `freshness` remains `NOT_EVALUATED`.
+- `authorization` remains `NOT_EVALUATED`.
+- Canonicalization is the deterministic JSON form identified by
+  `json_sorted_keys_no_whitespace_utf8`. It is **not** RFC 8785 / JCS and does not
+  claim RFC 8785 compatibility or cross-language equivalence beyond matching these
+  exact rules. See [docs/CANONICALIZATION_SPEC.md](docs/CANONICALIZATION_SPEC.md).
 
 ---
 

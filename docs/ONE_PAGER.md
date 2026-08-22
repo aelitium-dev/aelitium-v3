@@ -39,7 +39,9 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ## Key commands
 
 ```bash
-pip install aelitium
+# Install from source (PyPI availability is not independently verified)
+pip install .
+# with provider extras: pip install ".[all]"
 
 # Option A: capture through the native OpenAI adapter
 from engine.capture.openai import capture_chat_completion
@@ -111,8 +113,13 @@ external anchor or signer identity.
 
 ## Current state
 
-- Repository/package version: **0.3.0** (current baseline)
-- Historical repository claim: PyPI v0.2.4 (not externally verified during R0)
+- Repository/package source baseline: **0.3.0** — unreleased. No `v0.3.0` tag,
+  GitHub Release, or PyPI publication exists.
+- Latest released and tagged version: **v0.2.4** (2026-03-14)
+- The 0.3.0 line is prepared for release pending final reconciliation; see
+  [CHANGELOG.md](../CHANGELOG.md) and [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+- A historical repository claim of PyPI `v0.2.4` exists but has not been
+  independently verified; PyPI availability is not asserted here
 - Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
@@ -131,6 +138,6 @@ external anchor or signer identity.
 
 ## Repo
 
-`pip install aelitium`
 GitHub: https://github.com/aelitium-dev/aelitium-v3
+Install from source: `pip install .` (PyPI availability is not independently verified)
 Spec: [docs/EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md)
