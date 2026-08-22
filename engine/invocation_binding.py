@@ -16,10 +16,10 @@ This module does NOT:
 - integrate with any capture adapter
 - modify, read, or relate to the existing v1 binding_hash
   (SHA256(canonical_json({"request_hash": ..., "response_hash": ...})))
-- get consulted by engine.ai_verify, the CLI, or the standalone verifier
 - compare its inputs against any bundle's actual invocation_identity or
-  response_hash fields (that cross-field comparison is bundle-verifier
-  semantics for a future slice)
+  response_hash fields (engine.ai_verify consults this primitive for
+  parsing/recomputation, then performs that bundle-verifier cross-field
+  comparison)
 
 What this primitive represents:
     a versioned, self-describing record that an invocation-hash value and a
@@ -37,10 +37,9 @@ What it does NOT represent:
 - non-repudiation
 - trusted identity
 
-The eventual assurance meaning (once a future verifier consults this, which
-this slice does not implement) is limited to: the stored binding fields are
-internally consistent with the declared versioned binding hash. Nothing
-more.
+The assurance meaning of this primitive is limited to: the stored binding
+fields are internally consistent with the declared versioned binding hash.
+Nothing more.
 """
 
 from __future__ import annotations
