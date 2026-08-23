@@ -191,8 +191,12 @@ overall reason always points at the root cause, not the derived diagnostic.
 | Valid identity + cross-field-mismatched binding | `VALID` | `INVALID` |
 | Early payload failure | `NOT_EVALUATED` | `NOT_EVALUATED` |
 
-`freshness` is always `NOT_EVALUATED` in the current system.
-`authorization` is always `NOT_EVALUATED` in the current system.
+`freshness` remains `NOT_EVALUATED` when no explicit Freshness policy pair is
+supplied. When activated, it independently evaluates declared-time recency of
+`ai_canonical.json.ts_utc`; invocation identity or binding consistency does not
+establish provider execution, response causation, or trusted historical time.
+See [Trust boundary](TRUST_BOUNDARY.md#freshness-declared-time-recency).
+`authorization` remains `NOT_EVALUATED` in the current system.
 
 ## Consistency Is Not Historical Occurrence
 

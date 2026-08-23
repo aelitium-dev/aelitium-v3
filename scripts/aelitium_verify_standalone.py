@@ -22,6 +22,8 @@ def verify_bundle(
     require_binding: bool = False,
     trust_store_path: str | None = None,
     require_trusted_signer: bool = False,
+    freshness_max_age_seconds: int | None = None,
+    freshness_reference_time_utc: str | None = None,
 ) -> tuple:
     """Returns (valid, reason, details)."""
     vk_path = bundle_dir / "verification_keys.json"
@@ -30,6 +32,8 @@ def verify_bundle(
         require_binding=require_binding,
         trust_store_path=trust_store_path,
         require_trusted_signer=require_trusted_signer,
+        freshness_max_age_seconds=freshness_max_age_seconds,
+        freshness_reference_time_utc=freshness_reference_time_utc,
     )
     result = verify_ai_bundle(bundle_dir, options=options)
     if not result.valid:
@@ -83,6 +87,25 @@ def main():
             "trusted by the supplied trust store"
         ),
     )
+    ap.add_argument(
+        "--freshness-max-age-seconds",
+        type=int,
+        metavar="SECONDS",
+        default=None,
+        help=(
+            "Maximum declared-time evidence age in seconds; requires "
+            "--freshness-reference-time-utc"
+        ),
+    )
+    ap.add_argument(
+        "--freshness-reference-time-utc",
+        metavar="UTC_TIME",
+        default=None,
+        help=(
+            "Explicit UTC reference time in YYYY-MM-DDTHH:MM:SSZ form; "
+            "requires --freshness-max-age-seconds"
+        ),
+    )
     args = ap.parse_args()
 
     bundle_dir = Path(args.bundle)
@@ -92,6 +115,8 @@ def main():
         require_binding=args.require_binding,
         trust_store_path=args.trust_store,
         require_trusted_signer=args.require_trusted_signer,
+        freshness_max_age_seconds=args.freshness_max_age_seconds,
+        freshness_reference_time_utc=args.freshness_reference_time_utc,
     )
 
     if args.json:

@@ -1,5 +1,6 @@
 """Parity and adversarial tests for the canonical AI verification kernel."""
 
+import ast
 import base64
 import hashlib
 import json
@@ -17,6 +18,12 @@ from engine.ai_verify import (
     AIVerificationOptions,
     AssuranceState,
     verify_ai_bundle,
+)
+from engine.freshness import (
+    FRESHNESS_POLICY_INVALID,
+    FRESHNESS_STALE,
+    FRESHNESS_TIMESTAMP_IN_FUTURE,
+    FRESHNESS_TIMESTAMP_MALFORMED,
 )
 from engine.invocation import (
     MODE_SYNC_NON_STREAMING,
@@ -93,6 +100,18 @@ def _write_manifest(bundle: Path, manifest: dict) -> None:
     )
 
 
+def _rewrite_canonical_and_update_manifest_hash(
+    bundle: Path,
+    canonical: dict,
+) -> str:
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
+    return canonical_hash
+
+
 def _inject_invocation_identity(bundle: Path, stored_object: dict) -> None:
     """Insert a stored invocation-identity object into an existing bundle's
     canonical metadata and recompute the outer payload/manifest hash so
@@ -165,6 +184,29 @@ def _make_bound_bundle(bundle: Path) -> None:
     manifest["ai_hash_sha256"] = canonical_hash
     manifest["binding_hash"] = binding_hash
     _write_manifest(bundle, manifest)
+
+
+def _make_valid_invocation_bundle(bundle: Path) -> None:
+    """Create a valid bound bundle with invocation identity and binding."""
+
+    _make_bound_bundle(bundle)
+    identity = build_invocation_identity(
+        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+        mode=MODE_SYNC_NON_STREAMING,
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "hi"}],
+    ).to_stored_object()
+    invocation_binding = build_invocation_binding(
+        invocation_hash=identity["hash_sha256"],
+        response_hash="2" * 64,
+    ).to_stored_object()
+    _inject_metadata_fields(
+        bundle,
+        {
+            "invocation_identity": identity,
+            "invocation_binding": invocation_binding,
+        },
+    )
 
 
 def _verification_material_for_key(
@@ -970,6 +1012,1015 @@ class TestAIAssuranceResults(unittest.TestCase):
             self.assertEqual(output.returncode, 2)
             for name in result.assurance_dict():
                 self.assertIn(name.upper(), output.stdout)
+
+
+class TestAIFreshnessAssurance(unittest.TestCase):
+    """P1.3c kernel integration for declared-time freshness assurance."""
+
+    _RECENT_REFERENCE = "2026-03-04T00:00:30Z"
+    _BOUNDARY_REFERENCE = "2026-03-04T00:01:00Z"
+    _STALE_REFERENCE = "2026-03-04T00:01:01Z"
+    _FUTURE_REFERENCE = "2026-03-03T23:59:59Z"
+
+    def _options(
+        self,
+        *,
+        reference_time: object = _BOUNDARY_REFERENCE,
+        maximum_age: object = 60,
+        **kwargs,
+    ) -> AIVerificationOptions:
+        return AIVerificationOptions(
+            freshness_max_age_seconds=maximum_age,
+            freshness_reference_time_utc=reference_time,
+            **kwargs,
+        )
+
+    def _verify(
+        self,
+        bundle: Path,
+        options: AIVerificationOptions | None = None,
+    ):
+        result = verify_ai_bundle(bundle, options=options)
+        self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+        return result
+
+    def test_no_freshness_options_preserve_existing_valid_result(self):
+        options = AIVerificationOptions()
+        self.assertIsNone(options.freshness_max_age_seconds)
+        self.assertIsNone(options.freshness_reference_time_utc)
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            implicit = self._verify(bundle)
+            explicit = self._verify(bundle, options)
+
+            self.assertEqual(implicit, explicit)
+            self.assertTrue(implicit.valid)
+            self.assertEqual(implicit.reason, "OK")
+            self.assertEqual(implicit.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_recent_canonical_timestamp_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
+    def test_exact_maximum_age_boundary_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
+    def test_one_second_stale_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._STALE_REFERENCE),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_STALE)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_one_second_future_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._FUTURE_REFERENCE),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_TIMESTAMP_IN_FUTURE)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_malformed_canonical_timestamp_only_fails_active_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "not-a-strict-utc-timestamp"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            compatibility_result = self._verify(bundle)
+            active_result = self._verify(bundle, self._options())
+
+            self.assertTrue(compatibility_result.valid)
+            self.assertEqual(
+                compatibility_result.freshness,
+                AssuranceState.NOT_EVALUATED,
+            )
+            self.assertFalse(active_result.valid)
+            self.assertEqual(
+                active_result.reason,
+                FRESHNESS_TIMESTAMP_MALFORMED,
+            )
+            self.assertEqual(active_result.freshness, AssuranceState.INVALID)
+
+    def test_missing_canonical_timestamp_preserves_schema_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical.pop("ts_utc")
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_SCHEMA_INVALID")
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_malformed_reference_time_is_policy_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time="not-a-reference-time"),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+            self.assertEqual(result.freshness, AssuranceState.UNESTABLISHED)
+
+    def test_partial_policy_pairs_are_policy_invalid(self):
+        options = (
+            AIVerificationOptions(freshness_max_age_seconds=60),
+            AIVerificationOptions(
+                freshness_reference_time_utc=self._BOUNDARY_REFERENCE
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for selected in options:
+                with self.subTest(options=selected):
+                    result = self._verify(bundle, selected)
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+
+    def test_invalid_maximum_age_matrix_is_policy_invalid(self):
+        invalid_values = (-1, False, True, 60.0, "60", [], {})
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for value in invalid_values:
+                with self.subTest(value=repr(value)):
+                    result = self._verify(
+                        bundle,
+                        self._options(maximum_age=value),
+                    )
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+
+    def test_invalid_policy_is_rejected_before_bundle_processing(self):
+        invalid_options = (
+            AIVerificationOptions(freshness_max_age_seconds=60),
+            AIVerificationOptions(
+                freshness_reference_time_utc=self._BOUNDARY_REFERENCE
+            ),
+            self._options(reference_time="not-a-reference-time"),
+            self._options(maximum_age=-1),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            missing_bundle = Path(directory) / "missing"
+
+            for selected in invalid_options:
+                with self.subTest(options=selected):
+                    result = self._verify(missing_bundle, selected)
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+                    self.assertEqual(
+                        result.payload_integrity,
+                        AssuranceState.NOT_EVALUATED,
+                    )
+
+    def test_repeated_verification_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            options = self._options(reference_time=self._RECENT_REFERENCE)
+
+            first = self._verify(bundle, options)
+            second = self._verify(bundle, options)
+
+            self.assertEqual(first, second)
+
+    def test_changing_only_reference_time_crosses_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            boundary = self._verify(bundle, self._options())
+            stale = self._verify(
+                bundle,
+                self._options(reference_time=self._STALE_REFERENCE),
+            )
+
+            self.assertEqual(boundary.freshness, AssuranceState.VALID)
+            self.assertEqual(stale.freshness, AssuranceState.INVALID)
+            self.assertEqual(stale.reason, FRESHNESS_STALE)
+
+    def test_unsigned_self_consistent_rewrite_can_be_recent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "SELF-CONSISTENT UNSIGNED REWRITE"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+    def test_trusted_signer_with_stale_timestamp_keeps_trust_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = self._verify(
+                bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_STALE)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_trusted_signer_with_future_timestamp_keeps_trust_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = self._verify(
+                bundle,
+                self._options(
+                    reference_time=self._FUTURE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_TIMESTAMP_IN_FUTURE)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_recent_freshness_is_independent_of_signature_and_trust(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            unsigned_bundle = root / "unsigned"
+            trusted_bundle = root / "trusted"
+            unknown_bundle = root / "unknown"
+            for bundle in (unsigned_bundle, trusted_bundle, unknown_bundle):
+                _pack(bundle)
+
+            trusted_key = Ed25519PrivateKey.generate()
+            trusted_public_key_b64 = _sign_bundle_with_key(
+                trusted_bundle,
+                trusted_key,
+            )
+            _sign_bundle_with_key(
+                unknown_bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            trust_store_path = _write_trust_store(
+                root,
+                [trusted_public_key_b64],
+            )
+
+            unsigned = self._verify(
+                unsigned_bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+            trusted = self._verify(
+                trusted_bundle,
+                self._options(
+                    reference_time=self._RECENT_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+            unknown = self._verify(
+                unknown_bundle,
+                self._options(
+                    reference_time=self._RECENT_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertEqual(
+                {unsigned.freshness, trusted.freshness, unknown.freshness},
+                {AssuranceState.VALID},
+            )
+            self.assertEqual(unsigned.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(trusted.signature_validity, AssuranceState.VALID)
+            self.assertEqual(unknown.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                unsigned.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(
+                trusted.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                unknown.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+    def test_timestamp_tamper_without_hash_update_preserves_hash_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:01Z"
+            _rewrite_canonical(bundle, canonical)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "HASH_MISMATCH")
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_signature_invalid_precedes_stale_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _sign_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:01Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time="2026-03-04T00:02:00Z"),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_INVALID")
+            self.assertEqual(result.signature_validity, AssuranceState.INVALID)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_valid_invocation_dimensions_are_unchanged_with_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_valid_invocation_bundle(bundle)
+
+            baseline = self._verify(bundle)
+            active = self._verify(bundle, self._options())
+
+            dimensions = (
+                "payload_integrity",
+                "binding_field_consistency",
+                "invocation_identity_consistency",
+                "invocation_binding_consistency",
+                "signature_validity",
+                "trusted_signer_identity",
+            )
+            for dimension in dimensions:
+                with self.subTest(dimension=dimension):
+                    self.assertEqual(
+                        getattr(active, dimension),
+                        getattr(baseline, dimension),
+                    )
+            self.assertTrue(active.valid)
+            self.assertEqual(active.freshness, AssuranceState.VALID)
+            self.assertEqual(
+                active.invocation_identity_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                active.invocation_binding_consistency,
+                AssuranceState.VALID,
+            )
+
+    def test_invocation_root_precedes_stale_and_future_freshness(self):
+        references = (self._STALE_REFERENCE, self._FUTURE_REFERENCE)
+        for reference_time in references:
+            with self.subTest(reference_time=reference_time):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    identity = build_invocation_identity(
+                        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+                        mode=MODE_SYNC_NON_STREAMING,
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": "hi"}],
+                    ).to_stored_object()
+                    invocation_binding = build_invocation_binding(
+                        invocation_hash=identity["hash_sha256"],
+                        response_hash="2" * 64,
+                    ).to_stored_object()
+                    identity["request"]["model"] = "tampered-model"
+                    _inject_metadata_fields(
+                        bundle,
+                        {
+                            "invocation_identity": identity,
+                            "invocation_binding": invocation_binding,
+                        },
+                    )
+
+                    result = self._verify(
+                        bundle,
+                        self._options(reference_time=reference_time),
+                    )
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+                    self.assertEqual(
+                        result.invocation_identity_consistency,
+                        AssuranceState.INVALID,
+                    )
+                    self.assertEqual(
+                        result.invocation_binding_consistency,
+                        AssuranceState.INVALID,
+                    )
+                    self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_existing_requirement_roots_precede_stale_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+
+            signature_bundle = root / "signature"
+            _pack(signature_bundle)
+            signature_result = self._verify(
+                signature_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    require_signature=True,
+                ),
+            )
+
+            binding_bundle = root / "binding"
+            _pack(binding_bundle)
+            binding_result = self._verify(
+                binding_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    require_binding=True,
+                ),
+            )
+
+            trust_bundle = root / "trust"
+            _pack(trust_bundle)
+            _sign_bundle_with_key(
+                trust_bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(
+                root,
+                [other_public_key_b64],
+            )
+            trust_result = self._verify(
+                trust_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            expected = (
+                (signature_result, "SIGNATURE_REQUIRED"),
+                (binding_result, "BINDING_REQUIRED"),
+                (trust_result, "TRUSTED_SIGNER_NOT_FOUND"),
+            )
+            for result, reason in expected:
+                with self.subTest(reason=reason):
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, reason)
+                    self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+
+class TestAIFreshnessAssuranceAdversarial(unittest.TestCase):
+    """P1.3e: adversarial demonstrations of the Freshness claim boundary."""
+
+    _REFERENCE_TIME = "2026-03-04T00:01:00Z"
+    _MAXIMUM_AGE_SECONDS = 60
+
+    def _options(self, **kwargs) -> AIVerificationOptions:
+        return AIVerificationOptions(
+            freshness_max_age_seconds=self._MAXIMUM_AGE_SECONDS,
+            freshness_reference_time_utc=self._REFERENCE_TIME,
+            **kwargs,
+        )
+
+    def test_self_consistent_declared_timestamp_rewrite_can_remain_freshness_valid(
+        self,
+    ):
+        """A self-consistent declared timestamp rewrite can remain Freshness
+        VALID. This demonstrates verifier semantics and the absence of
+        historical-time authentication; it does not prove that the rewritten
+        timestamp historically occurred.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            original_timestamp = canonical["ts_utc"]
+            canonical["ts_utc"] = "2026-03-04T00:00:30Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = verify_ai_bundle(bundle, options=self._options())
+
+            self.assertNotEqual(original_timestamp, canonical["ts_utc"])
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_trusted_resigned_timestamp_does_not_establish_timestamp_truth(self):
+        """Trusted signer identity does not establish timestamp truth.
+
+        A valid signature authenticates the rewritten manifest bytes under the
+        existing signature semantics; it does not make the declared canonical
+        timestamp a trusted historical-time assertion.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:45Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=self._options(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_freshness_valid_with_invocation_consistency_proves_no_execution_or_causation(
+        self,
+    ):
+        """Freshness plus invocation consistency remains stored-evidence
+        assurance; the combination does not establish provider execution or
+        response causation.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_valid_invocation_bundle(bundle)
+
+            result = verify_ai_bundle(bundle, options=self._options())
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_trust_boundary_doc_contains_required_freshness_claims(self):
+        """Positive contract for load-bearing P1.3e claim-boundary concepts."""
+
+        doc_path = ROOT / "docs" / "TRUST_BOUNDARY.md"
+        text = doc_path.read_text(encoding="utf-8")
+        lowered = text.lower()
+
+        for phrase in (
+            "ai_canonical.json.ts_utc",
+            "freshness_reference_time_utc",
+            "freshness_max_age_seconds",
+            "[reference_time - maximum_age, reference_time]",
+            "declared-time recency",
+            "trusted historical time",
+            "implicit system clock",
+            "authorization = not_evaluated",
+            "historical occurrence",
+            "provider execution",
+            "response causation",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+
+class TestAIFreshnessPublicSurfaces(unittest.TestCase):
+    """P1.3d: CLI and standalone forwarding/rendering parity."""
+
+    _BOUNDARY_REFERENCE = "2026-03-04T00:01:00Z"
+    _STALE_REFERENCE = "2026-03-04T00:01:01Z"
+    _FUTURE_REFERENCE = "2026-03-03T23:59:59Z"
+
+    def _policy_args(
+        self,
+        *,
+        reference_time: str = _BOUNDARY_REFERENCE,
+        maximum_age: str = "60",
+    ) -> tuple[str, ...]:
+        return (
+            "--freshness-max-age-seconds",
+            maximum_age,
+            "--freshness-reference-time-utc",
+            reference_time,
+        )
+
+    def _text_outputs(
+        self,
+        bundle: Path,
+        *extra: str,
+    ) -> dict[str, subprocess.CompletedProcess]:
+        return {
+            "verify": _run_cli("verify", "--out", str(bundle), *extra),
+            "verify-bundle": _run_cli(
+                "verify-bundle",
+                str(bundle),
+                *extra,
+            ),
+            "standalone": subprocess.run(
+                [
+                    sys.executable,
+                    str(STANDALONE),
+                    "--bundle",
+                    str(bundle),
+                    *extra,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            ),
+        }
+
+    def _assert_outputs(
+        self,
+        outputs: dict[str, subprocess.CompletedProcess],
+        *,
+        returncode: int,
+        freshness: str,
+        reason: str | None = None,
+    ) -> None:
+        for surface, output in outputs.items():
+            with self.subTest(surface=surface, args=output.args):
+                self.assertEqual(
+                    output.returncode,
+                    returncode,
+                    output.stdout + output.stderr,
+                )
+                if output.stdout.lstrip().startswith("{"):
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["freshness"], freshness)
+                    self.assertEqual(
+                        payload["authorization"],
+                        "NOT_EVALUATED",
+                    )
+                    if reason is not None:
+                        self.assertEqual(
+                            payload["reason"].split(":", 1)[0],
+                            reason,
+                        )
+                else:
+                    rendered = output.stdout.upper()
+                    self.assertIn(f"FRESHNESS={freshness}", rendered)
+                    self.assertIn(
+                        "AUTHORIZATION=NOT_EVALUATED",
+                        rendered,
+                    )
+                    if reason is not None:
+                        self.assertIn(f"REASON={reason}", rendered)
+
+    def test_no_policy_preserves_all_public_surfaces_in_both_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+
+    def test_exact_boundary_policy_is_valid_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args()
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+
+    def test_stale_policy_fails_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args(reference_time=self._STALE_REFERENCE)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+
+    def test_future_policy_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=self._FUTURE_REFERENCE),
+                ),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_IN_FUTURE,
+            )
+
+    def test_malformed_evidence_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "not-an-evidence-time"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *self._policy_args()),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_MALFORMED,
+            )
+
+    def test_invalid_partial_and_negative_policies_use_kernel_failure(self):
+        policies = (
+            (
+                "malformed-reference",
+                self._policy_args(reference_time="not-a-reference-time"),
+            ),
+            ("only-max-age", ("--freshness-max-age-seconds", "60")),
+            (
+                "only-reference",
+                (
+                    "--freshness-reference-time-utc",
+                    self._BOUNDARY_REFERENCE,
+                ),
+            ),
+            ("negative-max-age", self._policy_args(maximum_age="-1")),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for case, policy in policies:
+                with self.subTest(case=case):
+                    self._assert_outputs(
+                        _public_verifier_outputs(bundle, *policy),
+                        returncode=2,
+                        freshness="UNESTABLISHED",
+                        reason=FRESHNESS_POLICY_INVALID,
+                    )
+
+    def test_reference_string_is_forwarded_without_normalization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            reference_with_space = self._BOUNDARY_REFERENCE + " "
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=reference_with_space),
+                ),
+                returncode=2,
+                freshness="UNESTABLISHED",
+                reason=FRESHNESS_POLICY_INVALID,
+            )
+
+    def test_active_policy_preserves_existing_assurance_dimensions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = build_invocation_identity(
+                surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+                mode=MODE_SYNC_NON_STREAMING,
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "hi"}],
+            ).to_stored_object()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="2" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+            options = (
+                *self._policy_args(),
+                "--require-signature",
+                "--require-binding",
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            )
+
+            outputs = _public_verifier_outputs(bundle, *options)
+            self._assert_outputs(
+                outputs,
+                returncode=0,
+                freshness="VALID",
+            )
+            expected = {
+                "payload_integrity": "VALID",
+                "binding_field_consistency": "VALID",
+                "invocation_identity_consistency": "VALID",
+                "invocation_binding_consistency": "VALID",
+                "signature_validity": "VALID",
+                "trusted_signer_identity": "VALID",
+                "authorization": "NOT_EVALUATED",
+            }
+            for surface, output in outputs.items():
+                with self.subTest(surface=surface):
+                    payload = json.loads(output.stdout)
+                    for dimension, state in expected.items():
+                        self.assertEqual(payload[dimension], state)
+
+    def test_public_surfaces_have_no_clock_or_freshness_calculation(self):
+        forbidden_calls = {
+            "datetime.now",
+            "datetime.utcnow",
+            "time.time",
+            "datetime.fromisoformat",
+            "datetime.strptime",
+        }
+        forbidden_fragments = (
+            "evaluate_freshness",
+            "FreshnessOutcome",
+        )
+        for relative_path in (
+            "engine/ai_cli.py",
+            "scripts/aelitium_verify_standalone.py",
+        ):
+            with self.subTest(path=relative_path):
+                source = (ROOT / relative_path).read_text(encoding="utf-8")
+                tree = ast.parse(source)
+                calls = set()
+                identifiers = set()
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Name):
+                        identifiers.add(node.id)
+                    elif isinstance(node, ast.Attribute):
+                        identifiers.add(node.attr)
+                    elif isinstance(node, ast.arg):
+                        identifiers.add(node.arg)
+                    if not isinstance(node, ast.Call):
+                        continue
+                    if isinstance(node.func, ast.Name):
+                        calls.add(node.func.id)
+                    elif (
+                        isinstance(node.func, ast.Attribute)
+                        and isinstance(node.func.value, ast.Name)
+                    ):
+                        calls.add(f"{node.func.value.id}.{node.func.attr}")
+                self.assertTrue(forbidden_calls.isdisjoint(calls), calls)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        self.assertTrue(
+                            {alias.name for alias in node.names}.isdisjoint(
+                                {"datetime", "time"}
+                            )
+                        )
+                    elif isinstance(node, ast.ImportFrom):
+                        self.assertNotIn(
+                            node.module,
+                            {
+                                "datetime",
+                                "time",
+                                "freshness",
+                                "engine.freshness",
+                            },
+                        )
+                self.assertNotIn("age_seconds", identifiers)
+                for fragment in forbidden_fragments:
+                    self.assertNotIn(fragment, source)
 
 
 class TestAIVerificationDowngradeControls(unittest.TestCase):

@@ -39,6 +39,38 @@ def _verification_options(args: argparse.Namespace) -> AIVerificationOptions:
         require_binding=getattr(args, "require_binding", False),
         trust_store_path=getattr(args, "trust_store", None),
         require_trusted_signer=getattr(args, "require_trusted_signer", False),
+        freshness_max_age_seconds=getattr(
+            args,
+            "freshness_max_age_seconds",
+            None,
+        ),
+        freshness_reference_time_utc=getattr(
+            args,
+            "freshness_reference_time_utc",
+            None,
+        ),
+    )
+
+
+def _add_freshness_policy_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--freshness-max-age-seconds",
+        type=int,
+        metavar="SECONDS",
+        default=None,
+        help=(
+            "Maximum declared-time evidence age in seconds; requires "
+            "--freshness-reference-time-utc"
+        ),
+    )
+    parser.add_argument(
+        "--freshness-reference-time-utc",
+        metavar="UTC_TIME",
+        default=None,
+        help=(
+            "Explicit UTC reference time in YYYY-MM-DDTHH:MM:SSZ form; "
+            "requires --freshness-max-age-seconds"
+        ),
     )
 
 
@@ -518,6 +550,7 @@ def main() -> int:
             "trusted by the supplied trust store"
         ),
     )
+    _add_freshness_policy_arguments(ve)
     ve.set_defaults(fn=cmd_verify)
 
     vr = sub.add_parser("verify-receipt", help="Offline verify an authority receipt_v1")
@@ -560,6 +593,7 @@ def main() -> int:
             "trusted by the supplied trust store"
         ),
     )
+    _add_freshness_policy_arguments(vb)
     vb.set_defaults(fn=cmd_verify_bundle)
 
     cmp = sub.add_parser(

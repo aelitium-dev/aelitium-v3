@@ -69,7 +69,7 @@ Required fields:
 | Field | Type | Description |
 |-------|------|-------------|
 | `schema_version` | `"ai_output_v1"` | Identifies the schema |
-| `ts_utc` | ISO-8601 string | Recorded timestamp; freshness is not evaluated |
+| `ts_utc` | ISO-8601 string | Declared canonical timestamp; selected for Freshness only under an explicit verifier policy pair |
 | `model` | string | Model identifier |
 | `prompt` | string | Input prompt |
 | `output` | string | Recorded response content |
@@ -115,6 +115,9 @@ For the current AI evidence bundle v1 surface, verification:
 6. hashes the canonical serialization without the optional LF and compares it to
    `ai_manifest.json["ai_hash_sha256"]`
 7. evaluates stored v1 binding fields and bundled signature material when present
+8. when both Freshness policy inputs are explicitly supplied, evaluates declared-time
+   recency using only `ai_canonical.json.ts_utc`, the supplied maximum age, and the
+   supplied UTC reference time
 
 No network access is required. The result distinguishes payload integrity,
 binding-field consistency, signature validity, signer identity, freshness, and
@@ -127,8 +130,11 @@ dimensions with `--require-signature` and `--require-binding`.
 
 A valid Ed25519 signature establishes mathematical validity under the public key
 packaged with the artifact. It does not establish an externally trusted signer
-identity: `trusted_signer_identity` remains `UNESTABLISHED`. Freshness and
-authorization remain `NOT_EVALUATED`.
+identity: `trusted_signer_identity` remains `UNESTABLISHED`. Freshness is a
+separate dimension: it remains `NOT_EVALUATED` without its explicit policy pair
+and otherwise evaluates declared-time recency without treating the signer as a
+time authority. Authorization remains `NOT_EVALUATED`. See
+[TRUST_BOUNDARY.md](TRUST_BOUNDARY.md#freshness-declared-time-recency).
 
 ---
 
