@@ -43,6 +43,8 @@ aelitium verify-bundle ./bundle
 - Stored v1 request and response hashes can be joined by a deterministic binding commitment
 - Modifications inconsistent with the bundle's recorded contract and hashes are detectable
 - Verification can be performed offline on the validated surface
+- An explicitly activated Freshness policy can evaluate declared-time recency
+  of the canonical timestamp
 
 ## What it does not establish
 
@@ -53,7 +55,7 @@ aelitium verify-bundle ./bundle
 - Complete provider invocation identity
 - Trusted signer identity, unless an external trust store is explicitly
   supplied for evaluation (see [Trust boundary](#trust-boundary))
-- Freshness or authorization
+- Trusted historical time or authorization
 - That semantic equivalence implies hash equivalence
 
 ---
@@ -138,8 +140,25 @@ absence. Bundled key material alone does not establish trusted signer identity â
 mathematical signature validity is a separate property. `trusted_signer_identity`
 remains `UNESTABLISHED` by default, and becomes `VALID` only when the caller
 explicitly supplies a local trust store (`--trust-store PATH`) containing the
-verified signing key's fingerprint. Freshness and authorization remain
-`NOT_EVALUATED`.
+verified signing key's fingerprint. Authorization remains `NOT_EVALUATED`.
+
+Freshness is `NOT_EVALUATED` by default. Activate it on `verify` or
+`verify-bundle` only by supplying both policy options:
+
+```bash
+aelitium verify-bundle ./evidence \
+  --freshness-max-age-seconds 300 \
+  --freshness-reference-time-utc 2026-03-04T00:05:00Z
+```
+
+The source is `ai_canonical.json.ts_utc`. `freshness = VALID` means only
+that this declared strict UTC whole-second timestamp lies within the
+inclusive verifier-supplied window. It is declared-time recency, not trusted
+historical time, provider execution, response causation, authorization, or
+legal/regulatory compliance. Invalid or incomplete policy gives
+`freshness = UNESTABLISHED`; stale, future, or malformed selected evidence
+time gives `freshness = INVALID`. See the normative
+[Freshness trust boundary](docs/TRUST_BOUNDARY.md#freshness-declared-time-recency).
 
 ---
 
@@ -368,7 +387,7 @@ are independently trusted.
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 | `compare <bundle_a> <bundle_b>` | Compare two bundles â€” detect changed recorded responses |
-| `verify-bundle <dir>` | Verify payload integrity and any present signature/binding evidence; optional flags can require them |
+| `verify-bundle <dir>` | Verify payload integrity and any present signature/binding evidence; optional flags can require them or activate declared-time Freshness evaluation |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify` with `--out=<dir>` | Verify integrity of a pack output dir |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
@@ -427,12 +446,14 @@ origin guarantees.
 - bundled Ed25519 material is mathematically valid when present
 - a verified signing key's fingerprint against an explicitly supplied
   external trust store, when one is provided
+- declared-time recency of `ai_canonical.json.ts_utc` under an explicitly
+  supplied maximum age and UTC reference time
 
 **What current verification does not establish by itself:**
 - complete provider invocation identity or independent source reconstruction
 - historical non-modification without an independently trusted external anchor
 - trusted signer identity beyond an explicitly supplied external trust store
-- freshness or authorization
+- trusted historical time or authorization
 - that the output is correct, safe, or actually produced by a claimed model
 
 An explicit trust store makes `trusted_signer_identity` observable instead of

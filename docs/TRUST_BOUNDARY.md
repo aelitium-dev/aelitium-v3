@@ -26,11 +26,125 @@ The assurance dimensions must be interpreted separately:
 | `binding_field_consistency` | Stored v1 binding fields are `VALID`, `INVALID`, or `ABSENT` |
 | `signature_validity` | Mathematical signature result, or `ABSENT` |
 | `trusted_signer_identity` | `UNESTABLISHED` by default; `VALID` only when an explicitly supplied external trust store contains the verified signing key's fingerprint |
-| `freshness` | `NOT_EVALUATED` |
+| `freshness` | `NOT_EVALUATED` without an explicit policy pair; otherwise declared-time recency is `VALID`, `INVALID`, or `UNESTABLISHED` as defined below |
 | `authorization` | `NOT_EVALUATED` |
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` let callers reject absence for their verification context.
+
+---
+
+## `freshness`: declared-time recency
+
+Freshness v1 is a deterministic evaluation of one declared timestamp under
+two explicit verifier-supplied policy inputs. Its source is
+`ai_canonical.json.ts_utc`. The policy inputs are
+`freshness_max_age_seconds` and `freshness_reference_time_utc`, exposed by
+the verification CLI as `--freshness-max-age-seconds` and
+`--freshness-reference-time-utc`. Both policy inputs must be supplied to
+activate evaluation.
+
+**Freshness `VALID` means only:** under the verifier-supplied maximum age
+and explicit UTC reference time, the declared canonical
+`ai_canonical.json.ts_utc` is a valid strict UTC whole-second timestamp and
+lies within the inclusive interval:
+
+```text
+[reference_time - maximum_age, reference_time]
+```
+
+This is **declared-time recency**. It is not trusted historical time.
+
+The v1 state mapping is:
+
+| Condition | `freshness` state |
+|---|---|
+| Neither policy input supplied | `NOT_EVALUATED` |
+| Selected canonical timestamp is valid and inside the inclusive window | `VALID` |
+| Selected canonical timestamp is stale, future, or malformed | `INVALID` |
+| Verifier policy is incomplete or invalid | `UNESTABLISHED` |
+| Canonical `ts_utc` is missing | Overall reason `CANONICAL_SCHEMA_INVALID`; `freshness = NOT_EVALUATED` |
+
+`authorization = NOT_EVALUATED` in every P1.3 v1 case. Freshness does not
+implement or imply authorization policy.
+
+### Time sources outside P1.3 v1
+
+P1.3 v1 uses no implicit system clock or implicit "now". It also does not
+use any of the following as its Freshness source or time authority:
+
+- `ai_manifest.json.ts_utc`
+- `metadata.captured_at_utc`
+- `provider_created_at`
+- provider timestamps generally
+- receipt timestamps
+- EvidenceLog timestamps
+- signer timestamp authority
+- RFC3161 or another external timestamp authority
+- transparency-log time
+- certificate or key expiry
+- authorization-policy time
+
+Those concepts are not declared invalid generally; they are outside the
+P1.3 v1 evaluation. The manifest timestamp continues to have its separate
+bundle-contract validation semantics, but it is not the Freshness source.
+
+### Freshness claim boundary
+
+`freshness = VALID` does **not** establish:
+
+- trusted historical time
+- historical occurrence
+- historical non-modification
+- provider receipt
+- provider execution
+- response causation
+- trusted provider identity
+- authorization
+- legal or regulatory compliance
+- semantic truth or correctness
+
+A self-consistent rewrite of the declared canonical timestamp, accompanied
+by consistent canonical and manifest hashes, can remain
+`freshness = VALID`. This demonstrates the verifier's declared-time
+semantics and absence of historical-time authentication; it does not prove
+that the rewritten timestamp historically occurred.
+
+Freshness is independent from `signature_validity` and
+`trusted_signer_identity`. These states may legitimately coexist:
+
+```text
+signature_validity = ABSENT
+trusted_signer_identity = UNESTABLISHED
+freshness = VALID
+```
+
+or:
+
+```text
+signature_validity = VALID
+trusted_signer_identity = VALID
+freshness = INVALID
+```
+
+The canonical `ai_canonical.json.ts_utc` does not become a trusted time
+authority merely because signer identity is trusted. A valid signature
+authenticates the signed bytes under the existing signature semantics; it
+does not prove that a timestamp inside those bytes is historically true.
+
+The assurance distinctions remain:
+
+```text
+payload integrity != historical non-modification
+signature validity alone does not establish signer identity as trusted
+invocation consistency != provider execution
+invocation binding consistency != response causation
+Freshness VALID != trusted historical occurrence
+```
+
+Freshness evidence may support a governance or compliance process, but
+`freshness = VALID` does not itself establish legal or regulatory
+compliance.
 
 ---
 
@@ -211,8 +325,8 @@ or other metadata may still make the complete bundle bytes differ.
 
 **Practical implication:** P2 hash-only bundles can support internal comparison and
 audit workflows when the expected hash is independently protected. Bundle-only
-verification does not establish origin, freshness, authorization, or historical
-non-modification.
+verification, including declared-time Freshness evaluation, does not establish
+origin, authorization, trusted historical time, or historical non-modification.
 
 ---
 

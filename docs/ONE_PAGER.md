@@ -64,8 +64,11 @@ aelitium compare ./evidence_run1 ./evidence_run2
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
 signature under key material bundled with the artifact does not establish signer
-identity: `trusted_signer_identity` remains `UNESTABLISHED`; freshness and
-authorization remain `NOT_EVALUATED`.
+identity: `trusted_signer_identity` remains `UNESTABLISHED`. In the current
+unreleased 0.3.0 development baseline, Freshness remains `NOT_EVALUATED` without
+an explicit policy pair; when activated it evaluates declared-time recency of
+`ai_canonical.json.ts_utc`, not trusted historical time. Authorization remains
+`NOT_EVALUATED`.
 
 Detect an inconsistent edit:
 
@@ -83,7 +86,8 @@ aelitium verify-bundle ./evidence
 |-----------|-----------------|
 | Inspected payload and recorded hash are internally consistent | Model output was correct or safe |
 | Stored v1 binding fields are consistent when present | Complete provider invocation identity |
-| Bundled Ed25519 material is mathematically valid when present | Trusted signer identity, freshness, or authorization |
+| Bundled Ed25519 material is mathematically valid when present | Trusted signer identity or authorization |
+| Declared canonical timestamp is inside an explicit verifier-supplied Freshness window | Trusted historical time, historical occurrence, or provider execution |
 
 ---
 

@@ -19,6 +19,8 @@ Current verification can establish:
 - consistency among stored v1 request, response, and binding hash fields when
   binding evidence is present
 - mathematical Ed25519 signature validity when verification material is present
+- declared-time recency of `ai_canonical.json.ts_utc` under an explicitly
+  supplied Freshness policy
 
 It does not by itself establish:
 
@@ -27,7 +29,7 @@ It does not by itself establish:
 - trusted signer identity, unless an external trust store is explicitly
   supplied for that verification invocation and the verified signing key's
   fingerprint is present in it
-- freshness or authorization
+- trusted historical time or authorization
 - semantic truth, safety, or correctness of the AI output
 
 ---
@@ -42,7 +44,7 @@ Do not collapse the current assurance result into a single authenticity claim.
 | `binding_field_consistency` | Consistency among stored v1 binding fields, or `ABSENT` |
 | `signature_validity` | Mathematical validity of bundled Ed25519 material, or `ABSENT` |
 | `trusted_signer_identity` | `UNESTABLISHED` by default; `VALID` only when an external trust store is explicitly supplied for that invocation and the verified signing key's fingerprint is present in it |
-| `freshness` | `NOT_EVALUATED` |
+| `freshness` | `NOT_EVALUATED` without the explicit policy pair; otherwise declared-time recency is evaluated under the normative Trust Boundary definition |
 | `authorization` | `NOT_EVALUATED` |
 
 A valid bundled signature alone does not authenticate a producer or establish
@@ -54,6 +56,35 @@ verification behaves exactly as it did before this capability existed.
 Unsigned and unbound bundles remain valid by default. Callers that require those
 dimensions must use `--require-signature` and `--require-binding`; absence then
 causes verification to fail.
+
+---
+
+## Freshness wording
+
+Use `freshness = VALID` only for declared-time recency: the strict UTC
+whole-second value declared in `ai_canonical.json.ts_utc` lies inside the
+inclusive window supplied by the verifier through
+`freshness_max_age_seconds` and `freshness_reference_time_utc`. See
+[TRUST_BOUNDARY.md](TRUST_BOUNDARY.md#freshness-declared-time-recency) for
+the complete normative definition, state mapping, excluded time sources,
+and non-claims.
+
+Do not shorten that meaning to “the evidence is fresh,” “the event happened
+recently,” “the provider response is recent,” or “the invocation occurred
+within the window” unless the same statement immediately preserves the
+declared canonical timestamp and explicit verifier-policy boundary.
+
+In particular, `freshness = VALID` is not trusted historical time and does
+not establish historical occurrence, historical non-modification, provider
+receipt or execution, response causation, trusted provider identity,
+authorization, legal or regulatory compliance, or semantic truth or
+correctness. Authorization remains `NOT_EVALUATED`.
+
+Freshness, mathematical signature validity, and trusted signer identity are
+independent dimensions. A trusted signer does not make the declared
+canonical timestamp a trusted time authority. A valid signature
+authenticates signed bytes under the existing signature semantics; it does
+not prove that a timestamp inside those bytes is historically true.
 
 ---
 
@@ -88,8 +119,9 @@ failure:
 `trusted_signer_identity = VALID` means only that the verified signature's
 public-key fingerprint is present in the trust store supplied to this
 verification invocation. It does not mean verified human, legal, or
-organizational identity; organizational role; authorization; freshness;
-revocation status; provider identity; or model execution proof. A fully
+organizational identity; organizational role; authorization; trusted
+historical time; revocation status; provider identity; or model execution
+proof. A fully
 rewritten, internally self-consistent artifact signed with an attacker's own
 key can still report `payload_integrity=VALID` and `signature_validity=VALID`
 — trusted signer identity does not create a historical external payload
@@ -133,6 +165,7 @@ independently trusted external hash, key identity, receipt, or equivalent anchor
 | mathematical signature validity | authentic origin or authenticated producer |
 | signer identity is not established by bundled key material alone | verified signer or trusted signer |
 | an explicitly supplied external trust store can establish `trusted_signer_identity = VALID` for a matching key | automatic, implicit, or ambient trusted signer |
+| declared-time recency under an explicit verifier-supplied window | the evidence/event/provider response is fresh or happened recently |
 | detects changes inconsistent with a trusted external anchor | tamper-proof or immutable record |
 | offline, fail-closed verification | secure AI or trustworthy AI |
 
@@ -145,10 +178,13 @@ dimensions that remain unestablished or unevaluated.
 
 > AELITIUM v1 validates the schema, canonical representation, and internal hash,
 > binding-field, and optional signature consistency of the bundle being inspected.
-> It does not by itself establish complete invocation identity, historical
-> non-modification, freshness, authorization, or output truth. Trusted signer
-> identity is established only when an external trust store is explicitly
-> supplied for that verification invocation and the verified key matches it.
+> Under an explicit policy pair it can also evaluate declared-time recency of
+> `ai_canonical.json.ts_utc`; that result is not trusted historical time. It does
+> not by itself establish complete invocation identity, historical occurrence or
+> non-modification, authorization, provider execution, response causation, or
+> output truth. Trusted signer identity is established only when an external
+> trust store is explicitly supplied for that verification invocation and the
+> verified key matches it.
 
 ---
 

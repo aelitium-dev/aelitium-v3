@@ -24,7 +24,7 @@ The system does NOT guarantee:
 - identity of the producer
 - authority of the signer
 - semantic correctness of content
-- temporal validity (freshness)
+- trusted temporal validity or historical time
 - contextual correctness
 
 Current AI bundle verification reports these dimensions separately:
@@ -35,7 +35,8 @@ Current AI bundle verification reports these dimensions separately:
 - `trusted_signer_identity` (`UNESTABLISHED` by default; `VALID` only when an
   external trust store is explicitly supplied to the verification call and
   the verified signing key's fingerprint is present in it)
-- `freshness` (`NOT_EVALUATED`)
+- `freshness` (`NOT_EVALUATED` without an explicit policy pair; otherwise an
+  evaluation of declared-time recency, not trusted historical time)
 - `authorization` (`NOT_EVALUATED`)
 
 Mathematical signature validity must not be interpreted as signer identity. By
@@ -45,6 +46,10 @@ that alone. An external trust store, explicitly supplied to the verification
 call independently of the inspected bundle, is required before
 `trusted_signer_identity` can become `VALID`. See TRUST_BOUNDARY.md for the
 trust-store contract.
+
+Freshness is independently activated only by an explicit maximum age and UTC
+reference time. Its sole evidence timestamp is `ai_canonical.json.ts_utc`.
+See TRUST_BOUNDARY.md for the normative declared-time claim and non-claims.
 
 ---
 
@@ -217,7 +222,7 @@ VALID does NOT mean:
 
 - the artifact is trustworthy in a broader sense
 - the producer is legitimate
-- the artifact is current or fresh
+- the artifact is current or fresh in a trusted historical sense
 - the artifact is safe or correct
 - the capture process was honest
 
@@ -228,11 +233,14 @@ VALID does NOT mean:
 The system does NOT provide:
 
 - replay protection
-- temporal guarantees
+- trusted historical-time guarantees
 - context binding
 
 A valid artifact may be reused outside its original context without detection.
-Mitigation requires external context binding or higher-level protocols.
+Explicit Freshness evaluation can classify the bundle's declared canonical
+timestamp against a caller-supplied window, but it is not replay protection or
+a trusted timestamp. Mitigation requires external context binding or higher-level
+protocols.
 
 ---
 
@@ -279,6 +287,7 @@ Any claim extending beyond:
 - integrity
 - consistency
 - verification correctness
+- the explicitly defined declared-time Freshness evaluation
 
 is out of scope and unsupported.
 
