@@ -1,5 +1,6 @@
 """Parity and adversarial tests for the canonical AI verification kernel."""
 
+import ast
 import base64
 import hashlib
 import json
@@ -1560,6 +1561,331 @@ class TestAIFreshnessAssurance(unittest.TestCase):
                     self.assertFalse(result.valid)
                     self.assertEqual(result.reason, reason)
                     self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+
+class TestAIFreshnessPublicSurfaces(unittest.TestCase):
+    """P1.3d: CLI and standalone forwarding/rendering parity."""
+
+    _BOUNDARY_REFERENCE = "2026-03-04T00:01:00Z"
+    _STALE_REFERENCE = "2026-03-04T00:01:01Z"
+    _FUTURE_REFERENCE = "2026-03-03T23:59:59Z"
+
+    def _policy_args(
+        self,
+        *,
+        reference_time: str = _BOUNDARY_REFERENCE,
+        maximum_age: str = "60",
+    ) -> tuple[str, ...]:
+        return (
+            "--freshness-max-age-seconds",
+            maximum_age,
+            "--freshness-reference-time-utc",
+            reference_time,
+        )
+
+    def _text_outputs(
+        self,
+        bundle: Path,
+        *extra: str,
+    ) -> dict[str, subprocess.CompletedProcess]:
+        return {
+            "verify": _run_cli("verify", "--out", str(bundle), *extra),
+            "verify-bundle": _run_cli(
+                "verify-bundle",
+                str(bundle),
+                *extra,
+            ),
+            "standalone": subprocess.run(
+                [
+                    sys.executable,
+                    str(STANDALONE),
+                    "--bundle",
+                    str(bundle),
+                    *extra,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            ),
+        }
+
+    def _assert_outputs(
+        self,
+        outputs: dict[str, subprocess.CompletedProcess],
+        *,
+        returncode: int,
+        freshness: str,
+        reason: str | None = None,
+    ) -> None:
+        for surface, output in outputs.items():
+            with self.subTest(surface=surface, args=output.args):
+                self.assertEqual(
+                    output.returncode,
+                    returncode,
+                    output.stdout + output.stderr,
+                )
+                if output.stdout.lstrip().startswith("{"):
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["freshness"], freshness)
+                    self.assertEqual(
+                        payload["authorization"],
+                        "NOT_EVALUATED",
+                    )
+                    if reason is not None:
+                        self.assertEqual(
+                            payload["reason"].split(":", 1)[0],
+                            reason,
+                        )
+                else:
+                    rendered = output.stdout.upper()
+                    self.assertIn(f"FRESHNESS={freshness}", rendered)
+                    self.assertIn(
+                        "AUTHORIZATION=NOT_EVALUATED",
+                        rendered,
+                    )
+                    if reason is not None:
+                        self.assertIn(f"REASON={reason}", rendered)
+
+    def test_no_policy_preserves_all_public_surfaces_in_both_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+
+    def test_exact_boundary_policy_is_valid_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args()
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+
+    def test_stale_policy_fails_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args(reference_time=self._STALE_REFERENCE)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+
+    def test_future_policy_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=self._FUTURE_REFERENCE),
+                ),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_IN_FUTURE,
+            )
+
+    def test_malformed_evidence_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "not-an-evidence-time"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *self._policy_args()),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_MALFORMED,
+            )
+
+    def test_invalid_partial_and_negative_policies_use_kernel_failure(self):
+        policies = (
+            (
+                "malformed-reference",
+                self._policy_args(reference_time="not-a-reference-time"),
+            ),
+            ("only-max-age", ("--freshness-max-age-seconds", "60")),
+            (
+                "only-reference",
+                (
+                    "--freshness-reference-time-utc",
+                    self._BOUNDARY_REFERENCE,
+                ),
+            ),
+            ("negative-max-age", self._policy_args(maximum_age="-1")),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for case, policy in policies:
+                with self.subTest(case=case):
+                    self._assert_outputs(
+                        _public_verifier_outputs(bundle, *policy),
+                        returncode=2,
+                        freshness="UNESTABLISHED",
+                        reason=FRESHNESS_POLICY_INVALID,
+                    )
+
+    def test_reference_string_is_forwarded_without_normalization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            reference_with_space = self._BOUNDARY_REFERENCE + " "
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=reference_with_space),
+                ),
+                returncode=2,
+                freshness="UNESTABLISHED",
+                reason=FRESHNESS_POLICY_INVALID,
+            )
+
+    def test_active_policy_preserves_existing_assurance_dimensions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = build_invocation_identity(
+                surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+                mode=MODE_SYNC_NON_STREAMING,
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "hi"}],
+            ).to_stored_object()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="2" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+            options = (
+                *self._policy_args(),
+                "--require-signature",
+                "--require-binding",
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            )
+
+            outputs = _public_verifier_outputs(bundle, *options)
+            self._assert_outputs(
+                outputs,
+                returncode=0,
+                freshness="VALID",
+            )
+            expected = {
+                "payload_integrity": "VALID",
+                "binding_field_consistency": "VALID",
+                "invocation_identity_consistency": "VALID",
+                "invocation_binding_consistency": "VALID",
+                "signature_validity": "VALID",
+                "trusted_signer_identity": "VALID",
+                "authorization": "NOT_EVALUATED",
+            }
+            for surface, output in outputs.items():
+                with self.subTest(surface=surface):
+                    payload = json.loads(output.stdout)
+                    for dimension, state in expected.items():
+                        self.assertEqual(payload[dimension], state)
+
+    def test_public_surfaces_have_no_clock_or_freshness_calculation(self):
+        forbidden_calls = {
+            "datetime.now",
+            "datetime.utcnow",
+            "time.time",
+            "datetime.fromisoformat",
+            "datetime.strptime",
+        }
+        forbidden_fragments = (
+            "evaluate_freshness",
+            "FreshnessOutcome",
+        )
+        for relative_path in (
+            "engine/ai_cli.py",
+            "scripts/aelitium_verify_standalone.py",
+        ):
+            with self.subTest(path=relative_path):
+                source = (ROOT / relative_path).read_text(encoding="utf-8")
+                tree = ast.parse(source)
+                calls = set()
+                identifiers = set()
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Name):
+                        identifiers.add(node.id)
+                    elif isinstance(node, ast.Attribute):
+                        identifiers.add(node.attr)
+                    elif isinstance(node, ast.arg):
+                        identifiers.add(node.arg)
+                    if not isinstance(node, ast.Call):
+                        continue
+                    if isinstance(node.func, ast.Name):
+                        calls.add(node.func.id)
+                    elif (
+                        isinstance(node.func, ast.Attribute)
+                        and isinstance(node.func.value, ast.Name)
+                    ):
+                        calls.add(f"{node.func.value.id}.{node.func.attr}")
+                self.assertTrue(forbidden_calls.isdisjoint(calls), calls)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        self.assertTrue(
+                            {alias.name for alias in node.names}.isdisjoint(
+                                {"datetime", "time"}
+                            )
+                        )
+                    elif isinstance(node, ast.ImportFrom):
+                        self.assertNotIn(
+                            node.module,
+                            {
+                                "datetime",
+                                "time",
+                                "freshness",
+                                "engine.freshness",
+                            },
+                        )
+                self.assertNotIn("age_seconds", identifiers)
+                for fragment in forbidden_fragments:
+                    self.assertNotIn(fragment, source)
 
 
 class TestAIVerificationDowngradeControls(unittest.TestCase):
