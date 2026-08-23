@@ -21,6 +21,13 @@ from .ai_contract import (
     AI_OUTPUT_SCHEMA_VERSION,
     AI_VERIFICATION_KEYS_FILENAME,
 )
+from .freshness import (
+    FRESHNESS_POLICY_INVALID,
+    FRESHNESS_TIMESTAMP_MALFORMED,
+    FreshnessError,
+    FreshnessOutcome,
+    evaluate_freshness,
+)
 from .invocation import InvocationIdentityError, parse_invocation_identity
 from .invocation_binding import InvocationBindingError, parse_invocation_binding
 from .trust import TrustStore, TrustStoreError, fingerprint_public_key, load_trust_store
@@ -47,6 +54,10 @@ class AIVerificationOptions:
     default to "no trust input" -- there is no ambient/default trust-store
     discovery (no environment variable, no default filesystem location).
     Trust is evaluated only when a trust store path is explicitly supplied.
+
+    Freshness is likewise inactive unless both ``freshness_max_age_seconds``
+    and ``freshness_reference_time_utc`` are explicitly supplied. The
+    verifier never supplies an ambient current time.
     """
 
     validate_manifest_timestamp: bool = True
@@ -54,6 +65,8 @@ class AIVerificationOptions:
     require_binding: bool = False
     trust_store_path: str | Path | None = None
     require_trusted_signer: bool = False
+    freshness_max_age_seconds: int | None = None
+    freshness_reference_time_utc: str | None = None
 
 
 @dataclass(frozen=True)
@@ -111,6 +124,7 @@ def _invalid(
     signature_validity: AssuranceState = AssuranceState.NOT_EVALUATED,
     trusted_signer_identity: AssuranceState = AssuranceState.UNESTABLISHED,
     trusted_signer_reason: str = "",
+    freshness: AssuranceState = AssuranceState.NOT_EVALUATED,
 ) -> AIVerificationResult:
     return AIVerificationResult(
         valid=False,
@@ -129,6 +143,7 @@ def _invalid(
         signature_validity=signature_validity,
         trusted_signer_identity=trusted_signer_identity,
         trusted_signer_reason=trusted_signer_reason,
+        freshness=freshness,
     )
 
 
@@ -364,6 +379,114 @@ def _evaluate_invocation_binding(
     return _InvocationBindingEvaluation(AssuranceState.VALID)
 
 
+@dataclass(frozen=True)
+class _FreshnessEvaluation:
+    state: AssuranceState
+    reason: str = ""
+    detail: str = ""
+
+
+_FRESHNESS_POLICY_PROBE_TIMESTAMP = "2000-01-01T00:00:00Z"
+
+
+def _validate_freshness_policy(
+    options: AIVerificationOptions,
+) -> _FreshnessEvaluation:
+    """Validate verifier-supplied freshness options without bundle evidence."""
+
+    maximum_age = options.freshness_max_age_seconds
+    reference_time = options.freshness_reference_time_utc
+
+    if maximum_age is None and reference_time is None:
+        return _FreshnessEvaluation(AssuranceState.NOT_EVALUATED)
+    if maximum_age is None or reference_time is None:
+        return _FreshnessEvaluation(
+            AssuranceState.UNESTABLISHED,
+            reason=FRESHNESS_POLICY_INVALID,
+            detail=(
+                "freshness_max_age_seconds and freshness_reference_time_utc "
+                "must be supplied together"
+            ),
+        )
+
+    try:
+        # The fixed evidence value is known-valid and its outcome is discarded.
+        # This delegates strict policy parsing to the primitive without reading
+        # or parsing canonical bundle evidence before integrity prerequisites.
+        evaluate_freshness(
+            evidence_timestamp=_FRESHNESS_POLICY_PROBE_TIMESTAMP,
+            reference_timestamp=reference_time,
+            maximum_age_seconds=maximum_age,
+        )
+    except FreshnessError as exc:
+        if exc.reason != FRESHNESS_POLICY_INVALID:
+            raise
+        return _FreshnessEvaluation(
+            AssuranceState.UNESTABLISHED,
+            reason=exc.reason,
+            detail=exc.detail,
+        )
+
+    return _FreshnessEvaluation(AssuranceState.NOT_EVALUATED)
+
+
+def _evaluate_freshness(
+    canonical: Any,
+    options: AIVerificationOptions,
+) -> _FreshnessEvaluation:
+    """Evaluate canonical declared-time recency under explicit options.
+
+    This helper is called only after canonical schema, byte, and payload-hash
+    validation succeed. It delegates all timestamp and maximum-age semantics
+    to ``engine.freshness`` and maps that primitive into verifier assurance
+    states without consulting signature or trust results.
+    """
+
+    maximum_age = options.freshness_max_age_seconds
+    reference_time = options.freshness_reference_time_utc
+
+    if maximum_age is None and reference_time is None:
+        return _FreshnessEvaluation(AssuranceState.NOT_EVALUATED)
+    if maximum_age is None or reference_time is None:
+        return _FreshnessEvaluation(
+            AssuranceState.UNESTABLISHED,
+            reason=FRESHNESS_POLICY_INVALID,
+            detail=(
+                "freshness_max_age_seconds and freshness_reference_time_utc "
+                "must be supplied together"
+            ),
+        )
+
+    try:
+        result = evaluate_freshness(
+            evidence_timestamp=canonical["ts_utc"],
+            reference_timestamp=reference_time,
+            maximum_age_seconds=maximum_age,
+        )
+    except FreshnessError as exc:
+        if exc.reason == FRESHNESS_TIMESTAMP_MALFORMED:
+            state = AssuranceState.INVALID
+        elif exc.reason == FRESHNESS_POLICY_INVALID:
+            state = AssuranceState.UNESTABLISHED
+        else:  # The primitive's reason vocabulary is closed in P1.3 v1.
+            raise
+        return _FreshnessEvaluation(
+            state,
+            reason=exc.reason,
+            detail=exc.detail,
+        )
+
+    state_by_outcome = {
+        FreshnessOutcome.VALID: AssuranceState.VALID,
+        FreshnessOutcome.FUTURE: AssuranceState.INVALID,
+        FreshnessOutcome.STALE: AssuranceState.INVALID,
+    }
+    return _FreshnessEvaluation(
+        state_by_outcome[result.outcome],
+        reason=result.reason or "",
+    )
+
+
 def verify_ai_bundle(
     bundle_dir: str | Path,
     *,
@@ -391,6 +514,14 @@ def verify_ai_bundle(
                 trusted_signer_identity=AssuranceState.UNESTABLISHED,
                 trusted_signer_reason="TRUST_STORE_INVALID",
             )
+
+    freshness_policy = _validate_freshness_policy(selected)
+    if freshness_policy.reason:
+        return _invalid(
+            freshness_policy.reason,
+            freshness_policy.detail,
+            freshness=freshness_policy.state,
+        )
 
     outdir = Path(bundle_dir)
     canon_path = outdir / AI_CANONICAL_FILENAME
@@ -585,6 +716,7 @@ def verify_ai_bundle(
     binding = _evaluate_binding_fields(canonical, manifest)
     invocation = _evaluate_invocation_identity(canonical)
     invocation_binding = _evaluate_invocation_binding(canonical, invocation)
+    freshness = _evaluate_freshness(canonical, selected)
 
     if signature_error:
         return _invalid(
@@ -602,6 +734,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if (
         selected.require_signature or selected.require_trusted_signer
@@ -619,6 +752,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if binding.reason:
         return _invalid(
@@ -635,6 +769,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if selected.require_binding and binding.state is AssuranceState.ABSENT:
         return _invalid(
@@ -650,6 +785,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if (
         selected.require_trusted_signer
@@ -669,6 +805,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if invocation.state is AssuranceState.INVALID:
         return _invalid(
@@ -686,6 +823,7 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
     if invocation_binding.state is AssuranceState.INVALID:
         return _invalid(
@@ -703,6 +841,25 @@ def verify_ai_bundle(
             signature_validity=signature_validity,
             trusted_signer_identity=trusted_signer_identity,
             trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
+        )
+    if freshness.reason:
+        return _invalid(
+            freshness.reason,
+            freshness.detail,
+            ai_hash_sha256=actual_hash,
+            signature=signature,
+            binding_hash=binding.binding_hash,
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.VALID,
+            binding_field_consistency=binding.state,
+            invocation_identity_consistency=invocation.state,
+            invocation_binding_consistency=invocation_binding.state,
+            signature_validity=signature_validity,
+            trusted_signer_identity=trusted_signer_identity,
+            trusted_signer_reason=trusted_signer_reason,
+            freshness=freshness.state,
         )
 
     return AIVerificationResult(
@@ -720,4 +877,5 @@ def verify_ai_bundle(
         signature_validity=signature_validity,
         trusted_signer_identity=trusted_signer_identity,
         trusted_signer_reason=trusted_signer_reason,
+        freshness=freshness.state,
     )
