@@ -82,6 +82,8 @@ SIGNATURE=NONE
 BINDING_HASH=NONE
 PAYLOAD_INTEGRITY=VALID
 BINDING_FIELD_CONSISTENCY=ABSENT
+INVOCATION_IDENTITY_CONSISTENCY=ABSENT
+INVOCATION_BINDING_CONSISTENCY=ABSENT
 SIGNATURE_VALIDITY=ABSENT
 TRUSTED_SIGNER_IDENTITY=UNESTABLISHED
 FRESHNESS=NOT_EVALUATED
@@ -89,13 +91,41 @@ AUTHORIZATION=NOT_EVALUATED
 ```
 
 The payload satisfies `ai_output_v1`; its canonical bytes, manifest identifiers,
-and hash are internally consistent. Signature and binding evidence are absent and
-accepted by default. Use `--require-signature` or `--require-binding` when that
-absence must fail.
+and hash are internally consistent. This manually packed example has no binding,
+invocation identity, invocation binding, or signature evidence, so those optional
+dimensions report `ABSENT` and are accepted by default. Use
+`--require-signature` or `--require-binding` when the corresponding absence must
+fail. Freshness has no policy pair and is therefore `NOT_EVALUATED`;
+authorization is always `NOT_EVALUATED` in v0.3.0.
 
 ---
 
-## Step 4 — Detect an inconsistent edit
+## Step 4 — Evaluate declared-time Freshness without overclaiming time
+
+The packed timestamp is exactly five minutes before this explicit reference time:
+
+```bash
+aelitium verify-bundle ./evidence \
+  --freshness-max-age-seconds 300 \
+  --freshness-reference-time-utc 2026-03-04T12:05:00Z
+```
+
+Relevant output from the inclusive window:
+
+```
+STATUS=VALID rc=0
+FRESHNESS=VALID
+```
+
+This means only that the declared canonical timestamp is inside the supplied
+window. A producer who controls the artifact can create a different,
+self-consistent bundle with a rewritten timestamp and matching hashes that also
+reports `FRESHNESS=VALID`; the result is not trusted historical time or proof
+that an event occurred then.
+
+---
+
+## Step 5 — Detect an inconsistent edit
 
 Edit one word in `evidence/ai_canonical.json` and verify again:
 
@@ -119,7 +149,7 @@ external anchor to distinguish it from the expected artifact.
 
 ---
 
-## Step 5 — Validate schema
+## Step 6 — Validate schema
 
 ```bash
 aelitium validate --input my_output.json
@@ -150,7 +180,7 @@ Schema violations return `STATUS=INVALID rc=2 reason=SCHEMA_VIOLATION`.
 | Scenario | How AELITIUM helps |
 |----------|--------------------|
 | AI output audit trail | Pack every response; verify before use |
-| Regulatory compliance | Evidence bundle per inference, offline verifiable |
+| Regulatory record workflow support | Article 12-oriented mapping of selected evidence fields; not a compliance determination |
 | Multi-team handoff | Producer packs; consumer verifies before processing |
 | Red-teaming / eval | Pin expected outputs; detect any drift |
 

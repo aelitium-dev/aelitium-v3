@@ -205,19 +205,23 @@ log2 = EvidenceLog("./evidence_log")
 assert log2.verify_chain(), "Chain tampered!"
 ```
 
-## Compliance export
+## Article 12-oriented record mapping
 
 ```python
 from engine.compliance import export_eu_ai_act_art12
 
 record = export_eu_ai_act_art12("./evidence/run-1")
-# record["log_entry"] contains fields for EU AI Act Art. 12 audit
+# record["log_entry"] contains selected fields for a record workflow
 ```
 
 Or via CLI:
 ```bash
 aelitium export --bundle ./evidence/run-1 --format eu-ai-act-art12 --json
 ```
+
+This project-defined export can support an Article 12-oriented record workflow.
+It is not an official EU AI Act format, a complete record of real-world events,
+certification, conformity assessment, or a legal compliance determination.
 
 ## Standalone verification
 

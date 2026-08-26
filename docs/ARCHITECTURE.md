@@ -114,14 +114,20 @@ For the current AI evidence bundle v1 surface, verification:
    optionally followed by one terminal LF
 6. hashes the canonical serialization without the optional LF and compares it to
    `ai_manifest.json["ai_hash_sha256"]`
-7. evaluates stored v1 binding fields and bundled signature material when present
+7. evaluates stored v1 binding fields, versioned invocation identity and
+   invocation binding fields, and bundled signature material when present
 8. when both Freshness policy inputs are explicitly supplied, evaluates declared-time
    recency using only `ai_canonical.json.ts_utc`, the supplied maximum age, and the
    supplied UTC reference time
 
-No network access is required. The result distinguishes payload integrity,
-binding-field consistency, signature validity, signer identity, freshness, and
-authorization.
+No network access is required. The result distinguishes exactly eight dimensions:
+`payload_integrity`, `binding_field_consistency`,
+`invocation_identity_consistency`, `invocation_binding_consistency`,
+`signature_validity`, `trusted_signer_identity`, `freshness`, and
+`authorization`. Their exact reachable states are defined in
+[TRUST_BOUNDARY.md](TRUST_BOUNDARY.md); authorization is always
+`NOT_EVALUATED` in v0.3.0, while Freshness is `NOT_EVALUATED` without its
+explicit complete policy pair and is evaluable when both inputs are supplied.
 
 Unsigned and unbound bundles remain valid by default. Callers can require those
 dimensions with `--require-signature` and `--require-binding`.

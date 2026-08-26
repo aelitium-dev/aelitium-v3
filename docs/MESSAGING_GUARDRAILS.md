@@ -18,6 +18,9 @@ Current verification can establish:
 - consistency between the canonical payload and `ai_hash_sha256`
 - consistency among stored v1 request, response, and binding hash fields when
   binding evidence is present
+- consistency of stored versioned invocation identity fields when present
+- consistency of the stored invocation identity hash-to-response hash link when
+  invocation binding evidence is present
 - mathematical Ed25519 signature validity when verification material is present
 - declared-time recency of `ai_canonical.json.ts_utc` under an explicitly
   supplied Freshness policy
@@ -25,6 +28,7 @@ Current verification can establish:
 It does not by itself establish:
 
 - complete provider invocation identity
+- provider execution or response causation from invocation consistency
 - historical non-modification without an independently trusted external anchor
 - trusted signer identity, unless an external trust store is explicitly
   supplied for that verification invocation and the verified signing key's
@@ -38,14 +42,16 @@ It does not by itself establish:
 
 Do not collapse the current assurance result into a single authenticity claim.
 
-| Dimension | Current meaning |
-|---|---|
-| `payload_integrity` | Schema, canonical bytes, manifest contract, and payload-hash consistency |
-| `binding_field_consistency` | Consistency among stored v1 binding fields, or `ABSENT` |
-| `signature_validity` | Mathematical validity of bundled Ed25519 material, or `ABSENT` |
-| `trusted_signer_identity` | `UNESTABLISHED` by default; `VALID` only when an external trust store is explicitly supplied for that invocation and the verified signing key's fingerprint is present in it |
-| `freshness` | `NOT_EVALUATED` without the explicit policy pair; otherwise declared-time recency is evaluated under the normative Trust Boundary definition |
-| `authorization` | `NOT_EVALUATED` |
+| Dimension | Reachable states in v0.3.0 | Current meaning |
+|---|---|---|
+| `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Schema, canonical bytes, manifest contract, and payload-hash consistency |
+| `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Consistency among stored v1 request/response/binding fields |
+| `invocation_identity_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Consistency of stored versioned invocation identity fields; not provider execution |
+| `invocation_binding_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Consistency of the stored invocation identity hash-to-response hash link; not provider execution or causation |
+| `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical validity of bundled Ed25519 material |
+| `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
+| `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under the explicit policy pair defined by the Trust Boundary |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
 
 A valid bundled signature alone does not authenticate a producer or establish
 that its key belongs to an externally trusted party. `trusted_signer_identity`
@@ -144,6 +150,11 @@ the model and messages used by that v1 path. Behavior-affecting parameters such 
 those stored fields. It does not independently reconstruct source request or
 response material, a provider invocation, an action, or an authorization decision.
 
+The separate versioned invocation identity and invocation binding fields preserve
+more of the recorded call boundary. Their assurance dimensions establish stored
+field consistency only; they do not establish provider receipt or execution,
+response causation, or complete reconstruction of a real-world invocation.
+
 ---
 
 ## Historical trust boundary
@@ -177,14 +188,14 @@ dimensions that remain unestablished or unevaluated.
 ## Boundary statement for public surfaces
 
 > AELITIUM v1 validates the schema, canonical representation, and internal hash,
-> binding-field, and optional signature consistency of the bundle being inspected.
-> Under an explicit policy pair it can also evaluate declared-time recency of
-> `ai_canonical.json.ts_utc`; that result is not trusted historical time. It does
-> not by itself establish complete invocation identity, historical occurrence or
-> non-modification, authorization, provider execution, response causation, or
-> output truth. Trusted signer identity is established only when an external
-> trust store is explicitly supplied for that verification invocation and the
-> verified key matches it.
+> binding-field, invocation-identity, invocation-binding, and optional signature
+> consistency of the bundle being inspected. Under an explicit policy pair it can
+> also evaluate declared-time recency of `ai_canonical.json.ts_utc`; that result is
+> not trusted historical time. It does not by itself establish complete invocation
+> identity, historical occurrence or non-modification, authorization, provider
+> execution, response causation, or output truth. Trusted signer identity is
+> established only when an external trust store is explicitly supplied for that
+> verification invocation and the verified key matches it.
 
 ---
 

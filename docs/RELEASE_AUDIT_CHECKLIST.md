@@ -29,8 +29,19 @@ phrase-pattern authority; do not duplicate its patterns in this checklist.
 
 - Current product surfaces describe internal consistency, not historical
   non-modification without an independently trusted anchor.
+- Canonical public docs name all eight assurance dimensions exactly:
+  `payload_integrity`, `binding_field_consistency`,
+  `invocation_identity_consistency`, `invocation_binding_consistency`,
+  `signature_validity`, `trusted_signer_identity`, `freshness`, and
+  `authorization`.
+- Freshness is `NOT_EVALUATED` without its complete explicit policy pair and is
+  evaluated when both inputs are supplied; authorization is always
+  `NOT_EVALUATED` in v0.3.0.
 - Request identity is scoped to selected v1 fields.
 - Signature validity is not presented as trusted signer identity.
+- Invocation identity/binding consistency is not presented as provider execution
+  or response causation, and technical `VALID` is not presented as a legal
+  compliance determination.
 - Conceptual and legacy documents retain their required quarantine markers.
 
 `aelitium verify --out <dir>` is valid current CLI syntax and is not forbidden by
@@ -67,3 +78,7 @@ env PYTHONDONTWRITEBYTECODE=1 bash scripts/audit_release.sh
 - human semantic review completed
 - CLI help contract passes
 - trust boundary preserved
+- release-process tag authority is `release_commit_sha`, with an unsigned
+  annotated tag sufficient for v0.3.0
+- PyPI Trusted Publishing is preferred and has a human stop/checkpoint if it is
+  unavailable

@@ -1,5 +1,8 @@
-"""
-Compliance export utilities for AELITIUM evidence bundles.
+"""Article 12-oriented record-mapping utilities for AELITIUM bundles.
+
+The project-defined mapping is technical workflow support, not an official
+regulatory format, certification, conformity assessment, complete regulatory
+record, or legal compliance determination.
 """
 import json
 from datetime import datetime, timezone
@@ -9,7 +12,7 @@ from typing import Any, Dict
 
 def export_eu_ai_act_art12(bundle_dir: Path | str) -> Dict[str, Any]:
     """
-    Read ai_canonical.json + ai_manifest.json and return EU AI Act Article 12 format.
+    Return the project-defined Article 12-oriented mapping for selected fields.
     """
     bundle_dir = Path(bundle_dir)
     canonical = json.loads((bundle_dir / "ai_canonical.json").read_text(encoding="utf-8"))

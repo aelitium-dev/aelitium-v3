@@ -39,7 +39,7 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ## Key commands
 
 ```bash
-# Install from source (PyPI availability is not independently verified)
+# Install the unreleased 0.3.0 source (the latest PyPI release is 0.2.4)
 pip install .
 # with provider extras: pip install ".[all]"
 
@@ -64,11 +64,12 @@ aelitium compare ./evidence_run1 ./evidence_run2
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
 signature under key material bundled with the artifact does not establish signer
-identity: `trusted_signer_identity` remains `UNESTABLISHED`. In the current
-unreleased 0.3.0 development baseline, Freshness remains `NOT_EVALUATED` without
-an explicit policy pair; when activated it evaluates declared-time recency of
-`ai_canonical.json.ts_utc`, not trusted historical time. Authorization remains
-`NOT_EVALUATED`.
+identity: `trusted_signer_identity` remains `UNESTABLISHED` unless an explicitly
+supplied external trust store contains the verified key. In the current unreleased
+0.3.0 source baseline, Freshness is `NOT_EVALUATED` without an explicit complete
+policy pair; when activated it evaluates declared-time recency of
+`ai_canonical.json.ts_utc`, not trusted historical time. Authorization is not
+implemented and remains `NOT_EVALUATED` in every v0.3.0 case.
 
 Detect an inconsistent edit:
 
@@ -80,14 +81,18 @@ aelitium verify-bundle ./evidence
 
 ---
 
-## What current verification establishes
+## The eight assurance dimensions
 
-| ✅ Establishes | ❌ Does not establish |
-|-----------|-----------------|
-| Inspected payload and recorded hash are internally consistent | Model output was correct or safe |
-| Stored v1 binding fields are consistent when present | Complete provider invocation identity |
-| Bundled Ed25519 material is mathematically valid when present | Trusted signer identity or authorization |
-| Declared canonical timestamp is inside an explicit verifier-supplied Freshness window | Trusted historical time, historical occurrence, or provider execution |
+| Dimension | Reachable states in v0.3.0 | Bounded meaning |
+|---|---|---|
+| `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Payload/schema/canonical/manifest/hash consistency |
+| `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored v1 request/response/binding field consistency |
+| `invocation_identity_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored versioned invocation identity consistency; not provider execution |
+| `invocation_binding_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored invocation-to-response binding consistency; not causation |
+| `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical validity of present Ed25519 material |
+| `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
+| `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under an explicit maximum age and reference time |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
 
 ---
 
@@ -105,13 +110,17 @@ external anchor or signer identity.
 
 ---
 
-## Compliance alignment
+## Record and audit workflow alignment
 
 | Framework | Requirement | How AELITIUM helps |
 |-----------|-------------|-------------------|
-| EU AI Act — Article 12 | Tamper-resistant logs for high-risk AI | Evidence bundles with verifiable hashes |
+| EU AI Act — Article 12 | Record-keeping workflows | Project-defined Article 12-oriented mapping of selected evidence fields |
 | SOC 2 — CC7 | Integrity monitoring | Independent offline verification |
-| ISO 42001 | AI auditability | Third-party verifiable bundles |
+| ISO 42001 | AI auditability | Offline bundle-consistency checks for third-party review |
+
+These are technical workflow mappings, not an official regulatory format, a
+complete real-world record, certification, conformity assessment, or a legal
+compliance determination.
 
 ---
 
@@ -120,10 +129,9 @@ external anchor or signer identity.
 - Repository/package source baseline: **0.3.0** — unreleased. No `v0.3.0` tag,
   GitHub Release, or PyPI publication exists.
 - Latest released and tagged version: **v0.2.4** (2026-03-14)
-- The 0.3.0 line is prepared for release pending final reconciliation; see
-  [CHANGELOG.md](../CHANGELOG.md) and [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
-- A historical repository claim of PyPI `v0.2.4` exists but has not been
-  independently verified; PyPI availability is not asserted here
+- The 0.3.0 line remains unreleased and requires the separately authorized manual
+  process in [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+- Latest PyPI release: **0.2.4**; **0.3.0 is not published**
 - Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
@@ -143,5 +151,5 @@ external anchor or signer identity.
 ## Repo
 
 GitHub: https://github.com/aelitium-dev/aelitium-v3
-Install from source: `pip install .` (PyPI availability is not independently verified)
+Install this unreleased source tree: `pip install .` (latest PyPI release: `0.2.4`)
 Spec: [docs/EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md)

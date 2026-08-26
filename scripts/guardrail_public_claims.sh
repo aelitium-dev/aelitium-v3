@@ -39,6 +39,97 @@ fi
 
 echo "[PASS] required quarantine markers found"
 
+require_literal() {
+  local file="$1"
+  local literal="$2"
+  if ! grep -qF -- "$literal" "$file"; then
+    echo "[FAIL] required public-contract text missing from $file: $literal"
+    fail=1
+  fi
+}
+
+forbid_literal() {
+  local file="$1"
+  local literal="$2"
+  if grep -qF -- "$literal" "$file"; then
+    echo "[FAIL] stale public-contract text remains in $file: $literal"
+    fail=1
+  fi
+}
+
+contract_docs=(
+  "README.md"
+  "docs/ONE_PAGER.md"
+  "docs/TRUST_BOUNDARY.md"
+  "docs/MESSAGING_GUARDRAILS.md"
+  "docs/ARCHITECTURE.md"
+  "docs/TRUST_MODEL.md"
+  "FEATURE_MATRIX.md"
+)
+
+assurance_dimensions=(
+  "payload_integrity"
+  "binding_field_consistency"
+  "invocation_identity_consistency"
+  "invocation_binding_consistency"
+  "signature_validity"
+  "trusted_signer_identity"
+  "freshness"
+  "authorization"
+)
+
+for file in "${contract_docs[@]}"; do
+  for dimension in "${assurance_dimensions[@]}"; do
+    require_literal "$file" "$dimension"
+  done
+  require_literal "$file" "NOT_EVALUATED"
+done
+
+for dimension in "${assurance_dimensions[@]}"; do
+  require_literal "docs/AI_INTEGRITY_DEMO.md" "${dimension^^}="
+done
+
+require_literal "README.md" "--freshness-max-age-seconds"
+require_literal "README.md" "--freshness-reference-time-utc"
+for file in docs/TRUST_BOUNDARY.md docs/MESSAGING_GUARDRAILS.md; do
+  require_literal "$file" "freshness_max_age_seconds"
+  require_literal "$file" "freshness_reference_time_utc"
+done
+
+require_literal "pyproject.toml" "Internally consistent, offline-verifiable"
+forbid_literal "pyproject.toml" 'description = "Tamper-evident evidence bundles for AI outputs"'
+
+unreleased_changelog="$(sed -n '/^## \[Unreleased\]/,/^## \[0\.2\.4\]/p' CHANGELOG.md)"
+for stale_literal in \
+  "14c8202626f85637d44bc7209ed64f3ba7f646ce" \
+  "CI test-suite gate (PR #21)" \
+  "459 tests" \
+  '`freshness` remains `NOT_EVALUATED`.'
+do
+  if [[ "$unreleased_changelog" == *"$stale_literal"* ]]; then
+    echo "[FAIL] stale claim remains in current Unreleased section: $stale_literal"
+    fail=1
+  fi
+done
+require_literal "docs/RELEASE_PROCESS.md" "release_commit_sha"
+require_literal "docs/RELEASE_PROCESS.md" "Explicit human approval is required before each"
+require_literal "docs/RELEASE_PROCESS.md" "PyPI Trusted Publishing is the preferred publication mechanism"
+require_literal "docs/RELEASE_PROCESS.md" "do not silently fall back to Twine"
+require_literal "docs/RELEASE_PROCESS.md" "annotated, unsigned tag is sufficient"
+require_literal "SECURITY.md" 'Upon an actual `v0.3.0` release, `0.3.x` becomes the supported line and `0.2.x`'
+
+forbid_literal "README.md" "Export bundle in compliance format"
+forbid_literal "docs/ONE_PAGER.md" "Tamper-resistant logs for high-risk AI"
+forbid_literal "docs/AI_INTEGRITY_DEMO.md" "| Regulatory compliance |"
+forbid_literal "engine/compliance.py" "return EU AI Act Article 12 format"
+
+if [ "$fail" -ne 0 ]; then
+  echo "[FAIL] public-contract reconciliation checks failed"
+  exit 1
+fi
+
+echo "[PASS] public-contract reconciliation checks passed"
+
 # Phrase-level affirmative patterns only. These intentionally avoid isolated words
 # such as "exact", "proof", "trusted", or "immutable".
 pattern_labels=(

@@ -66,7 +66,9 @@ class TestAICLIHelp(unittest.TestCase):
             "Compare selected v1 request/response hashes between bundles",
             help_text,
         )
+        self.assertIn("Export an Article 12-oriented record mapping", help_text)
         self.assertNotIn("detect AI model behavior change", help_text)
+        self.assertNotIn("Export bundle in compliance format", help_text)
 
     def test_verify_help_describes_json_compatibility(self):
         help_text = self._help("verify")
@@ -99,7 +101,7 @@ class TestAICLIHelp(unittest.TestCase):
         root_help = self._help()
         help_text = self._help("verify-bundle")
         self.assertIn(
-            "Verify AI bundle integrity and any present signature/binding evidence",
+            "Verify all eight AI bundle assurance dimensions; optionally evaluate Freshness",
             root_help,
         )
         self.assertNotIn("hash + signature + binding hash", root_help)

@@ -11,6 +11,10 @@ bundle being inspected. Specifically, current v1 verification can establish:
 - `ai_hash_sha256` matches the independently reconstructed canonical payload
 - stored request, response, and binding hash fields are consistent when binding
   evidence is present
+- stored versioned invocation identity fields are internally consistent when
+  invocation evidence is present
+- stored invocation binding fields consistently link the invocation identity hash
+  to the stored response hash when invocation binding evidence is present
 - bundled Ed25519 verification material is mathematically valid when present
 
 This result does not, by itself, prove that the inspected artifact is historically
@@ -20,14 +24,16 @@ anchor.
 
 The assurance dimensions must be interpreted separately:
 
-| Dimension | Current v1 interpretation |
-|---|---|
-| `payload_integrity` | Payload/schema/canonical/manifest/hash consistency |
-| `binding_field_consistency` | Stored v1 binding fields are `VALID`, `INVALID`, or `ABSENT` |
-| `signature_validity` | Mathematical signature result, or `ABSENT` |
-| `trusted_signer_identity` | `UNESTABLISHED` by default; `VALID` only when an explicitly supplied external trust store contains the verified signing key's fingerprint |
-| `freshness` | `NOT_EVALUATED` without an explicit policy pair; otherwise declared-time recency is `VALID`, `INVALID`, or `UNESTABLISHED` as defined below |
-| `authorization` | `NOT_EVALUATED` |
+| Dimension | Reachable states in v0.3.0 | Current v1 interpretation |
+|---|---|---|
+| `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Payload/schema/canonical/manifest/hash consistency |
+| `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored v1 request/response/binding field consistency |
+| `invocation_identity_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored versioned invocation identity consistency; not provider execution |
+| `invocation_binding_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored invocation-to-response binding consistency; not provider execution or causation |
+| `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical signature result for bundled material |
+| `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
+| `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under the explicit policy pair defined below |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` let callers reject absence for their verification context.
@@ -354,9 +360,10 @@ origin, authorization, trusted historical time, or historical non-modification.
 
 ## Summary
 
-AELITIUM is best understood as an **evidence preservation layer**, not a trust oracle.
+AELITIUM is best understood as an **evidence-consistency layer**, not a trust oracle.
 
-It answers: *"Is what you have now what was recorded then?"*
+It answers: *"Are the inspected bundle fields internally consistent under the
+documented contract and explicitly supplied policies?"*
 
 It does not answer: *"Should you trust what was recorded?"*
 

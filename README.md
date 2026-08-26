@@ -132,15 +132,27 @@ Current binding verification checks consistency among stored v1 hash fields. It
 does not reconstruct source request or response material or establish that a
 real-world provider invocation produced a particular response.
 
-Verification reports separate assurance dimensions: `payload_integrity`,
-`binding_field_consistency`, `signature_validity`, `trusted_signer_identity`,
-`freshness`, and `authorization`. Unsigned and unbound bundles remain valid by
-default; `--require-signature` and `--require-binding` reject the corresponding
-absence. Bundled key material alone does not establish trusted signer identity —
-mathematical signature validity is a separate property. `trusted_signer_identity`
-remains `UNESTABLISHED` by default, and becomes `VALID` only when the caller
-explicitly supplies a local trust store (`--trust-store PATH`) containing the
-verified signing key's fingerprint. Authorization remains `NOT_EVALUATED`.
+Verification reports exactly eight separate assurance dimensions:
+
+| Dimension | Reachable states in v0.3.0 |
+|---|---|
+| `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
+| `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
+| `invocation_identity_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
+| `invocation_binding_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
+| `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
+| `trusted_signer_identity` | `VALID`, `UNESTABLISHED` |
+| `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` |
+| `authorization` | `NOT_EVALUATED` only |
+
+Unsigned and unbound bundles remain valid by default; `--require-signature` and
+`--require-binding` reject the corresponding absence. Bundled key material alone
+does not establish trusted signer identity — mathematical signature validity is a
+separate property. `trusted_signer_identity` remains `UNESTABLISHED` by default,
+and becomes `VALID` only when the caller explicitly supplies a local trust store
+(`--trust-store PATH`) containing the verified signing key's fingerprint.
+Authorization is not implemented in v0.3.0 and remains `NOT_EVALUATED` in every
+case.
 
 Freshness is `NOT_EVALUATED` by default. Activate it on `verify` or
 `verify-bundle` only by supplying both policy options:
@@ -374,7 +386,8 @@ are independently trusted.
 - Detect when recorded responses differ between runs for the same request hash
 - Detect changes inconsistent with the recorded evidence contract and a trusted external anchor
 - Investigate incidents involving AI agents ("what recorded evidence is available for this interaction?")
-- Produce verifiable records for compliance or audits (EU AI Act Art.12, SOC 2)
+- Support Article 12-oriented record mapping and other audit evidence workflows;
+  AELITIUM does not determine legal or regulatory compliance
 - Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
 
 ---
@@ -387,13 +400,13 @@ are independently trusted.
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 | `compare <bundle_a> <bundle_b>` | Compare two bundles — detect changed recorded responses |
-| `verify-bundle <dir>` | Verify payload integrity and any present signature/binding evidence; optional flags can require them or activate declared-time Freshness evaluation |
+| `verify-bundle <dir>` | Verify the eight-dimension assurance result, including invocation consistency and optional declared-time Freshness evaluation |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
-| `verify` with `--out=<dir>` | Verify integrity of a pack output dir |
+| `verify` with `--out=<dir>` | Verify the same eight-dimension assurance result for a pack output directory |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
 | `canonicalize --input <file>` | Print deterministic hash |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
-| `export --bundle <dir>` | Export bundle in compliance format (EU AI Act Art.12) |
+| `export --bundle <dir>` | Export a project-defined Article 12-oriented record mapping |
 
 Exit codes are command-specific: verification uses `0` for valid and `2` for
 invalid; comparison also uses `1` for not comparable. The CLI is designed for
@@ -404,7 +417,8 @@ CI/CD pipelines.
 
 ## Policy
 
-See `docs/policy/AELITIUM_TRUST_BOUNDARY_SPEC.md` for the canonical trust-boundary language policy.
+See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
+[Trust boundary](docs/TRUST_BOUNDARY.md) for the public-claim policy.
 
 ## Documentation
 
@@ -443,6 +457,10 @@ origin guarantees.
 - the payload satisfies `ai_output_v1` and the governed canonical byte contract
 - manifest identifiers and `ai_hash_sha256` are consistent with the canonical payload
 - stored v1 binding fields are consistent when present
+- stored invocation identity fields and their versioned hash are consistent when
+  present
+- stored invocation binding fields consistently link the invocation identity hash
+  to the recorded response hash when present
 - bundled Ed25519 material is mathematically valid when present
 - a verified signing key's fingerprint against an explicitly supplied
   external trust store, when one is provided
@@ -451,6 +469,7 @@ origin guarantees.
 
 **What current verification does not establish by itself:**
 - complete provider invocation identity or independent source reconstruction
+- provider execution or response causation from invocation consistency
 - historical non-modification without an independently trusted external anchor
 - trusted signer identity beyond an explicitly supplied external trust store
 - trusted historical time or authorization
@@ -477,21 +496,23 @@ Stronger provenance — signing authorities, hardware-backed keys — is the dir
 
 ---
 
-## Compliance alignment
+## Record and audit workflow alignment
 
-AELITIUM provides governed evidence bundles that can support the following
-regulatory and audit requirements when used with appropriate external controls:
+AELITIUM provides technical evidence artifacts that can support record and audit
+workflows when used with appropriate external controls:
 
 | Framework | Requirement | How AELITIUM helps |
 |-----------|-------------|-------------------|
-| **EU AI Act — Article 12** | Logging and traceability of high-risk AI system outputs | Evidence bundles provide governed, internally verifiable records with deterministic hashes |
+| **EU AI Act — Article 12** | Record-keeping workflows | A project-defined Article 12-oriented mapping exposes selected bundle fields for downstream record workflows |
 | **SOC 2 — CC7** | System monitoring and integrity controls | Offline consistency checks can support controls when expected hashes or keys are independently trusted |
 | **ISO 42001** | AI management system auditability | Canonical bundles with schema versioning support third-party audits without infrastructure access |
 | **NIST AI RMF — MG 2.2** | Traceability of AI decisions and outputs | Each bundle records a validated payload, hash, timestamp fields, and optional signature material within the documented v1 scope |
 
 AELITIUM does not replace logging infrastructure. It adds **cryptographic
 evidence-consistency checks** to an existing pipeline — offline, without a server
-or blockchain.
+or blockchain. Its export is not an official regulatory format, a complete
+real-world record, a conformity assessment, certification, or a legal compliance
+determination.
 
 ---
 
