@@ -2,8 +2,9 @@
 
 ## Supported Versions
 
-Support is stated against **released, tagged versions**. An unreleased
-development line is not a supported release.
+Support is stated against **released, tagged versions**. Before `v0.3.0` is
+released, `0.2.x` remains the current supported line and the `0.3.x` source line
+is not a supported release.
 
 | Version | State | Supported |
 |---------|-------|-----------|
@@ -11,13 +12,15 @@ development line is not a supported release.
 | 0.2.x   | Current released line (latest release: `v0.2.4`) | ✅ |
 | < 0.2   | Superseded | ❌ |
 
-### Pending decision at 0.3.0 release
+Upon an actual `v0.3.0` release, `0.3.x` becomes the supported line and `0.2.x`
+becomes superseded. Merged release documentation, green CI, or a source version
+of `0.3.0` does not trigger that transition; the release must exist.
 
-This repository does not define a support-transition or end-of-life policy. When
-`v0.3.0` is released, the support status of the 0.2.x line must be decided
-explicitly and recorded here. That decision has **not** been made and is not
-implied by this table: 0.2.x remains supported until it is superseded by an
-explicit decision.
+Within the future `0.3.x` released line, patch releases must not deliberately
+introduce breaking changes to existing public assurance dimension names,
+assurance states, or already-versioned public identifiers/contracts. See
+[Release Process](docs/RELEASE_PROCESS.md#pre-10-stability-policy) for the scoped
+pre-1.0 compatibility policy.
 
 ## Reporting a Vulnerability
 

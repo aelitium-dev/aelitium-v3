@@ -15,7 +15,7 @@ No guarantees exist outside the scope explicitly defined here.
 
 The system guarantees:
 
-- integrity of verified artifacts at byte level
+- internal consistency of inspected artifacts at byte level
 - consistency between input, canonical form, and computed hash
 - correctness of signature verification (if applicable)
 
@@ -27,17 +27,22 @@ The system does NOT guarantee:
 - trusted temporal validity or historical time
 - contextual correctness
 
-Current AI bundle verification reports these dimensions separately:
+Current AI bundle verification reports exactly these eight dimensions:
 
-- `payload_integrity`
-- `binding_field_consistency`
-- `signature_validity`
-- `trusted_signer_identity` (`UNESTABLISHED` by default; `VALID` only when an
-  external trust store is explicitly supplied to the verification call and
-  the verified signing key's fingerprint is present in it)
-- `freshness` (`NOT_EVALUATED` without an explicit policy pair; otherwise an
-  evaluation of declared-time recency, not trusted historical time)
-- `authorization` (`NOT_EVALUATED`)
+- `payload_integrity`: `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED`
+- `binding_field_consistency`: `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED`
+- `invocation_identity_consistency`: `VALID`, `INVALID`, `ABSENT`,
+  `NOT_EVALUATED`
+- `invocation_binding_consistency`: `VALID`, `INVALID`, `ABSENT`,
+  `NOT_EVALUATED`
+- `signature_validity`: `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED`
+- `trusted_signer_identity`: `VALID`, `UNESTABLISHED`
+- `freshness`: `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED`
+- `authorization`: `NOT_EVALUATED` only
+
+Invocation identity and invocation binding results establish stored-field
+consistency only. They do not establish provider receipt or execution, response
+causation, or complete real-world invocation reconstruction.
 
 Mathematical signature validity must not be interpreted as signer identity. By
 default the verifier compares only against verification material packaged

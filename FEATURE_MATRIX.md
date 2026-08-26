@@ -1,6 +1,6 @@
 # FEATURE MATRIX — AELITIUM
 
-Status: DRAFT
+Status: DRAFT — non-exhaustive inventory of the unreleased 0.3.0 source baseline
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
 ---
@@ -141,14 +141,24 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
 
 - Guarantees:
   - Verifies bundle integrity against included hashed artifacts
+  - Validates the canonical payload against the authoritative `ai_output_v1`
+    schema before a successful result
   - Returns an invalid verification result when verification checks fail
   - Can be run offline against local bundle contents
+  - Reports exactly eight assurance dimensions:
+    `payload_integrity`, `binding_field_consistency`,
+    `invocation_identity_consistency`, `invocation_binding_consistency`,
+    `signature_validity`, `trusted_signer_identity`, `freshness`, and
+    `authorization`
+  - The first five dimensions can report `VALID`, `INVALID`, `ABSENT`, or
+    `NOT_EVALUATED`; `trusted_signer_identity` reports `VALID` or
+    `UNESTABLISHED`; `freshness` reports `VALID`, `INVALID`, `UNESTABLISHED`, or
+    `NOT_EVALUATED`; `authorization` reports only `NOT_EVALUATED`
 
 - Non-guarantees:
   - Does not prove when the bundle was generated
   - Does not prove what a model "actually said"
   - Does not verify facts outside the included artifacts
-  - Does not validate full schema correctness of the canonical payload
 
 ---
 
@@ -224,7 +234,7 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
 
 ---
 
-## 13. EU AI Act Art. 12 export
+## 13. Article 12-oriented record export
 
 - Feature: `export_eu_ai_act_art12`
 - Interface: Python API
@@ -237,6 +247,7 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
 
 - Non-guarantees:
   - Does not guarantee legal compliance
+  - Does not claim an official EU AI Act format or a complete regulatory record
   - Does not constitute certification, legal advice, or regulatory acceptance
   - Does not guarantee that every required external record exists outside the processed bundle files
 

@@ -211,8 +211,9 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
     """
     Verify an evidence bundle directory.
 
-    Checks: canonical JSON hash, manifest integrity, Ed25519 signature (if present),
-    and binding_hash (if present in manifest).
+    Reports the eight assurance dimensions after schema/canonical/payload,
+    binding-field, invocation-identity, invocation-binding, signature/trust, and
+    optional Freshness evaluation.
 
     Usage: aelitium verify-bundle <bundle_dir>
     """
@@ -567,7 +568,7 @@ def main() -> int:
 
     vb = sub.add_parser(
         "verify-bundle",
-        help="Verify AI bundle integrity and any present signature/binding evidence",
+        help="Verify all eight AI bundle assurance dimensions; optionally evaluate Freshness",
     )
     vb.add_argument("bundle", help="Path to evidence bundle directory")
     vb.add_argument(
@@ -618,7 +619,7 @@ def main() -> int:
     ck.add_argument("--ci", action="store_true", help="CI-friendly AELITIUM_SCAN_* key=value output")
     ck.set_defaults(fn=cmd_scan)
 
-    exp = sub.add_parser("export", help="Export bundle in compliance format")
+    exp = sub.add_parser("export", help="Export an Article 12-oriented record mapping")
     exp.add_argument("--bundle", required=True, help="Path to evidence bundle dir")
     exp.add_argument("--format", default="eu-ai-act-art12", choices=["eu-ai-act-art12"])
     exp.add_argument("--json", action="store_true")

@@ -26,7 +26,7 @@ version remains `v0.2.4` (2026-03-14). This section is converted to
 annotated `v0.3.0` tag.
 
 The entries below cover all material work on the 0.3.0 line through
-`14c8202626f85637d44bc7209ed64f3ba7f646ce` (merge of PR #21).
+`7e007f60ca884a6dc44e63aec1f8f5243ab2ed6e` (merge of PR #23).
 
 ### Breaking
 
@@ -43,15 +43,24 @@ callers accepted under 0.2.4 may now be rejected.
   (`CAPTURE_METADATA_RESERVED_KEY_COLLISION`) instead of silently overwriting
   adapter-owned fields. This protects adapter-owned fields from caller metadata
   collisions; it does not address filesystem concurrency.
+- **Invocation-evidence migration** — legacy bundles without invocation identity
+  and invocation binding evidence remain accepted and report `ABSENT`; malformed
+  or incomplete evidence is rejected when those fields are present. Current
+  capture adapters add the versioned invocation fields to canonical metadata, so
+  the complete `ai_hash_sha256` can differ from an otherwise comparable legacy
+  capture. The v1 `request_hash` and `binding_hash` constructions and their public
+  identifiers remain unchanged.
 
 ### Added
 
-- **Explicit assurance-state model** — verification reports explicit states across
-  assurance dimensions: `VALID`/`INVALID` where evaluated; `ABSENT` for optional
-  missing binding or signature evidence; `UNESTABLISHED` for trusted signer
-  identity under the bundled-key model; `NOT_EVALUATED` for dimensions the current
-  system does not evaluate. Unsigned and unbound bundles remain `VALID` by default
-  unless `--require-signature` or `--require-binding` is used.
+- **Explicit assurance-state model** — verification reports
+  `payload_integrity`, `binding_field_consistency`,
+  `invocation_identity_consistency`, `invocation_binding_consistency`,
+  `signature_validity`, `trusted_signer_identity`, `freshness`, and
+  `authorization` separately. States distinguish evaluated results, optional
+  absence, unestablished trust or policy, and non-evaluation. Unsigned and unbound
+  bundles remain `VALID` by default unless `--require-signature` or
+  `--require-binding` is used.
 - **Trusted signer store** — a local trusted signer store primitive
   (`engine/trust.py`), with normalized handling of trust store read failures.
 - **Trusted signer identity evaluation** — the verifier evaluates trusted signer
@@ -60,11 +69,20 @@ callers accepted under 0.2.4 may now be rejected.
   Without such a store, `trusted_signer_identity` remains `UNESTABLISHED`.
 - **Invocation identity** — a versioned invocation-identity primitive
   (`engine/invocation.py`), recorded by the capture adapters and checked for
-  consistency by the verifier. Invocation identity is recorded separately from
-  `request_hash`; recording it does not change v1 `request_hash` construction.
+  consistency by the verifier as `invocation_identity_consistency`. Invocation
+  identity is recorded separately from `request_hash`; recording it does not
+  change v1 `request_hash` construction.
 - **Invocation binding** — a versioned invocation-binding primitive
   (`engine/invocation_binding.py`) binding invocation identity to the response
-  hash, consulted by the bundle verifier for parsing and recomputation.
+  hash, consulted by the bundle verifier for parsing and recomputation as
+  `invocation_binding_consistency`.
+- **Deterministic Freshness** — an explicit maximum age and explicit UTC reference
+  time evaluate declared-time recency from `ai_canonical.json.ts_utc`, without an
+  implicit system clock. With no policy pair, `freshness` is `NOT_EVALUATED`;
+  invalid or incomplete policy is `UNESTABLISHED`; stale, future, or malformed
+  selected evidence time is `INVALID`; an in-window timestamp is `VALID`.
+  Freshness options are exposed by the public verifier API, `verify`,
+  `verify-bundle`, and the standalone verifier.
 
 ### Changed
 
@@ -92,14 +110,15 @@ callers accepted under 0.2.4 may now be rejected.
 
 ### Tests and CI
 
-- **CI test-suite gate (PR #21)** — the assurance test suite is gated across
+- **CI test-suite gate (through PR #23)** — the assurance test suite is gated across
   supported Python versions. `.github/workflows/tests.yml` runs the suite on
   Python 3.10, 3.11 and 3.12 with provider extras installed (`pip install -e
   ".[all]"`), and fails the job if any test is skipped, so provider adapter tests
   cannot silently stop executing. The end-to-end matrix
   (`scripts/run_test_matrix.sh`) runs in the same workflow.
-- **459 tests** across Python 3.10 / 3.11 / 3.12 with provider extras, up from 177
-  at 0.2.4.
+- **529 test cases on each supported interpreter** — CI runs the 529-case suite
+  separately on Python 3.10, 3.11, and 3.12 with provider extras. This is a
+  per-interpreter count, not one aggregate count across the matrix.
 - Expanded adversarial verification coverage: malformed governed hash matrix,
   signature stripping, binding stripping, attacker signer substitution,
   unsupported version and signature algorithm, canonicalization golden vectors,
@@ -108,7 +127,7 @@ callers accepted under 0.2.4 may now be rejected.
 - `.github/workflows/release-audit.yml` gates `scripts/audit_release.sh` on push
   and pull request.
 
-### Assurance boundaries (unchanged from 0.2.4)
+### Persistent assurance and compatibility boundaries
 
 Verification establishes internal consistency of recorded evidence on the
 validated surface. It does not establish:
@@ -119,14 +138,15 @@ validated surface. It does not establish:
   Verification checks stored binding-field consistency only.
 - That the response is correct, truthful, complete, or that capture was complete.
 
-Additionally, and unchanged:
+Additional contract and compatibility boundaries:
 
 - The `ai_output_v1` schema identifier is unchanged.
 - v1 `request_hash` and `binding_hash` construction is unchanged.
 - Request identity remains selected-field identity, not full invocation identity.
 - `trusted_signer_identity` remains `UNESTABLISHED` unless an external trust store
   is explicitly supplied for evaluation.
-- `freshness` remains `NOT_EVALUATED`.
+- `freshness` is `NOT_EVALUATED` without the complete explicit policy pair and is
+  evaluated only when both policy inputs are supplied.
 - `authorization` remains `NOT_EVALUATED`.
 - Canonicalization is the deterministic JSON form identified by
   `json_sorted_keys_no_whitespace_utf8`. It is **not** RFC 8785 / JCS and does not
