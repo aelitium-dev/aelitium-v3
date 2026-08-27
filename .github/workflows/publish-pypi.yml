@@ -1,0 +1,112 @@
+name: publish-pypi
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  build:
+    if: >-
+      github.event.release.tag_name == 'v0.3.0' &&
+      github.event.release.draft == false &&
+      github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out the released tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build frontend
+        run: python -m pip install --upgrade build
+
+      - name: Build wheel and source distribution
+        run: python -m build --sdist --wheel
+
+      - name: Verify distribution metadata
+        run: |
+          python - <<'PY'
+          from email.parser import Parser
+          from pathlib import Path, PurePosixPath
+          import tarfile
+          import zipfile
+
+          expected = ("aelitium", "0.3.0")
+          dist = Path("dist")
+          wheels = sorted(dist.glob("*.whl"))
+          sdists = sorted(dist.glob("*.tar.gz"))
+          assert len(wheels) == 1, f"expected one wheel, found: {wheels}"
+          assert len(sdists) == 1, f"expected one sdist, found: {sdists}"
+
+          with zipfile.ZipFile(wheels[0]) as archive:
+              entries = [
+                  name for name in archive.namelist()
+                  if name.endswith(".dist-info/METADATA")
+              ]
+              assert len(entries) == 1, f"unexpected wheel metadata: {entries}"
+              wheel_metadata = Parser().parsestr(
+                  archive.read(entries[0]).decode("utf-8")
+              )
+
+          with tarfile.open(sdists[0], "r:gz") as archive:
+              entries = [
+                  member for member in archive.getmembers()
+                  if member.isfile()
+                  and PurePosixPath(member.name).name == "PKG-INFO"
+                  and len(PurePosixPath(member.name).parts) == 2
+              ]
+              assert len(entries) == 1, f"unexpected sdist metadata: {entries}"
+              extracted = archive.extractfile(entries[0])
+              assert extracted is not None
+              sdist_metadata = Parser().parsestr(
+                  extracted.read().decode("utf-8")
+              )
+
+          for label, metadata in (
+              ("wheel", wheel_metadata),
+              ("sdist", sdist_metadata),
+          ):
+              actual = (metadata["Name"], metadata["Version"])
+              assert actual == expected, f"{label} metadata is {actual}, expected {expected}"
+
+          print(f"verified: {wheels[0].name}")
+          print(f"verified: {sdists[0].name}")
+          PY
+
+      - name: Store verified distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: >-
+      github.event.release.tag_name == 'v0.3.0' &&
+      github.event.release.draft == false &&
+      github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Retrieve verified distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
