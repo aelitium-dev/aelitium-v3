@@ -17,7 +17,7 @@ Two known artefacts of that history are preserved rather than rewritten: a legac
 
 ---
 
-## [Unreleased] — planned release: 0.3.0
+## [0.3.0] — 2026-08-27
 
 **Release status.** The repository and package baseline is `0.3.0`. No `v0.3.0`
 tag, GitHub Release, or PyPI publication exists. The latest released and tagged
