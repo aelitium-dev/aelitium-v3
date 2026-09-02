@@ -1,8 +1,10 @@
-"""Live-capture example for selected-hash comparison.
+"""Live-capture example for invocation-first comparison.
 
-The historical filename is retained for compatibility. A CHANGED result means
-that selected response hashes differ for the same selected v1 request hash; it
-does not establish model drift or causation.
+The historical filename is retained for compatibility. Current capture bundles
+normally provide validated invocation identity and binding evidence, so v0.4
+default comparison reports its invocation-first basis. A CHANGED result means
+selected comparison identity hashes match and selected response hashes differ
+under the reported basis; it does not establish model drift or causation.
 """
 
 from openai import OpenAI
@@ -21,7 +23,7 @@ capture_openai(client, "gpt-4o-mini", messages, "./run1")
 print("Running capture 2...")
 capture_openai(client, "gpt-4o-mini", messages, "./run2")
 
-print("Comparing selected request/response hashes...\n")
+print("Comparing validated recorded evidence (basis shown in output)...\n")
 
 subprocess.run([
     "aelitium",

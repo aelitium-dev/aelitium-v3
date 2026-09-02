@@ -61,15 +61,21 @@ python3 -m engine.ai_cli verify-bundle examples/drift_demo/bundle_a
 
 ## Check 4 — compare (unchanged)
 
-Comparison basis for Checks 4 and 5 is `request_hash` v1. The status labels
-describe selected request/response hash equality; they do not establish full
-invocation identity or causation.
+**Comparison basis in v0.3.x: `request_hash` v1.** The frozen bundles used by
+Checks 4 and 5 predate invocation evidence. Under the v0.4 development contract
+they therefore exercise the visible `REQUEST_HASH_V1_FALLBACK` basis. The status
+labels describe selected identity/response hash relationships; they do not
+establish complete invocation identity or causation.
 
 ### Command
 python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_a
 
 ### PASS
 - STATUS=UNCHANGED rc=0
+- COMPARISON_CONTRACT=aelitium-compare-v1
+- COMPARISON_MODE=INVOCATION_FIRST
+- COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK
+- COMPARISON_REASON=RESPONSE_HASH_SAME
 - REQUEST_HASH=SAME
 - RESPONSE_HASH=SAME
 
@@ -82,8 +88,16 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
 
 ### PASS
 - STATUS=CHANGED rc=2
+- COMPARISON_CONTRACT=aelitium-compare-v1
+- COMPARISON_MODE=INVOCATION_FIRST
+- COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK
+- COMPARISON_REASON=RESPONSE_HASH_DIFFERENT
 - REQUEST_HASH=SAME
 - RESPONSE_HASH=DIFFERENT
+
+For v0.4 migration checks, add `--require-invocation-evidence` to confirm these
+frozen bundles report `NOT_COMPARABLE` with basis `NONE`, or add
+`--legacy-request-hash-v1` to select `REQUEST_HASH_V1_LEGACY` explicitly.
 
 ---
 

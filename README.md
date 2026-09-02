@@ -78,8 +78,9 @@ cd aelitium-v3 && pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
-Same selected v1 request hash. Different selected response hash. That means the
-selected recorded response fields differ between the compared bundles.
+The frozen demo bundles predate invocation evidence, so v0.4 development output
+reports `COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK`. Their selected v1 request
+hashes match and their selected response hashes differ.
 
 ```bash
 # Scan your codebase for unprotected LLM calls:
@@ -109,7 +110,7 @@ capture adapter   ← records request_hash + response_hash in-process
 evidence bundle   ← canonical JSON + ai_manifest.json + binding_hash
       ↓
 aelitium verify-bundle   ← STATUS=VALID / STATUS=INVALID
-aelitium compare         ← UNCHANGED / CHANGED / NOT_COMPARABLE
+aelitium compare         ← invocation-first comparison with visible basis
 ```
 
 Each bundle contains a deterministic SHA-256 hash of its complete canonical
@@ -233,8 +234,10 @@ caused by it. See [Invocation assurance](docs/INVOCATION_ASSURANCE.md) for
 the full claim boundary.
 
 `invocation_identity` is a separate, broader recorded identity when present.
-Current 0.3.x `compare` does not use `invocation_identity` or
-`invocation_binding` as its comparison basis.
+Historical v0.3.x `compare` does not use `invocation_identity` or
+`invocation_binding` as its comparison basis. The unreleased v0.4 development
+contract uses a validated invocation identity only when validated invocation
+binding evidence is also present in both bundles.
 
 ---
 
@@ -284,32 +287,64 @@ See [`examples/litellm_enable.py`](examples/litellm_enable.py) for a runnable ex
 
 ---
 
-## Compare selected request and response hashes
+## Compare validated recorded evidence
 
 ```bash
 aelitium compare ./bundle_last_week ./bundle_today
 # STATUS=CHANGED rc=2
+# COMPARISON_CONTRACT=aelitium-compare-v1
+# COMPARISON_MODE=INVOCATION_FIRST
+# COMPARISON_BASIS=INVOCATION_IDENTITY_V1
+# COMPARISON_REASON=RESPONSE_HASH_DIFFERENT
+# INVOCATION_IDENTITY_HASH=SAME  a=62a1d3c4... b=62a1d3c4...
 # REQUEST_HASH=SAME    a=3f4a8c1d... b=3f4a8c1d...
 # RESPONSE_HASH=DIFFERENT  a=9b2e7f1a... b=c41d8e3b...
-# INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
 **Comparison basis in v0.3.x: `request_hash` v1.**
 
-- `UNCHANGED`: the bundles have the same selected v1 `request_hash` and the
-  same `response_hash` over selected recorded response fields.
-- `CHANGED`: the bundles have the same selected v1 `request_hash` and
-  different selected `response_hash` values.
-- `NOT_COMPARABLE`: the selected v1 `request_hash` values differ or required
-  `request_hash` capture metadata is missing. Invalid bundles are reported
-  separately as `INVALID_BUNDLE`.
+That remains the historical v0.3.x contract. It can be selected explicitly in
+v0.4 development with `--legacy-request-hash-v1`.
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+mode is `INVOCATION_FIRST`:
+
+- When both bundles have `invocation_identity_consistency=VALID` and
+  `invocation_binding_consistency=VALID`, the basis is
+  `INVOCATION_IDENTITY_V1`. Different invocation-identity hashes produce
+  `NOT_COMPARABLE`; matching hashes allow the selected response hashes to be
+  compared.
+- When one or both valid bundles lack that usable invocation evidence, the basis
+  is visibly downgraded to `REQUEST_HASH_V1_FALLBACK`, including asymmetric and
+  legacy-bundle comparisons.
+- `--require-invocation-evidence` selects `STRICT_INVOCATION` and disables the
+  fallback. Missing usable evidence produces `NOT_COMPARABLE`, basis `NONE`, and
+  required basis `INVOCATION_IDENTITY_V1`.
+- `--legacy-request-hash-v1` selects `LEGACY_REQUEST_HASH_V1` and basis
+  `REQUEST_HASH_V1_LEGACY`, reproducing the v0.3.x request-hash decisions.
+
+Every result exposes its comparison basis and reason. `UNCHANGED` means that,
+under the reported basis, the selected comparison identity hashes and selected
+response hashes match. `CHANGED` means the selected comparison identity hashes
+match and the selected response hashes differ. `NOT_COMPARABLE` makes no
+response-change conclusion because the selected identities differ or required
+evidence is unavailable. Invalid inputs report `INVALID_BUNDLE` before basis
+selection.
 
 `request_hash` is not a complete invocation identity. Its equality does not
 establish equality of every invocation parameter, mode, provider route, client
 configuration, or execution context. `CHANGED` does not by itself establish
 model drift or explain causation, and `UNCHANGED` does not establish that the
-full invocation configuration was unchanged. The broader recorded
-`invocation_identity`, when present, is not used by current 0.3.x comparison.
+full invocation configuration or model behavior was unchanged. Equality of
+validated `aelitium-invocation-v1` hashes applies only to the fields selected by
+that recorded identity format; it does not establish a complete real-world
+invocation. The displayed request and legacy binding hashes are diagnostic when
+the basis is `INVOCATION_IDENTITY_V1`; invocation-binding hashes are never the
+comparison identity.
+
+AELITIUM establishes internal consistency of recorded evidence on the validated
+surface. It does not establish provider execution, causation, full invocation
+completeness, model drift, output truth, authorization, or legal compliance.
 
 Run offline (no API key):
 
@@ -419,7 +454,7 @@ are independently trusted.
 | Command | Description |
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
-| `compare <bundle_a> <bundle_b>` | Compare selected v1 request and response hashes between bundles |
+| `compare <bundle_a> <bundle_b>` | Compare validated recorded hashes using an explicit invocation-first, fallback, strict, or legacy basis |
 | `verify-bundle <dir>` | Verify the eight-dimension assurance result, including invocation consistency and optional declared-time Freshness evaluation |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify` with `--out=<dir>` | Verify the same eight-dimension assurance result for a pack output directory |

@@ -60,39 +60,54 @@ class TestAICLIHelp(unittest.TestCase):
     def test_ai_cli_help_exit_zero(self):
         self._help()
 
-    def test_root_help_scopes_compare_to_selected_v1_hashes(self):
+    def test_root_help_scopes_compare_to_invocation_first_hash_contract(self):
         help_text = self._help()
         self.assertIn(
-            "Compare selected v1 request/response hashes between bundles",
+            "Compare validated bundle hashes using invocation-first semantics",
             help_text,
         )
         self.assertIn("Export an Article 12-oriented record mapping", help_text)
         self.assertNotIn("detect AI model behavior change", help_text)
         self.assertNotIn("Export bundle in compliance format", help_text)
 
-    def test_compare_help_defines_selected_hash_contract(self):
+    def test_compare_help_defines_versioned_invocation_first_contract(self):
         help_text = self._help("compare")
         self.assertIn(
-            "Comparison basis in v0.3.x: request_hash v1.",
+            "Comparison contract: aelitium-compare-v1.",
             help_text,
         )
         self.assertIn(
-            "UNCHANGED means the selected v1 request_hash and selected "
-            "response_hash match",
+            "The default uses validated invocation identity and binding evidence "
+            "from both bundles",
             help_text,
         )
         self.assertIn(
-            "CHANGED means request_hash matches and response_hash differs",
+            "with a visible request_hash v1 fallback when that evidence is "
+            "unavailable",
             help_text,
         )
         self.assertIn(
-            "NOT_COMPARABLE means the selected request hashes differ or "
-            "request_hash capture metadata is missing",
+            "UNCHANGED and CHANGED describe selected identity and response-hash "
+            "relationships only",
+            help_text,
+        )
+
+    def test_compare_help_defines_strict_and_legacy_modes(self):
+        help_text = self._help("compare")
+        self.assertIn(
+            "--require-invocation-evidence",
             help_text,
         )
         self.assertIn(
-            "Current 0.3.x compare does not use invocation_identity as its "
-            "comparison basis",
+            "Require invocation_identity_consistency=VALID and "
+            "invocation_binding_consistency=VALID for both bundles; disable "
+            "request_hash v1 fallback.",
+            help_text,
+        )
+        self.assertIn("--legacy-request-hash-v1", help_text)
+        self.assertIn(
+            "Use v0.3.x request_hash v1 comparison semantics even when "
+            "validated invocation evidence is present.",
             help_text,
         )
 

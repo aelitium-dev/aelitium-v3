@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# AELITIUM selected-hash comparison demo — no API key required
-# Demonstrates: same selected v1 request_hash, different selected response_hash.
+# AELITIUM comparison-basis demo — no API key required
+# These frozen pre-invocation bundles demonstrate visible request_hash fallback:
+# matching selected v1 request hashes and different selected response hashes.
 # The comparison does not identify the cause.
 #
 # Usage:
@@ -43,4 +44,5 @@ echo "--- aelitium compare ---"
 echo ""
 aelitium compare "$BUNDLE_A" "$BUNDLE_B" || true
 echo ""
-echo "Same selected v1 request_hash. Different selected response_hash. Compare does not identify the cause."
+echo "Expected basis: REQUEST_HASH_V1_FALLBACK (frozen pre-invocation fixtures)."
+echo "Selected request hashes match; selected response hashes differ. Compare does not identify the cause."
