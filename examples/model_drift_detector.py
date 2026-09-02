@@ -1,3 +1,10 @@
+"""Live-capture example for selected-hash comparison.
+
+The historical filename is retained for compatibility. A CHANGED result means
+that selected response hashes differ for the same selected v1 request hash; it
+does not establish model drift or causation.
+"""
+
 from openai import OpenAI
 from aelitium import capture_openai
 import subprocess
@@ -14,7 +21,7 @@ capture_openai(client, "gpt-4o-mini", messages, "./run1")
 print("Running capture 2...")
 capture_openai(client, "gpt-4o-mini", messages, "./run2")
 
-print("Comparing bundles...\n")
+print("Comparing selected request/response hashes...\n")
 
 subprocess.run([
     "aelitium",

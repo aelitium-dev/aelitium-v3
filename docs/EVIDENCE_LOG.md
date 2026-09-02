@@ -3,6 +3,12 @@
 Scope: recorded outputs from executing the operational test matrix.
 Rule: only observed results are recorded. No inferred claims.
 
+This is a dated historical record. Output excerpts are preserved verbatim and
+may predate current public wording. In v0.3.x, compare statuses describe
+selected `request_hash` v1 and selected `response_hash` relationships, not full
+invocation identity or causation; see
+[Comparing Recorded Responses Across Runs](MODEL_BEHAVIOR_CHANGE.md).
+
 ---
 
 ## Environment

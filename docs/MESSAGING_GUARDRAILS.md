@@ -155,6 +155,25 @@ more of the recorded call boundary. Their assurance dimensions establish stored
 field consistency only; they do not establish provider receipt or execution,
 response causation, or complete reconstruction of a real-world invocation.
 
+### Compare boundary in v0.3.x
+
+**Comparison basis in v0.3.x: `request_hash` v1.** Current 0.3.x `compare`
+does not use `invocation_identity` or `invocation_binding` as its comparison
+basis.
+
+| Status | Approved meaning |
+|---|---|
+| `UNCHANGED` | Same selected v1 `request_hash` and same `response_hash` over selected recorded response fields |
+| `CHANGED` | Same selected v1 `request_hash` and different selected `response_hash` values |
+| `NOT_COMPARABLE` | Different selected v1 `request_hash` values or missing required `request_hash` capture metadata; invalid bundles are reported separately as `INVALID_BUNDLE` |
+
+`request_hash` is not a complete invocation identity. Equality does not
+establish equality of every invocation parameter, mode, provider route, client
+configuration, or execution context. `invocation_identity` is a separate,
+broader recorded identity when present. `CHANGED` does not by itself establish
+model drift or explain causation. `UNCHANGED` does not establish that the full
+invocation configuration was unchanged.
+
 ---
 
 ## Historical trust boundary
@@ -172,6 +191,8 @@ independently trusted external hash, key identity, receipt, or equivalent anchor
 |---|---|
 | internal consistency of the inspected bundle | proof the bundle was never altered |
 | v1 selected-field request identity | exact request or full invocation identity |
+| same selected v1 request hash and same selected response hash | same invocation or behavior unchanged |
+| same selected v1 request hash and different selected response hash | model drift detected or proof of change |
 | stored binding-field consistency | proof that a real-world request produced a response |
 | mathematical signature validity | authentic origin or authenticated producer |
 | signer identity is not established by bundled key material alone | verified signer or trusted signer |

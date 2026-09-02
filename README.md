@@ -62,7 +62,7 @@ aelitium verify-bundle ./bundle
 
 ## The problem
 
-You run the same prompt in production. One week later, the output is different.
+You run the same prompt text in production. One week later, the output is different.
 
 The recorded response changed — but your logs just show two JSON blobs. It is hard
 to check their schema and hash consistency against a separately retained expected
@@ -78,7 +78,8 @@ cd aelitium-v3 && pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
-Same request hash. Different recorded response hash. That means the recorded response changed for the compared bundles.
+Same selected v1 request hash. Different selected response hash. That means the
+selected recorded response fields differ between the compared bundles.
 
 ```bash
 # Scan your codebase for unprotected LLM calls:
@@ -231,6 +232,10 @@ received or executed the invocation, nor that the response was historically
 caused by it. See [Invocation assurance](docs/INVOCATION_ASSURANCE.md) for
 the full claim boundary.
 
+`invocation_identity` is a separate, broader recorded identity when present.
+Current 0.3.x `compare` does not use `invocation_identity` or
+`invocation_binding` as its comparison basis.
+
 ---
 
 ## Zero-config with LiteLLM
@@ -279,7 +284,7 @@ See [`examples/litellm_enable.py`](examples/litellm_enable.py) for a runnable ex
 
 ---
 
-## Detect when the recorded response changed
+## Compare selected request and response hashes
 
 ```bash
 aelitium compare ./bundle_last_week ./bundle_today
@@ -289,7 +294,22 @@ aelitium compare ./bundle_last_week ./bundle_today
 # INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-If `REQUEST_HASH=SAME` and `RESPONSE_HASH=DIFFERENT`, the compared bundles contain different recorded responses for the same hashed request. AELITIUM does not attribute the cause.
+**Comparison basis in v0.3.x: `request_hash` v1.**
+
+- `UNCHANGED`: the bundles have the same selected v1 `request_hash` and the
+  same `response_hash` over selected recorded response fields.
+- `CHANGED`: the bundles have the same selected v1 `request_hash` and
+  different selected `response_hash` values.
+- `NOT_COMPARABLE`: the selected v1 `request_hash` values differ or required
+  `request_hash` capture metadata is missing. Invalid bundles are reported
+  separately as `INVALID_BUNDLE`.
+
+`request_hash` is not a complete invocation identity. Its equality does not
+establish equality of every invocation parameter, mode, provider route, client
+configuration, or execution context. `CHANGED` does not by itself establish
+model drift or explain causation, and `UNCHANGED` does not establish that the
+full invocation configuration was unchanged. The broader recorded
+`invocation_identity`, when present, is not used by current 0.3.x comparison.
 
 Run offline (no API key):
 
@@ -383,7 +403,7 @@ are independently trusted.
 
 ## When teams use AELITIUM
 
-- Detect when recorded responses differ between runs for the same request hash
+- Compare selected response hashes across bundles with the same selected v1 request hash
 - Detect changes inconsistent with the recorded evidence contract and a trusted external anchor
 - Investigate incidents involving AI agents ("what recorded evidence is available for this interaction?")
 - Support Article 12-oriented record mapping and other audit evidence workflows;
@@ -399,7 +419,7 @@ are independently trusted.
 | Command | Description |
 |---------|-------------|
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
-| `compare <bundle_a> <bundle_b>` | Compare two bundles — detect changed recorded responses |
+| `compare <bundle_a> <bundle_b>` | Compare selected v1 request and response hashes between bundles |
 | `verify-bundle <dir>` | Verify the eight-dimension assurance result, including invocation consistency and optional declared-time Freshness evaluation |
 | `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
 | `verify` with `--out=<dir>` | Verify the same eight-dimension assurance result for a pack output directory |

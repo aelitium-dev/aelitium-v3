@@ -110,7 +110,7 @@ python3 -m engine.ai_cli verify-bundle examples/drift_demo/bundle_a
 ## Test 4 — Compare => UNCHANGED / CHANGED
 
 - Objective:
-  Verify the observable comparison outcomes for unchanged and changed bundle pairs.
+  Verify the observable selected-hash comparison outcomes for the bundle pairs.
 
 - Command:
 
@@ -137,7 +137,8 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
   CLI comparison output for both runs.
 
 - Non-goal:
-  Does not explain why a change occurred.
+  Does not establish full invocation equivalence or explain why selected
+  response hashes differ. Comparison basis in v0.3.x is `request_hash` v1.
 
 ---
 

@@ -70,6 +70,32 @@ class TestAICLIHelp(unittest.TestCase):
         self.assertNotIn("detect AI model behavior change", help_text)
         self.assertNotIn("Export bundle in compliance format", help_text)
 
+    def test_compare_help_defines_selected_hash_contract(self):
+        help_text = self._help("compare")
+        self.assertIn(
+            "Comparison basis in v0.3.x: request_hash v1.",
+            help_text,
+        )
+        self.assertIn(
+            "UNCHANGED means the selected v1 request_hash and selected "
+            "response_hash match",
+            help_text,
+        )
+        self.assertIn(
+            "CHANGED means request_hash matches and response_hash differs",
+            help_text,
+        )
+        self.assertIn(
+            "NOT_COMPARABLE means the selected request hashes differ or "
+            "request_hash capture metadata is missing",
+            help_text,
+        )
+        self.assertIn(
+            "Current 0.3.x compare does not use invocation_identity as its "
+            "comparison basis",
+            help_text,
+        )
+
     def test_verify_help_describes_json_compatibility(self):
         help_text = self._help("verify")
         self.assertIn(

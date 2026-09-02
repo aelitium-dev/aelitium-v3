@@ -139,8 +139,13 @@ aelitium compare bundle_a bundle_b
 The AELITIUM commands can provide:
 
 - verification of the recorded v1 bundle's internal consistency
-- drift detection across runs
+- selected v1 request/response hash comparison across bundles
 - offline audit without provider access
+
+The comparison basis in v0.3.x is `request_hash` v1, not the separate, broader
+`invocation_identity`. `CHANGED` reports the same selected request hash with a
+different selected response hash; it does not establish model drift or explain
+causation.
 
 ---
 

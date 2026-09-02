@@ -191,8 +191,15 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
 - Guarantees:
   - Compares supported evidence inputs through the CLI
   - Returns explicit comparison outcomes including `UNCHANGED`, `CHANGED`, `NOT_COMPARABLE`, and `INVALID_BUNDLE`
+  - Comparison basis in v0.3.x is `request_hash` v1: `UNCHANGED` means the
+    selected request and response hashes match; `CHANGED` means the selected
+    request hash matches and the selected response hash differs
 
 - Non-guarantees:
+  - Does not use the separate, broader `invocation_identity` as the current
+    comparison basis
+  - Does not establish full invocation-configuration equality from
+    `request_hash` equality
   - Does not explain why a change occurred
   - Does not attribute causality to provider, model, prompt, or environment changes
 
