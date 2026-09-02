@@ -61,6 +61,10 @@ python3 -m engine.ai_cli verify-bundle examples/drift_demo/bundle_a
 
 ## Check 4 — compare (unchanged)
 
+Comparison basis for Checks 4 and 5 is `request_hash` v1. The status labels
+describe selected request/response hash equality; they do not establish full
+invocation identity or causation.
+
 ### Command
 python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_a
 

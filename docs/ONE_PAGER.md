@@ -55,11 +55,21 @@ aelitium pack --input output.json --out ./evidence
 aelitium verify-bundle ./evidence
 # STATUS=VALID rc=0 | BINDING_HASH=<hash> | SIGNATURE=NONE
 
-# Detect if recorded responses differ between two captures
+# Compare selected request and response hashes between two captures
 aelitium compare ./evidence_run1 ./evidence_run2
-# STATUS=UNCHANGED rc=0   (same request_hash and response_hash observed)
-# STATUS=CHANGED   rc=2   (same request_hash, different response_hash observed)
+# STATUS=UNCHANGED rc=0   (same selected v1 request_hash and selected response_hash)
+# STATUS=CHANGED   rc=2   (same selected v1 request_hash, different selected response_hash)
 ```
+
+**Comparison basis in v0.3.x: `request_hash` v1.** `request_hash` is not a
+complete invocation identity. Equality does not establish equality of every
+invocation parameter, mode, provider route, client configuration, or execution
+context. The separate, broader recorded `invocation_identity`, when present, is
+not used by current 0.3.x comparison. `CHANGED` does not by itself establish
+model drift or explain causation; `UNCHANGED` does not establish that the full
+invocation configuration was unchanged. Different selected v1 request hashes or
+missing required `request_hash` capture metadata produce `NOT_COMPARABLE`;
+invalid bundles are reported separately as `INVALID_BUNDLE`.
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
@@ -135,7 +145,7 @@ compliance determination.
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
 - Offline verification — no network, no SaaS, no blockchain
-- `compare` command for detecting changed recorded responses across bundles
+- `compare` command for selected v1 request/response hash comparison across bundles
 
 ---
 

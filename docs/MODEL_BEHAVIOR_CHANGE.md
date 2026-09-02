@@ -7,10 +7,13 @@ hashes from internally consistent recorded evidence.
 
 ## The problem
 
-AI providers update models continuously. These updates are often silent — the model endpoint
-(`gpt-4o`, `claude-3-5-sonnet`) stays the same, but behavior changes.
+Recorded outputs can differ across repeated calls even when the selected model
+identifier (`gpt-4o`, `claude-3-5-sonnet`) remains the same. Provider changes,
+invocation parameters, routing, client configuration, execution context, and
+other factors can all be relevant.
 
-If your system sends the same request today and gets a different answer than last week:
+If your system records the same selected v1 request fields today and different
+selected response fields than last week:
 
 - Is it your code?
 - Is it your prompt?
@@ -26,8 +29,8 @@ The capture adapter records three v1 hashes in its controlled call path:
 
 | Hash | What it covers |
 |------|---------------|
-| `request_hash` | SHA256 of the recorded request payload (model + messages) |
-| `response_hash` | SHA256 of the recorded response artifact |
+| `request_hash` | SHA256 of the selected v1 request fields (model + messages) |
+| `response_hash` | SHA256 of the selected recorded response fields |
 | `binding_hash` | SHA256 commitment over the stored request/response hash pair |
 
 These are written to the evidence bundle and checked for stored-field consistency.
@@ -37,6 +40,11 @@ trusted external anchor.
 ---
 
 ## Detecting a change
+
+**Comparison basis in v0.3.x: `request_hash` v1.** Current 0.3.x comparison
+does not use `invocation_identity` as its comparison basis. That separate
+identity records a broader call surface when present, but it is not necessarily
+complete for every provider call.
 
 ```bash
 # Bundle from a previous run (e.g. last week)
@@ -53,8 +61,10 @@ BINDING_HASH=SAME
 INTERPRETATION=Same request_hash and response_hash observed
 ```
 
-The selected v1 request and response hashes are unchanged. Other unbound invocation
-parameters or metadata may still differ.
+The bundles have the same selected v1 `request_hash` and the same
+`response_hash` over selected recorded response fields. This does not establish
+that every invocation parameter, mode, provider route, client configuration, or
+execution context was unchanged.
 
 ### Same selected request hash, different response hash
 
@@ -66,8 +76,9 @@ BINDING_HASH=DIFFERENT
 INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-The compared bundles have the same `request_hash` and different `response_hash` values.
-This shows a changed recorded response for the same hashed request. It does not attribute the cause.
+The bundles have the same selected v1 `request_hash` and different selected
+`response_hash` values. This status does not by itself establish model drift or
+explain causation.
 
 ### Different selected request hashes
 
@@ -78,7 +89,9 @@ INTERPRETATION=Requests differ — bundles are not comparable
 ```
 
 The selected v1 request identities differ, so comparison reports
-`NOT_COMPARABLE`. This does not establish full invocation equivalence or
+`NOT_COMPARABLE`. Missing required `request_hash` capture metadata also
+produces this status. An invalid bundle is reported separately as
+`INVALID_BUNDLE`. Comparison does not establish full invocation equivalence or
 inequality.
 
 ---
@@ -100,7 +113,8 @@ aelitium compare ./baseline ./today --json
 }
 ```
 
-Exit codes: `0` = unchanged, `1` = not comparable, `2` = changed or invalid.
+Exit codes: `0` = `UNCHANGED`, `1` = `NOT_COMPARABLE`, and `2` = `CHANGED`
+or `INVALID_BUNDLE`.
 
 ---
 
@@ -114,7 +128,7 @@ Exit codes: `0` = unchanged, `1` = not comparable, `2` = changed or invalid.
   run: |
     aelitium compare ./evidence_baseline ./evidence_today
     if [ $? -eq 2 ]; then
-      echo "Recorded response changed for the same request hash — review before merge"
+      echo "Compare returned CHANGED or INVALID_BUNDLE — inspect STATUS before drawing a conclusion"
       exit 1
     fi
 ```
@@ -123,18 +137,19 @@ Exit codes: `0` = unchanged, `1` = not comparable, `2` = changed or invalid.
 
 ## Baseline management
 
-Store one bundle per request type as your behavioral baseline.
+Store one bundle per request type as your selected-hash baseline.
 Run `aelitium compare` against it in every CI run.
 
-If the recorded response hash changes, the pipeline fails with
-`STATUS=CHANGED rc=2` and reports:
+For valid bundles with the same selected v1 request hash, a different selected
+response hash produces `STATUS=CHANGED rc=2` and reports:
 
 - the selected v1 request hash fields
 - what was recorded before (previous response hash)
 - what is recorded now (new response hash)
 - whether the selected v1 request identity changed
 
-This is offline comparison of recorded evidence, not provider attribution.
+This is offline comparison of selected hashes in recorded evidence, not full
+invocation comparison, provider attribution, or a causal explanation.
 
 ---
 

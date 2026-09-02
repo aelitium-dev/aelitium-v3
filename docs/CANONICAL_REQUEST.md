@@ -14,9 +14,12 @@ invocation identity.
 `request_hash` is a SHA-256 hash of the canonical form of the fields selected by
 the current v1 capture model.
 
-Its purpose: allow two bundles to be compared and determine whether they came from the same hashed request within the implemented capture model.
+Its purpose is to let two bundles be compared for the same selected request
+identity within the implemented v1 capture model.
 
-If two bundles have the same `request_hash`, the compared bundles contain the same hashed request fields. A different `response_hash` means a different recorded response artifact was observed.
+If two bundles have the same `request_hash`, they contain the same selected v1
+request fields. A different `response_hash` means their selected recorded
+response fields differ.
 
 ---
 
@@ -86,18 +89,32 @@ It is **not** stable if:
 
 ## Impact on compare
 
+**Comparison basis in v0.3.x: `request_hash` v1.**
+
 `aelitium compare bundle_a bundle_b` reports:
 
 ```
-REQUEST_HASH=SAME       ← same model, same messages
-RESPONSE_HASH=DIFFERENT ← different recorded response artifact observed
+REQUEST_HASH=SAME       ← same selected v1 model and messages
+RESPONSE_HASH=DIFFERENT ← different selected recorded response fields
 STATUS=CHANGED
 INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-If `REQUEST_HASH=DIFFERENT`, the selected v1 request identity differs and
-comparison is `NOT_COMPARABLE`. Equality or inequality does not establish full
-invocation equivalence.
+- `UNCHANGED` means the selected v1 `request_hash` and selected `response_hash`
+  are the same.
+- `CHANGED` means the selected v1 `request_hash` is the same and the selected
+  `response_hash` differs.
+- `NOT_COMPARABLE` means the selected v1 `request_hash` differs or required
+  `request_hash` capture metadata is missing. Invalid bundles are reported
+  separately as `INVALID_BUNDLE`.
+
+`request_hash` is not a complete invocation identity. Its equality does not
+establish equality of every invocation parameter, mode, provider route, client
+configuration, or execution context. `invocation_identity` is a separate,
+broader recorded identity when present; current 0.3.x `compare` does not use it
+as the comparison basis. Consequently, `CHANGED` does not establish model drift
+or causation, and `UNCHANGED` does not establish an unchanged full invocation
+configuration.
 
 ---
 

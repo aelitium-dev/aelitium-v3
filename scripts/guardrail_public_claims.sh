@@ -122,6 +122,25 @@ require_literal "docs/ONE_PAGER.md" "Current repository/package release: **0.3.0
 require_literal "docs/RELEASE_PROCESS.md" '`v0.3.0` is released through an'
 require_literal "SECURITY.md" '`v0.3.0` is the current'
 
+compare_contract_docs=(
+  "README.md"
+  "docs/MODEL_BEHAVIOR_CHANGE.md"
+  "docs/CANONICAL_REQUEST.md"
+  "docs/INVOCATION_ASSURANCE.md"
+  "docs/MESSAGING_GUARDRAILS.md"
+  "docs/ONE_PAGER.md"
+)
+
+for file in "${compare_contract_docs[@]}"; do
+  require_literal "$file" 'Comparison basis in v0.3.x: `request_hash` v1'
+done
+
+require_literal "docs/MESSAGING_GUARDRAILS.md" 'does not use `invocation_identity`'
+forbid_literal "examples/drift_demo/generate_bundles.py" "simulates model drift"
+forbid_literal "examples/drift_demo/run_demo.sh" "The change came from the model"
+forbid_literal "docs/AAR_EVIDENCE_REF_MAPPING.md" "drift detection across runs"
+forbid_literal "docs/SECURITY_MODEL.md" "drift detection signals"
+
 forbid_literal "README.md" "Export bundle in compliance format"
 forbid_literal "docs/ONE_PAGER.md" "Tamper-resistant logs for high-risk AI"
 forbid_literal "docs/AI_INTEGRITY_DEMO.md" "| Regulatory compliance |"

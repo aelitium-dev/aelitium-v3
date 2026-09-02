@@ -143,7 +143,9 @@ Metadata is preserved in the bundle and included in `ai_canonical.json`, but exc
 
 **Minimum viable bundle (privacy-first):**
 
-If the output itself is sensitive and you only need drift detection signals (not content archival), you can store the hashes extracted from the written bundle and then delete the bundle:
+If the output itself is sensitive and you only need selected request/response
+hash comparison signals (not content archival), you can store the hashes
+extracted from the written bundle and then delete the bundle:
 
 ```python
 # Store hashes derived from the bundle; delete the bundle file

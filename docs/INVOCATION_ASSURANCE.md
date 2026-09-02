@@ -87,6 +87,24 @@ provider SDK call, not a reconstruction of caller intent. Specifics:
 This document does not expand the grammar beyond what is actually
 implemented in `engine/invocation.py`.
 
+## Relationship to Compare in v0.3.x
+
+**Comparison basis in v0.3.x: `request_hash` v1.**
+
+`invocation_identity` is a separate, broader recorded identity when present.
+Current 0.3.x `compare` verifies each bundle as a prerequisite, then determines
+`UNCHANGED`, `CHANGED`, or `NOT_COMPARABLE` from the selected v1
+`request_hash` and selected `response_hash` values. It does not use
+`invocation_identity` or `invocation_binding` as its comparison basis; the
+displayed v1 `binding_hash` comparison does not determine the status either.
+
+Two valid bundles can therefore have the same `request_hash` and different
+valid invocation identities. `request_hash` equality does not establish
+equality of every invocation parameter, mode, provider route, client
+configuration, or execution context. A `CHANGED` result does not by itself
+establish model drift or explain causation. An `UNCHANGED` result does not
+establish that the full invocation configuration was unchanged.
+
 ## Invocation Identity Consistency
 
 The verifier reports `invocation_identity_consistency` using the existing
@@ -266,8 +284,8 @@ response causation, authorization, or freshness.
 If a LiteLLM call receives any provider-call kwarg that
 `aelitium-invocation-v1` cannot fully represent:
 
-- provider call behavior is unchanged — the underlying `litellm.completion()`
-  call still receives every kwarg exactly as passed
+- the underlying `litellm.completion()` call still receives every kwarg exactly
+  as passed
 - existing v1 evidence capture (request/response/binding hashes) still
   proceeds normally
 - `invocation_identity` is omitted from the bundle entirely

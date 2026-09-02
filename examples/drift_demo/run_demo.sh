@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# AELITIUM drift demo — no API key required
-# Demonstrates: same request, different model response, proved by hashes.
+# AELITIUM selected-hash comparison demo — no API key required
+# Demonstrates: same selected v1 request_hash, different selected response_hash.
+# The comparison does not identify the cause.
 #
 # Usage:
 #   cd /path/to/aelitium-v3
@@ -42,4 +43,4 @@ echo "--- aelitium compare ---"
 echo ""
 aelitium compare "$BUNDLE_A" "$BUNDLE_B" || true
 echo ""
-echo "Same request. Different output. The change came from the model, not your code."
+echo "Same selected v1 request_hash. Different selected response_hash. Compare does not identify the cause."

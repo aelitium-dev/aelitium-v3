@@ -1,7 +1,8 @@
 """
-Generate two evidence bundles for the drift demo.
+Generate two evidence bundles for the selected-hash comparison demo.
 
-Same request, different responses — simulates model drift.
+The bundles share the selected v1 request fields and have different selected
+recorded response fields. A CHANGED result does not identify the cause.
 No API key required. Uses the AELITIUM engine directly.
 
 Run once:

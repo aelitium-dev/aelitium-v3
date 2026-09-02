@@ -239,12 +239,12 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
 
 def cmd_compare(args: argparse.Namespace) -> int:
     """
-    Compare two evidence bundles to detect AI model behavior change.
+    Compare selected v1 request and response hashes between evidence bundles.
 
     Given two bundles A and B (both produced by the capture adapter):
-    - UNCHANGED:      request_hash same, response_hash same
-    - CHANGED:        request_hash same, response_hash different
-    - NOT_COMPARABLE: request_hash differs, or bundles lack capture metadata
+    - UNCHANGED:      selected request_hash same, selected response_hash same
+    - CHANGED:        selected request_hash same, selected response_hash different
+    - NOT_COMPARABLE: selected request_hash differs, or request_hash capture metadata is absent
     - INVALID_BUNDLE: one or both bundles fail bundle verification
 
     Usage: aelitium compare <bundle_a> <bundle_b>
@@ -600,6 +600,14 @@ def main() -> int:
     cmp = sub.add_parser(
         "compare",
         help="Compare selected v1 request/response hashes between bundles",
+        description=(
+            "Comparison basis in v0.3.x: request_hash v1. UNCHANGED means the "
+            "selected v1 request_hash and selected response_hash match; CHANGED "
+            "means request_hash matches and response_hash differs; NOT_COMPARABLE "
+            "means the selected request hashes differ or request_hash capture "
+            "metadata is missing. Invalid bundles report INVALID_BUNDLE. Current "
+            "0.3.x compare does not use invocation_identity as its comparison basis."
+        ),
     )
     cmp.add_argument("bundle_a", help="Path to first evidence bundle directory")
     cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
