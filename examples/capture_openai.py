@@ -20,7 +20,7 @@ from pathlib import Path
 # Requires: pip install openai
 import openai
 
-from engine.capture.openai import capture_chat_completion
+from aelitium import capture_openai
 
 
 def main() -> None:
@@ -30,7 +30,7 @@ def main() -> None:
         {"role": "user", "content": "Explain why deterministic AI outputs matter for compliance."},
     ]
 
-    result = capture_chat_completion(
+    result = capture_openai(
         client=client,
         model="gpt-4o",
         messages=messages,

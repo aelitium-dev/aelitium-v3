@@ -116,7 +116,11 @@ require_literal "docs/RELEASE_PROCESS.md" "Explicit human approval is required b
 require_literal "docs/RELEASE_PROCESS.md" "PyPI Trusted Publishing is the preferred publication mechanism"
 require_literal "docs/RELEASE_PROCESS.md" "do not silently fall back to Twine"
 require_literal "docs/RELEASE_PROCESS.md" "annotated, unsigned tag is sufficient"
-require_literal "SECURITY.md" 'Upon an actual `v0.3.0` release, `0.3.x` becomes the supported line and `0.2.x`'
+require_literal "CHANGELOG.md" '**Release status.** The repository and package baseline is `0.3.0`, released'
+require_literal "FEATURE_MATRIX.md" "inventory of the released 0.3.0 baseline"
+require_literal "docs/ONE_PAGER.md" "Current repository/package release: **0.3.0**"
+require_literal "docs/RELEASE_PROCESS.md" '`v0.3.0` is released through an'
+require_literal "SECURITY.md" '`v0.3.0` is the current'
 
 forbid_literal "README.md" "Export bundle in compliance format"
 forbid_literal "docs/ONE_PAGER.md" "Tamper-resistant logs for high-risk AI"

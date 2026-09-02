@@ -2,21 +2,16 @@
 
 ## Supported Versions
 
-Support is stated against **released, tagged versions**. Before `v0.3.0` is
-released, `0.2.x` remains the current supported line and the `0.3.x` source line
-is not a supported release.
+Support is stated against **released, tagged versions**. `v0.3.0` is the current
+released version, so `0.3.x` is the supported line and `0.2.x` is superseded.
 
 | Version | State | Supported |
 |---------|-------|-----------|
-| 0.3.x   | Unreleased development line — no `v0.3.0` tag or release exists | ❌ (not yet released) |
-| 0.2.x   | Current released line (latest release: `v0.2.4`) | ✅ |
+| 0.3.x   | Current released line (latest release: `v0.3.0`) | ✅ |
+| 0.2.x   | Superseded (latest release: `v0.2.4`) | ❌ |
 | < 0.2   | Superseded | ❌ |
 
-Upon an actual `v0.3.0` release, `0.3.x` becomes the supported line and `0.2.x`
-becomes superseded. Merged release documentation, green CI, or a source version
-of `0.3.0` does not trigger that transition; the release must exist.
-
-Within the future `0.3.x` released line, patch releases must not deliberately
+Within the current `0.3.x` released line, patch releases must not deliberately
 introduce breaking changes to existing public assurance dimension names,
 assurance states, or already-versioned public identifiers/contracts. See
 [Release Process](docs/RELEASE_PROCESS.md#pre-10-stability-policy) for the scoped

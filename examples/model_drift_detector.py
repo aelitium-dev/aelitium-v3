@@ -1,5 +1,5 @@
 from openai import OpenAI
-from engine.capture.openai import capture_chat_completion
+from aelitium import capture_openai
 import subprocess
 
 client = OpenAI()
@@ -9,10 +9,10 @@ messages = [
 ]
 
 print("Running capture 1...")
-capture_chat_completion(client, "gpt-4o-mini", messages, "./run1")
+capture_openai(client, "gpt-4o-mini", messages, "./run1")
 
 print("Running capture 2...")
-capture_chat_completion(client, "gpt-4o-mini", messages, "./run2")
+capture_openai(client, "gpt-4o-mini", messages, "./run2")
 
 print("Comparing bundles...\n")
 

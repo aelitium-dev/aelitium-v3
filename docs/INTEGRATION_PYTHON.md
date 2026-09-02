@@ -28,12 +28,12 @@ distinguish the expected artifact from a fully self-consistent replacement.
 
 ```python
 from openai import OpenAI
-from engine.capture.openai import capture_chat_completion
+from aelitium import capture_openai
 
 client = OpenAI()
 messages = [{"role": "user", "content": "What is the capital of France?"}]
 
-result = capture_chat_completion(
+result = capture_openai(
     client,
     model="gpt-4o-mini",
     messages=messages,

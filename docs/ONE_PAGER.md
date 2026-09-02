@@ -25,7 +25,7 @@ signer identity require independently trusted anchors outside the bundle.
 ```
 LLM call
     ↓
-capture_chat_completion()     ← intercepts at call time
+capture_openai()              ← intercepts at call time
     ↓
 canonicalize + hash           ← deterministic in validated configurations
     ↓
@@ -39,13 +39,13 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ## Key commands
 
 ```bash
-# Install the unreleased 0.3.0 source (the latest PyPI release is 0.2.4)
-pip install .
-# with provider extras: pip install ".[all]"
+# Install the current 0.3.0 release
+pip install aelitium
+# with provider extras: pip install "aelitium[all]"
 
 # Option A: capture through the native OpenAI adapter
-from engine.capture.openai import capture_chat_completion
-result = capture_chat_completion(client, "gpt-4o", messages, "./evidence")
+from aelitium import capture_openai
+result = capture_openai(client, "gpt-4o", messages, "./evidence")
 # result.ai_hash_sha256  →  hash of the complete validated canonical object
 
 # Option B: pack a JSON output manually
@@ -65,9 +65,9 @@ Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
 signature under key material bundled with the artifact does not establish signer
 identity: `trusted_signer_identity` remains `UNESTABLISHED` unless an explicitly
-supplied external trust store contains the verified key. In the current unreleased
-0.3.0 source baseline, Freshness is `NOT_EVALUATED` without an explicit complete
-policy pair; when activated it evaluates declared-time recency of
+supplied external trust store contains the verified key. In v0.3.0, Freshness is
+`NOT_EVALUATED` without an explicit complete policy pair; when activated it
+evaluates declared-time recency of
 `ai_canonical.json.ts_utc`, not trusted historical time. Authorization is not
 implemented and remains `NOT_EVALUATED` in every v0.3.0 case.
 
@@ -126,12 +126,11 @@ compliance determination.
 
 ## Current state
 
-- Repository/package source baseline: **0.3.0** — unreleased. No `v0.3.0` tag,
-  GitHub Release, or PyPI publication exists.
-- Latest released and tagged version: **v0.2.4** (2026-03-14)
-- The 0.3.0 line remains unreleased and requires the separately authorized manual
-  process in [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
-- Latest PyPI release: **0.2.4**; **0.3.0 is not published**
+- Current repository/package release: **0.3.0**
+- Release surfaces: annotated **v0.3.0** tag, GitHub Release, and PyPI publication
+- Release process: human-authorized, as documented in
+  [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+- Latest PyPI release: **0.3.0**
 - Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
@@ -151,5 +150,5 @@ compliance determination.
 ## Repo
 
 GitHub: https://github.com/aelitium-dev/aelitium-v3
-Install this unreleased source tree: `pip install .` (latest PyPI release: `0.2.4`)
+Install the current release: `pip install aelitium`
 Spec: [docs/EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md)
