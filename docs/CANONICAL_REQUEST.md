@@ -91,30 +91,45 @@ It is **not** stable if:
 
 **Comparison basis in v0.3.x: `request_hash` v1.**
 
-`aelitium compare bundle_a bundle_b` reports:
+Historically, v0.3.x `aelitium compare` determines status from the selected v1
+request and response hashes. That behavior remains available explicitly in v0.4
+development with `--legacy-request-hash-v1`.
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+mode first uses validated `aelitium-invocation-v1` hashes when both bundles have
+`invocation_identity_consistency=VALID` and
+`invocation_binding_consistency=VALID`. Otherwise, valid inputs use a visible
+`REQUEST_HASH_V1_FALLBACK` basis. `--require-invocation-evidence` disables that
+fallback.
+
+Fallback or legacy output can report:
 
 ```
+COMPARISON_MODE=INVOCATION_FIRST
+COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK
+COMPARISON_REASON=RESPONSE_HASH_DIFFERENT
 REQUEST_HASH=SAME       ← same selected v1 model and messages
 RESPONSE_HASH=DIFFERENT ← different selected recorded response fields
 STATUS=CHANGED
-INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-- `UNCHANGED` means the selected v1 `request_hash` and selected `response_hash`
-  are the same.
-- `CHANGED` means the selected v1 `request_hash` is the same and the selected
-  `response_hash` differs.
-- `NOT_COMPARABLE` means the selected v1 `request_hash` differs or required
-  `request_hash` capture metadata is missing. Invalid bundles are reported
-  separately as `INVALID_BUNDLE`.
+- Under fallback or legacy basis, `UNCHANGED` means the selected v1
+  `request_hash` and selected `response_hash` values match.
+- Under fallback or legacy basis, `CHANGED` means the selected v1
+  `request_hash` values match and the selected `response_hash` values differ.
+- `NOT_COMPARABLE` means the selected comparison identity hashes differ or the
+  mode's required evidence is unavailable. Invalid bundles are reported
+  separately as `INVALID_BUNDLE` with basis `NONE`.
 
 `request_hash` is not a complete invocation identity. Its equality does not
 establish equality of every invocation parameter, mode, provider route, client
 configuration, or execution context. `invocation_identity` is a separate,
-broader recorded identity when present; current 0.3.x `compare` does not use it
-as the comparison basis. Consequently, `CHANGED` does not establish model drift
-or causation, and `UNCHANGED` does not establish an unchanged full invocation
-configuration.
+broader recorded identity when present. Historical v0.3.x comparison does not
+use it; the v0.4 default uses it only under the validated evidence prerequisites
+above. Equality under that format remains equality only over its selected
+recorded fields. Consequently, `CHANGED` does not establish model drift or
+causation, and `UNCHANGED` does not establish unchanged invocation configuration
+or unchanged model behavior.
 
 ---
 

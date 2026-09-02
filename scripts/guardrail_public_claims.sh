@@ -133,9 +133,21 @@ compare_contract_docs=(
 
 for file in "${compare_contract_docs[@]}"; do
   require_literal "$file" 'Comparison basis in v0.3.x: `request_hash` v1'
+  require_literal "$file" 'Comparison contract in v0.4 development: `aelitium-compare-v1`'
 done
 
 require_literal "docs/MESSAGING_GUARDRAILS.md" 'does not use `invocation_identity`'
+require_literal "CHANGELOG.md" "## [Unreleased]"
+require_literal "FEATURE_MATRIX.md" 'Comparison contract in v0.4 development: `aelitium-compare-v1`'
+require_literal "engine/ai_cli.py" 'COMPARISON_CONTRACT = "aelitium-compare-v1"'
+require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_INVOCATION_IDENTITY_V1 = "INVOCATION_IDENTITY_V1"'
+require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK = "REQUEST_HASH_V1_FALLBACK"'
+require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY = "REQUEST_HASH_V1_LEGACY"'
+require_literal "engine/ai_cli.py" '"--require-invocation-evidence"'
+require_literal "engine/ai_cli.py" '"--legacy-request-hash-v1"'
+for file in README.md docs/MODEL_BEHAVIOR_CHANGE.md docs/MESSAGING_GUARDRAILS.md docs/ONE_PAGER.md; do
+  require_literal "$file" "AELITIUM establishes internal consistency of recorded"
+done
 forbid_literal "examples/drift_demo/generate_bundles.py" "simulates model drift"
 forbid_literal "examples/drift_demo/run_demo.sh" "The change came from the model"
 forbid_literal "docs/AAR_EVIDENCE_REF_MAPPING.md" "drift detection across runs"

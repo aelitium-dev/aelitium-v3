@@ -119,12 +119,39 @@ assert_contains "$out3" "BINDING_HASH=" "offline verify-bundle binding hash"
 section "Test 4 - Compare => UNCHANGED / CHANGED"
 run_capture out4a python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_a
 assert_contains "$out4a" "STATUS=UNCHANGED rc=0" "compare unchanged status"
+assert_contains "$out4a" "COMPARISON_CONTRACT=aelitium-compare-v1" "compare contract"
+assert_contains "$out4a" "COMPARISON_MODE=INVOCATION_FIRST" "compare default mode"
+assert_contains "$out4a" "COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK" "compare fallback basis"
+assert_contains "$out4a" "COMPARISON_REASON=RESPONSE_HASH_SAME" "compare unchanged reason"
+assert_contains "$out4a" "INVOCATION_IDENTITY_CONSISTENCY_A=ABSENT" "compare legacy identity state"
 assert_contains "$out4a" "REQUEST_HASH=SAME" "compare unchanged request hash"
 assert_contains "$out4a" "RESPONSE_HASH=SAME" "compare unchanged response hash"
 run_expect_rc out4b 2 python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_b
 assert_contains "$out4b" "STATUS=CHANGED rc=2" "compare changed status"
+assert_contains "$out4b" "COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK" "compare changed fallback basis"
+assert_contains "$out4b" "COMPARISON_REASON=RESPONSE_HASH_DIFFERENT" "compare changed reason"
 assert_contains "$out4b" "REQUEST_HASH=SAME" "compare changed request hash"
 assert_contains "$out4b" "RESPONSE_HASH=DIFFERENT" "compare changed response hash"
+run_expect_rc out4c 1 python3 -m engine.ai_cli compare \
+  examples/drift_demo/bundle_a examples/drift_demo/bundle_a \
+  --require-invocation-evidence
+assert_contains "$out4c" "STATUS=NOT_COMPARABLE rc=1" "compare strict unavailable status"
+assert_contains "$out4c" "COMPARISON_MODE=STRICT_INVOCATION" "compare strict mode"
+assert_contains "$out4c" "COMPARISON_BASIS=NONE" "compare strict unavailable basis"
+assert_contains "$out4c" "REQUIRED_COMPARISON_BASIS=INVOCATION_IDENTITY_V1" "compare strict required basis"
+run_expect_rc out4d 2 python3 -m engine.ai_cli compare \
+  examples/drift_demo/bundle_a examples/drift_demo/bundle_b \
+  --legacy-request-hash-v1
+assert_contains "$out4d" "STATUS=CHANGED rc=2" "compare legacy changed status"
+assert_contains "$out4d" "COMPARISON_MODE=LEGACY_REQUEST_HASH_V1" "compare legacy mode"
+assert_contains "$out4d" "COMPARISON_BASIS=REQUEST_HASH_V1_LEGACY" "compare legacy basis"
+run_expect_rc out4e 2 python3 -m engine.ai_cli compare \
+  tests/fixtures/compare/v030_invocation_a \
+  tests/fixtures/compare/v030_invocation_b
+assert_contains "$out4e" "STATUS=CHANGED rc=2" "compare invocation-first changed status"
+assert_contains "$out4e" "COMPARISON_MODE=INVOCATION_FIRST" "compare invocation-first mode"
+assert_contains "$out4e" "COMPARISON_BASIS=INVOCATION_IDENTITY_V1" "compare invocation-first basis"
+assert_contains "$out4e" "INVOCATION_IDENTITY_HASH=SAME" "compare invocation identity relationship"
 
 section "Test 5 - Receipt verification (valid)"
 tmp5="$(mktemp -d)"

@@ -1,9 +1,11 @@
 """
 Generate two evidence bundles for the selected-hash comparison demo.
 
-The bundles share the selected v1 request fields and have different selected
-recorded response fields. A CHANGED result does not identify the cause.
-No API key required. Uses the AELITIUM engine directly.
+The bundles are intentionally frozen pre-invocation fixtures: they share the
+selected v1 request fields, have different selected recorded response fields,
+and omit invocation identity and invocation binding evidence. The v0.4 compare
+default therefore reports REQUEST_HASH_V1_FALLBACK. A CHANGED result does not
+identify the cause. No API key required. Uses the AELITIUM engine directly.
 
 Run once:
     python examples/drift_demo/generate_bundles.py

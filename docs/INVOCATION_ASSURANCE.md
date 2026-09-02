@@ -92,7 +92,7 @@ implemented in `engine/invocation.py`.
 **Comparison basis in v0.3.x: `request_hash` v1.**
 
 `invocation_identity` is a separate, broader recorded identity when present.
-Current 0.3.x `compare` verifies each bundle as a prerequisite, then determines
+The v0.3.x `compare` command verifies each bundle as a prerequisite, then determines
 `UNCHANGED`, `CHANGED`, or `NOT_COMPARABLE` from the selected v1
 `request_hash` and selected `response_hash` values. It does not use
 `invocation_identity` or `invocation_binding` as its comparison basis; the
@@ -104,6 +104,60 @@ equality of every invocation parameter, mode, provider route, client
 configuration, or execution context. A `CHANGED` result does not by itself
 establish model drift or explain causation. An `UNCHANGED` result does not
 establish that the full invocation configuration was unchanged.
+
+## Relationship to Compare in v0.4 Development
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** Default
+mode is `INVOCATION_FIRST`.
+
+The command verifies both bundles before selecting a comparison basis. A bundle
+has usable invocation evidence only when:
+
+```text
+invocation_identity_consistency = VALID
+AND
+invocation_binding_consistency = VALID
+```
+
+When both bundles meet that condition, comparison uses
+`invocation_identity.hash_sha256` under basis `INVOCATION_IDENTITY_V1`. It does
+not use `invocation_binding.hash_sha256` as an identity; the binding assurance
+is a prerequisite showing that the validated recorded invocation identity is
+linked consistently to that bundle's selected response hash.
+
+When one or both otherwise valid bundles do not meet the condition, default
+mode uses `REQUEST_HASH_V1_FALLBACK`. This includes identity absence on both
+sides, identity absence on one side, legacy bundles, conservative LiteLLM
+absence, and `invocation_identity_consistency=VALID` with
+`invocation_binding_consistency=ABSENT`. The basis and all four per-side
+invocation assurance states are reported, so asymmetric downgrade is visible.
+
+Malformed or `INVALID` invocation evidence makes the bundle invalid; it never
+triggers fallback. A valid verifier result containing `INVALID`,
+`NOT_EVALUATED`, or another impossible invocation-assurance combination is
+treated as `COMPARISON_INPUT_INVARIANT_FAILED` with basis `NONE`.
+
+Two explicit migration modes are available:
+
+- `--require-invocation-evidence` selects `STRICT_INVOCATION`. It requires usable
+  invocation evidence on both sides and otherwise reports `NOT_COMPARABLE`,
+  basis `NONE`, and required basis `INVOCATION_IDENTITY_V1`.
+- `--legacy-request-hash-v1` selects `LEGACY_REQUEST_HASH_V1` and basis
+  `REQUEST_HASH_V1_LEGACY`. It reproduces the v0.3.x request-hash decisions;
+  invocation evidence remains diagnostic.
+
+The v0.4 comparison policy does not introduce a cross-field verifier assurance
+that projects invocation-identity model/messages fields onto `request_hash`.
+That relationship is outside this contract and the two identities remain
+separately versioned recorded surfaces.
+
+Equality of validated `aelitium-invocation-v1` hashes describes equality only
+under the fields selected by that recorded identity format; it does not
+establish a complete real-world invocation. Fallback `request_hash` v1 equality
+covers selected canonical model and messages fields, not every invocation
+parameter, mode, provider route, client configuration, or execution context.
+`CHANGED` does not identify a cause. `UNCHANGED` does not establish unchanged
+invocation configuration or unchanged model behavior.
 
 ## Invocation Identity Consistency
 

@@ -55,21 +55,34 @@ aelitium pack --input output.json --out ./evidence
 aelitium verify-bundle ./evidence
 # STATUS=VALID rc=0 | BINDING_HASH=<hash> | SIGNATURE=NONE
 
-# Compare selected request and response hashes between two captures
+# Compare validated recorded evidence between two captures
 aelitium compare ./evidence_run1 ./evidence_run2
-# STATUS=UNCHANGED rc=0   (same selected v1 request_hash and selected response_hash)
-# STATUS=CHANGED   rc=2   (same selected v1 request_hash, different selected response_hash)
+# COMPARISON_CONTRACT=aelitium-compare-v1
+# COMPARISON_MODE=INVOCATION_FIRST
+# COMPARISON_BASIS=INVOCATION_IDENTITY_V1 or REQUEST_HASH_V1_FALLBACK
 ```
 
 **Comparison basis in v0.3.x: `request_hash` v1.** `request_hash` is not a
 complete invocation identity. Equality does not establish equality of every
 invocation parameter, mode, provider route, client configuration, or execution
 context. The separate, broader recorded `invocation_identity`, when present, is
-not used by current 0.3.x comparison. `CHANGED` does not by itself establish
-model drift or explain causation; `UNCHANGED` does not establish that the full
-invocation configuration was unchanged. Different selected v1 request hashes or
-missing required `request_hash` capture metadata produce `NOT_COMPARABLE`;
-invalid bundles are reported separately as `INVALID_BUNDLE`.
+not used by historical v0.3.x comparison.
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+uses `INVOCATION_IDENTITY_V1` only when both identity and binding consistency are
+`VALID` in both bundles. Otherwise valid inputs visibly use
+`REQUEST_HASH_V1_FALLBACK`. `--require-invocation-evidence` disables fallback;
+`--legacy-request-hash-v1` selects the v0.3.x decision contract explicitly.
+Every result reports its mode, basis, reason, invocation-hash relationship, and
+per-side invocation assurance states.
+
+`CHANGED` means selected comparison identity hashes match and selected response
+hashes differ under the reported basis; it does not identify a cause.
+`UNCHANGED` means those selected hashes match; it does not establish unchanged
+invocation configuration or unchanged model behavior. `NOT_COMPARABLE` makes no
+response-change conclusion. Equality of validated invocation-identity hashes is
+limited to fields selected by that recorded format and does not establish a
+complete real-world invocation.
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
@@ -118,6 +131,10 @@ contract, hashes, and any present signature material. A fully self-consistent
 replacement can still verify unless the verifier has an independently trusted
 external anchor or signer identity.
 
+AELITIUM establishes internal consistency of recorded evidence on the validated
+surface. It does not establish provider execution, causation, full invocation
+completeness, model drift, output truth, authorization, or legal compliance.
+
 ---
 
 ## Record and audit workflow alignment
@@ -145,7 +162,7 @@ compliance determination.
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
 - Offline verification — no network, no SaaS, no blockchain
-- `compare` command for selected v1 request/response hash comparison across bundles
+- Unreleased v0.4 development: versioned invocation-first `compare` contract with visible request-hash fallback, strict mode, and explicit v0.3 legacy mode
 
 ---
 

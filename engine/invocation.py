@@ -10,10 +10,10 @@ Scope of this module only:
 - deterministic parsing/recomputation of an already-stored identity object
 
 This module does NOT:
-- integrate with any capture adapter (openai/anthropic/litellm)
+- perform or route any provider/SDK call
 - modify, read, or relate to request_hash, response_hash, or binding_hash
 - bind an invocation identity to a response
-- get consulted by engine.ai_verify, the CLI, or the standalone verifier
+- establish comparison policy on its own
 
 What this primitive represents:
     the semantic invocation emitted by an AELITIUM capture adapter into its
@@ -27,10 +27,10 @@ What it does NOT represent:
 - provider identity
 - response causation
 
-The eventual assurance meaning (once a future verifier consults this, which
-this slice does not implement) is limited to: the stored invocation fields
-are internally consistent with the declared versioned invocation hash.
-Nothing more.
+The verifier's assurance meaning is limited to: the stored invocation fields
+are internally consistent with the declared versioned invocation hash. The
+compare command may use that validated hash as a selected comparison identity;
+neither operation expands the claim boundary above. Nothing more.
 """
 
 from __future__ import annotations

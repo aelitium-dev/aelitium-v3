@@ -157,7 +157,7 @@ response causation, or complete reconstruction of a real-world invocation.
 
 ### Compare boundary in v0.3.x
 
-**Comparison basis in v0.3.x: `request_hash` v1.** Current 0.3.x `compare`
+**Comparison basis in v0.3.x: `request_hash` v1.** The v0.3.x `compare` command
 does not use `invocation_identity` or `invocation_binding` as its comparison
 basis.
 
@@ -173,6 +173,43 @@ configuration, or execution context. `invocation_identity` is a separate,
 broader recorded identity when present. `CHANGED` does not by itself establish
 model drift or explain causation. `UNCHANGED` does not establish that the full
 invocation configuration was unchanged.
+
+### Compare boundary in v0.4 development
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+mode is `INVOCATION_FIRST` and every comparison result reports its mode, basis,
+and reason.
+
+| Condition | Basis | Approved result meaning |
+|---|---|---|
+| Both bundles have identity and binding consistency `VALID`; invocation hashes match; response hashes match | `INVOCATION_IDENTITY_V1` | `UNCHANGED`: selected comparison identity and selected response hashes match under the reported basis |
+| Both bundles have identity and binding consistency `VALID`; invocation hashes match; response hashes differ | `INVOCATION_IDENTITY_V1` | `CHANGED`: selected comparison identity hashes match and selected response hashes differ; no cause is identified |
+| Both bundles have identity and binding consistency `VALID`; invocation hashes differ | `INVOCATION_IDENTITY_V1` | `NOT_COMPARABLE`: no response-change conclusion is made |
+| One or both valid bundles lack usable invocation evidence | `REQUEST_HASH_V1_FALLBACK` | Apply the historical selected request/response hash decision with the downgrade visible |
+| Strict mode lacks usable invocation evidence | `NONE` | `NOT_COMPARABLE`; required basis is `INVOCATION_IDENTITY_V1` |
+| Either bundle fails verification | `NONE` | `INVALID_BUNDLE`; never fall back from invalid evidence |
+
+`--legacy-request-hash-v1` explicitly selects basis
+`REQUEST_HASH_V1_LEGACY`. `--require-invocation-evidence` explicitly selects
+strict invocation mode and disables fallback. Invocation-binding hashes are
+diagnostic and gated assurance evidence; they are not the comparison identity.
+
+Safe interpretation boundaries:
+
+- Invocation identity equality: the validated `aelitium-invocation-v1` hash
+  values match. This describes equality only under the fields selected by that
+  recorded identity format; it does not establish a complete real-world
+  invocation.
+- Fallback equality: `request_hash` v1 values match under the fallback basis.
+  They cover selected canonical model and messages fields, not every invocation
+  parameter, mode, route, client configuration, or execution context.
+- `CHANGED`: under the reported basis, selected comparison identity hashes
+  match and selected response hashes differ. This does not identify a cause.
+- `UNCHANGED`: under the reported basis, selected comparison identity hashes
+  and selected response hashes match. This does not establish unchanged
+  invocation configuration or unchanged model behavior.
+- `NOT_COMPARABLE`: no response-change conclusion is made because the selected
+  comparison identity hashes differ or required evidence is unavailable.
 
 ---
 
@@ -193,6 +230,9 @@ independently trusted external hash, key identity, receipt, or equivalent anchor
 | v1 selected-field request identity | exact request or full invocation identity |
 | same selected v1 request hash and same selected response hash | same invocation or behavior unchanged |
 | same selected v1 request hash and different selected response hash | model drift detected or proof of change |
+| matching validated invocation-identity hashes under `aelitium-invocation-v1` | complete invocation equality |
+| visible `REQUEST_HASH_V1_FALLBACK` basis | silent equivalence of complete call configuration |
+| selected response hashes differ under the reported basis | model behavior changed or provider caused the difference |
 | stored binding-field consistency | proof that a real-world request produced a response |
 | mathematical signature validity | authentic origin or authenticated producer |
 | signer identity is not established by bundled key material alone | verified signer or trusted signer |
@@ -217,6 +257,11 @@ dimensions that remain unestablished or unevaluated.
 > execution, response causation, or output truth. Trusted signer identity is
 > established only when an external trust store is explicitly supplied for that
 > verification invocation and the verified key matches it.
+
+For compare specifically: AELITIUM establishes internal consistency of recorded
+evidence on the validated surface. It does not establish provider execution,
+causation, full invocation completeness, model drift, output truth,
+authorization, or legal compliance.
 
 ---
 

@@ -17,6 +17,31 @@ version.
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **Versioned invocation-first compare contract** — development for v0.4.0
+  introduces `aelitium-compare-v1`. The default `compare` mode uses validated
+  `aelitium-invocation-v1` hashes when both bundles report
+  `invocation_identity_consistency=VALID` and
+  `invocation_binding_consistency=VALID`; otherwise valid bundles visibly use
+  `REQUEST_HASH_V1_FALLBACK`.
+- **Explicit compare modes** — `--require-invocation-evidence` disables the
+  request-hash fallback, while `--legacy-request-hash-v1` preserves the v0.3.x
+  request-hash decision contract. Comparison output now reports its contract,
+  mode, basis, reason, invocation-hash relationship, and per-side invocation
+  assurance states.
+- Existing exit codes remain unchanged: `0` for `UNCHANGED`, `1` for
+  `NOT_COMPARABLE`, and `2` for `CHANGED` or `INVALID_BUNDLE`. Existing bundles
+  without invocation evidence remain readable through the visible fallback.
+
+This development work does not change `request_hash` v1, evidence schemas,
+capture adapter semantics, or verifier trust boundaries. It is not a v0.4.0
+release entry and has no release date.
+
+---
+
 ## [0.3.0] — 2026-08-27
 
 **Release status.** The repository and package baseline is `0.3.0`, released

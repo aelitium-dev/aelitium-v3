@@ -133,7 +133,8 @@ aelitium verify-bundle ./bundle
 # STATUS=VALID
 
 aelitium compare bundle_a bundle_b
-# REQUEST_HASH=SAME / RESPONSE_HASH=DIFFERENT
+# COMPARISON_BASIS=INVOCATION_IDENTITY_V1 or REQUEST_HASH_V1_FALLBACK
+# selected identity hashes match / RESPONSE_HASH=DIFFERENT
 ```
 
 The AELITIUM commands can provide:
@@ -142,10 +143,16 @@ The AELITIUM commands can provide:
 - selected v1 request/response hash comparison across bundles
 - offline audit without provider access
 
-The comparison basis in v0.3.x is `request_hash` v1, not the separate, broader
-`invocation_identity`. `CHANGED` reports the same selected request hash with a
-different selected response hash; it does not establish model drift or explain
-causation.
+**Comparison basis in v0.3.x: `request_hash` v1.** It does not use the separate,
+broader `invocation_identity`.
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** Default
+comparison prefers validated invocation identity and binding evidence on both
+sides, with a visible `REQUEST_HASH_V1_FALLBACK` for valid inputs when that
+evidence is unavailable. Strict and explicit v0.3 legacy modes are available.
+`CHANGED` reports matching selected comparison identity hashes and different
+selected response hashes under the reported basis; it does not establish model
+drift or explain causation.
 
 ---
 

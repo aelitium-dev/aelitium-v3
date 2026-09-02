@@ -107,16 +107,20 @@ python3 -m engine.ai_cli verify-bundle examples/drift_demo/bundle_a
 
 ---
 
-## Test 4 — Compare => UNCHANGED / CHANGED
+## Test 4 — Compare contract and migration modes
 
 - Objective:
-  Verify the observable selected-hash comparison outcomes for the bundle pairs.
+  Verify invocation-first output, visible fallback for frozen pre-invocation
+  bundles, strict-mode refusal, and explicit legacy decisions.
 
 - Command:
 
 ```bash
 python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_a
 python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_b || true
+python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_a --require-invocation-evidence || true
+python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_demo/bundle_b --legacy-request-hash-v1 || true
+python3 -m engine.ai_cli compare tests/fixtures/compare/v030_invocation_a tests/fixtures/compare/v030_invocation_b || true
 ```
 
 - Input:
@@ -126,12 +130,24 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
 - Expected result:
   First command returns `STATUS=UNCHANGED rc=0`.
   Second command returns `STATUS=CHANGED rc=2`.
+  Strict mode returns `STATUS=NOT_COMPARABLE rc=1` because these frozen bundles
+  predate invocation evidence. Legacy mode returns `STATUS=CHANGED rc=2` under
+  the explicit v0.3.x basis. The final frozen v0.3-format pair returns
+  `STATUS=CHANGED rc=2` under `INVOCATION_IDENTITY_V1`.
 
 - Pass criteria:
   Output includes:
+  - `COMPARISON_CONTRACT=aelitium-compare-v1`
+  - `COMPARISON_MODE=INVOCATION_FIRST`
+  - `COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK` for the two default commands
   - `REQUEST_HASH=SAME`
   - `RESPONSE_HASH=SAME` for the unchanged case
   - `RESPONSE_HASH=DIFFERENT` for the changed case
+  - `COMPARISON_BASIS=NONE` and
+    `REQUIRED_COMPARISON_BASIS=INVOCATION_IDENTITY_V1` for strict mode
+  - `COMPARISON_BASIS=REQUEST_HASH_V1_LEGACY` for legacy mode
+  - `COMPARISON_BASIS=INVOCATION_IDENTITY_V1` and
+    `INVOCATION_IDENTITY_HASH=SAME` for the frozen invocation-evidence pair
 
 - Evidence generated:
   CLI comparison output for both runs.
@@ -139,6 +155,8 @@ python3 -m engine.ai_cli compare examples/drift_demo/bundle_a examples/drift_dem
 - Non-goal:
   Does not establish full invocation equivalence or explain why selected
   response hashes differ. Comparison basis in v0.3.x is `request_hash` v1.
+  Comparison contract in v0.4 development is `aelitium-compare-v1`; the frozen
+  inputs exercise its fallback rather than its preferred invocation basis.
 
 ---
 

@@ -9,13 +9,25 @@ from pathlib import Path
 #  - running as a script   (python engine/ai_cli.py)
 if __package__:
     from .ai_canonical import AICanonicalError, canonicalize_ai_output
-    from .ai_verify import AIVerificationOptions, verify_ai_bundle
+    from .ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
 else:
     import sys
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
     from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
-    from engine.ai_verify import AIVerificationOptions, verify_ai_bundle
+    from engine.ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
+
+
+COMPARISON_CONTRACT = "aelitium-compare-v1"
+
+COMPARISON_MODE_INVOCATION_FIRST = "INVOCATION_FIRST"
+COMPARISON_MODE_STRICT_INVOCATION = "STRICT_INVOCATION"
+COMPARISON_MODE_LEGACY_REQUEST_HASH_V1 = "LEGACY_REQUEST_HASH_V1"
+
+COMPARISON_BASIS_INVOCATION_IDENTITY_V1 = "INVOCATION_IDENTITY_V1"
+COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK = "REQUEST_HASH_V1_FALLBACK"
+COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY = "REQUEST_HASH_V1_LEGACY"
+COMPARISON_BASIS_NONE = "NONE"
 
 
 def _out(args, text_lines: list[str], json_obj: dict) -> None:
@@ -239,114 +251,400 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
 
 def cmd_compare(args: argparse.Namespace) -> int:
     """
-    Compare selected v1 request and response hashes between evidence bundles.
-
-    Given two bundles A and B (both produced by the capture adapter):
-    - UNCHANGED:      selected request_hash same, selected response_hash same
-    - CHANGED:        selected request_hash same, selected response_hash different
-    - NOT_COMPARABLE: selected request_hash differs, or request_hash capture metadata is absent
-    - INVALID_BUNDLE: one or both bundles fail bundle verification
+    Compare validated invocation evidence, with an explicit request-hash fallback.
 
     Usage: aelitium compare <bundle_a> <bundle_b>
     """
-    def _verify_bundle_quiet(path: Path):
-        result = verify_ai_bundle(path)
-        if not result.valid:
-            if result.reason in ("MISSING_CANONICAL", "MISSING_MANIFEST"):
-                return False, "MISSING_BUNDLE_FILES", None, None
-            return False, result.reason, result.detail, None
 
-        if result.canonical is None or result.manifest is None:
-            return False, "MISSING_BUNDLE_FILES", None, None
-        return True, "OK", "", {
-            "canon": result.canonical,
-            "manifest": result.manifest,
+    def _mode() -> str:
+        if getattr(args, "require_invocation_evidence", False):
+            return COMPARISON_MODE_STRICT_INVOCATION
+        if getattr(args, "legacy_request_hash_v1", False):
+            return COMPARISON_MODE_LEGACY_REQUEST_HASH_V1
+        return COMPARISON_MODE_INVOCATION_FIRST
+
+    def _state(result, name: str) -> str:
+        value = getattr(result, name, AssuranceState.NOT_EVALUATED)
+        return value.value if isinstance(value, AssuranceState) else str(value)
+
+    def _assurance_values(result) -> tuple[AssuranceState, AssuranceState] | None:
+        identity = getattr(result, "invocation_identity_consistency", None)
+        binding = getattr(result, "invocation_binding_consistency", None)
+        if not isinstance(identity, AssuranceState) or not isinstance(
+            binding, AssuranceState
+        ):
+            return None
+        allowed = {
+            (AssuranceState.ABSENT, AssuranceState.ABSENT),
+            (AssuranceState.VALID, AssuranceState.ABSENT),
+            (AssuranceState.VALID, AssuranceState.VALID),
         }
+        return (identity, binding) if (identity, binding) in allowed else None
 
-    def _hashes(canon, manifest):
+    def _hashes(result) -> dict:
+        canon = result.canonical
+        manifest = result.manifest
         meta = canon.get("metadata", {})
+        invocation = meta.get("invocation_identity")
+        invocation_hash = (
+            invocation.get("hash_sha256") if isinstance(invocation, dict) else None
+        )
         return {
             "request_hash": meta.get("request_hash"),
             "response_hash": meta.get("response_hash"),
             "binding_hash": manifest.get("binding_hash"),
+            "invocation_identity_hash": invocation_hash,
             "ts_utc": canon.get("ts_utc") or manifest.get("ts_utc"),
         }
 
-    path_a = Path(args.bundle_a)
-    path_b = Path(args.bundle_b)
+    def _is_sha256(value) -> bool:
+        return (
+            isinstance(value, str)
+            and len(value) == 64
+            and all(character in "0123456789abcdef" for character in value)
+        )
 
-    ok_a, reason_a, detail_a, data_a = _verify_bundle_quiet(path_a)
-    ok_b, reason_b, detail_b, data_b = _verify_bundle_quiet(path_b)
+    def _inputs_are_consistent(result, states) -> bool:
+        if states is None:
+            return False
+        if not isinstance(result.canonical, dict) or not isinstance(
+            result.manifest, dict
+        ):
+            return False
+        meta = result.canonical.get("metadata", {})
+        if not isinstance(meta, dict):
+            return False
 
-    if not ok_a or not ok_b:
+        identity_state, binding_state = states
+        identity_present = "invocation_identity" in meta
+        binding_present = "invocation_binding" in meta
+        if identity_present != (identity_state is AssuranceState.VALID):
+            return False
+        if binding_present != (binding_state is AssuranceState.VALID):
+            return False
+        if identity_state is AssuranceState.VALID:
+            invocation = meta.get("invocation_identity")
+            if not isinstance(invocation, dict) or not _is_sha256(
+                invocation.get("hash_sha256")
+            ):
+                return False
+        return True
+
+    def _relation(value_a, value_b) -> str:
+        if not value_a or not value_b:
+            return "UNAVAILABLE"
+        return "SAME" if value_a == value_b else "DIFFERENT"
+
+    def _short(value) -> str:
+        return value[:16] + "..." if value else "N/A"
+
+    def _interpretation(status: str) -> str:
+        if status == "NOT_COMPARABLE":
+            return (
+                "No response-change conclusion is made because the selected "
+                "comparison identity hashes differ or the comparison mode's "
+                "required evidence is unavailable."
+            )
+        if status == "UNCHANGED":
+            return (
+                "Under the reported comparison basis, the selected comparison "
+                "identity hashes and selected response_hash values match. This "
+                "does not establish unchanged invocation configuration or "
+                "unchanged model behavior."
+            )
+        return (
+            "Under the reported comparison basis, the selected comparison "
+            "identity hashes match and selected response_hash values differ. "
+            "This does not identify a cause."
+        )
+
+    def _emit_invalid(
+        mode: str,
+        result_a,
+        result_b,
+        *,
+        invariant: bool,
+        invariant_sides: tuple[str, ...] = (),
+    ) -> int:
+        reason = (
+            "COMPARISON_INPUT_INVARIANT_FAILED"
+            if invariant
+            else "BUNDLE_VERIFICATION_FAILED"
+        )
         detail_parts = []
-        if not ok_a:
-            detail_parts.append(f"a={reason_a}")
-        if not ok_b:
-            detail_parts.append(f"b={reason_b}")
-        _out(args,
-             ["STATUS=INVALID_BUNDLE rc=2",
-              f"DETAIL={' ; '.join(detail_parts)}"],
-             {"status": "INVALID_BUNDLE", "rc": 2,
-              "detail": " ; ".join(detail_parts)})
+        if invariant:
+            detail_parts.extend(
+                f"{side}=COMPARISON_INPUT_INVARIANT_FAILED"
+                for side in invariant_sides
+            )
+        else:
+            for side, result in (("a", result_a), ("b", result_b)):
+                if result.valid:
+                    continue
+                bundle_reason = result.reason
+                if bundle_reason in ("MISSING_CANONICAL", "MISSING_MANIFEST"):
+                    bundle_reason = "MISSING_BUNDLE_FILES"
+                detail_parts.append(f"{side}={bundle_reason}")
+        detail = " ; ".join(detail_parts)
+        interpretation = (
+            "Comparison was not performed because validated comparison inputs "
+            "were internally inconsistent"
+            if invariant
+            else "Comparison was not performed because one or both bundles "
+            "failed verification"
+        )
+        states = {
+            "invocation_identity_consistency_a": _state(
+                result_a, "invocation_identity_consistency"
+            ),
+            "invocation_binding_consistency_a": _state(
+                result_a, "invocation_binding_consistency"
+            ),
+            "invocation_identity_consistency_b": _state(
+                result_b, "invocation_identity_consistency"
+            ),
+            "invocation_binding_consistency_b": _state(
+                result_b, "invocation_binding_consistency"
+            ),
+        }
+        lines = [
+            "STATUS=INVALID_BUNDLE rc=2",
+            f"COMPARISON_CONTRACT={COMPARISON_CONTRACT}",
+            f"COMPARISON_MODE={mode}",
+            f"COMPARISON_BASIS={COMPARISON_BASIS_NONE}",
+            f"COMPARISON_REASON={reason}",
+            "INVOCATION_IDENTITY_HASH=UNAVAILABLE",
+            f"INVOCATION_IDENTITY_CONSISTENCY_A={states['invocation_identity_consistency_a']}",
+            f"INVOCATION_BINDING_CONSISTENCY_A={states['invocation_binding_consistency_a']}",
+            f"INVOCATION_IDENTITY_CONSISTENCY_B={states['invocation_identity_consistency_b']}",
+            f"INVOCATION_BINDING_CONSISTENCY_B={states['invocation_binding_consistency_b']}",
+        ]
+        if detail:
+            lines.append(f"DETAIL={detail}")
+        lines.append(f"INTERPRETATION={interpretation}")
+        _out(
+            args,
+            lines,
+            {
+                "status": "INVALID_BUNDLE",
+                "rc": 2,
+                "comparison_contract": COMPARISON_CONTRACT,
+                "comparison_mode": mode,
+                "comparison_basis": COMPARISON_BASIS_NONE,
+                "required_comparison_basis": None,
+                "comparison_reason": reason,
+                "invocation_identity_hash": "UNAVAILABLE",
+                "invocation_identity_hash_a": None,
+                "invocation_identity_hash_b": None,
+                **states,
+                "detail": detail,
+                "interpretation": interpretation,
+            },
+        )
         return 2
 
-    canon_a, manifest_a = data_a["canon"], data_a["manifest"]
-    canon_b, manifest_b = data_b["canon"], data_b["manifest"]
+    path_a = Path(args.bundle_a)
+    path_b = Path(args.bundle_b)
+    mode = _mode()
 
-    h_a = _hashes(canon_a, manifest_a)
-    h_b = _hashes(canon_b, manifest_b)
+    # Verification precedence is deliberate: both inputs are verified before
+    # any comparison basis is selected or any stored identity hash is exposed.
+    result_a = verify_ai_bundle(path_a)
+    result_b = verify_ai_bundle(path_b)
 
-    if not h_a["request_hash"] or not h_b["request_hash"]:
-        _out(args,
-             ["STATUS=NOT_COMPARABLE rc=1",
-              "DETAIL=Bundles do not contain capture metadata (request_hash missing)",
-              "HINT=Use the capture adapter (engine.capture.openai / engine.capture.anthropic) instead of aelitium pack"],
-             {"status": "NOT_COMPARABLE", "rc": 1,
-              "detail": "Bundles do not contain capture metadata (request_hash missing)",
-              "hint": "Use the capture adapter instead of aelitium pack"})
-        return 1
+    if not result_a.valid or not result_b.valid:
+        return _emit_invalid(mode, result_a, result_b, invariant=False)
 
-    req = "SAME" if h_a["request_hash"] == h_b["request_hash"] else "DIFFERENT"
-    resp = "SAME" if h_a["response_hash"] == h_b["response_hash"] else "DIFFERENT"
-    bind = "SAME" if h_a["binding_hash"] == h_b["binding_hash"] else "DIFFERENT"
+    states_a = _assurance_values(result_a)
+    states_b = _assurance_values(result_b)
+    consistent_a = _inputs_are_consistent(result_a, states_a)
+    consistent_b = _inputs_are_consistent(result_b, states_b)
+    if not consistent_a or not consistent_b:
+        invariant_sides = tuple(
+            side
+            for side, consistent in (("a", consistent_a), ("b", consistent_b))
+            if not consistent
+        )
+        return _emit_invalid(
+            mode,
+            result_a,
+            result_b,
+            invariant=True,
+            invariant_sides=invariant_sides,
+        )
 
-    if req == "DIFFERENT":
+    h_a = _hashes(result_a)
+    h_b = _hashes(result_b)
+    identity_a, invocation_binding_a = states_a
+    identity_b, invocation_binding_b = states_b
+    usable_a = (
+        identity_a is AssuranceState.VALID
+        and invocation_binding_a is AssuranceState.VALID
+    )
+    usable_b = (
+        identity_b is AssuranceState.VALID
+        and invocation_binding_b is AssuranceState.VALID
+    )
+
+    required_basis = None
+    if mode == COMPARISON_MODE_LEGACY_REQUEST_HASH_V1:
+        basis = COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY
+    elif usable_a and usable_b:
+        basis = COMPARISON_BASIS_INVOCATION_IDENTITY_V1
+    elif mode == COMPARISON_MODE_STRICT_INVOCATION:
+        basis = COMPARISON_BASIS_NONE
+        required_basis = COMPARISON_BASIS_INVOCATION_IDENTITY_V1
+    else:
+        basis = COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK
+
+    req = _relation(h_a["request_hash"], h_b["request_hash"])
+    resp = _relation(h_a["response_hash"], h_b["response_hash"])
+    bind = _relation(h_a["binding_hash"], h_b["binding_hash"])
+    invocation = _relation(
+        h_a["invocation_identity_hash"], h_b["invocation_identity_hash"]
+    )
+
+    if required_basis is not None:
         status = "NOT_COMPARABLE"
         rc = 1
-        interpretation = "Requests differ — bundles are not comparable"
-    elif resp == "SAME":
-        status = "UNCHANGED"
-        rc = 0
-        interpretation = "Same request_hash and response_hash observed"
+        reason = "INVOCATION_EVIDENCE_UNAVAILABLE"
+    elif basis == COMPARISON_BASIS_INVOCATION_IDENTITY_V1:
+        bad_response_sides = tuple(
+            side
+            for side, hashes in (("a", h_a), ("b", h_b))
+            if not _is_sha256(hashes["response_hash"])
+        )
+        if bad_response_sides:
+            return _emit_invalid(
+                mode,
+                result_a,
+                result_b,
+                invariant=True,
+                invariant_sides=bad_response_sides,
+            )
+        if invocation == "DIFFERENT":
+            status = "NOT_COMPARABLE"
+            rc = 1
+            reason = "INVOCATION_IDENTITY_HASH_DIFFERENT"
+        elif invocation != "SAME":
+            return _emit_invalid(
+                mode,
+                result_a,
+                result_b,
+                invariant=True,
+                invariant_sides=("a", "b"),
+            )
+        elif resp == "SAME":
+            status = "UNCHANGED"
+            rc = 0
+            reason = "RESPONSE_HASH_SAME"
+        else:
+            status = "CHANGED"
+            rc = 2
+            reason = "RESPONSE_HASH_DIFFERENT"
     else:
-        status = "CHANGED"
-        rc = 2
-        interpretation = "Same request_hash with different response_hash observed"
+        if req == "UNAVAILABLE":
+            status = "NOT_COMPARABLE"
+            rc = 1
+            reason = "REQUEST_HASH_UNAVAILABLE"
+        elif bad_selected_sides := tuple(
+            side
+            for side, hashes in (("a", h_a), ("b", h_b))
+            if not _is_sha256(hashes["request_hash"])
+            or not _is_sha256(hashes["response_hash"])
+        ):
+            return _emit_invalid(
+                mode,
+                result_a,
+                result_b,
+                invariant=True,
+                invariant_sides=bad_selected_sides,
+            )
+        elif req == "DIFFERENT":
+            status = "NOT_COMPARABLE"
+            rc = 1
+            reason = "REQUEST_HASH_DIFFERENT"
+        elif resp == "SAME":
+            status = "UNCHANGED"
+            rc = 0
+            reason = "RESPONSE_HASH_SAME"
+        else:
+            status = "CHANGED"
+            rc = 2
+            reason = "RESPONSE_HASH_DIFFERENT"
 
-    def _short(h): return h[:16] + "..." if h else "N/A"
+    interpretation = _interpretation(status)
     lines = [
         f"STATUS={status} rc={rc}",
-        f"REQUEST_HASH={req}  a={_short(h_a['request_hash'])} b={_short(h_b['request_hash'])}",
-        f"RESPONSE_HASH={resp}  a={_short(h_a['response_hash'])} b={_short(h_b['response_hash'])}",
-        f"BINDING_HASH={bind}",
-        f"TS_UTC_A={h_a['ts_utc'] or 'N/A'}",
-        f"TS_UTC_B={h_b['ts_utc'] or 'N/A'}",
-        f"INTERPRETATION={interpretation}",
+        f"COMPARISON_CONTRACT={COMPARISON_CONTRACT}",
+        f"COMPARISON_MODE={mode}",
+        f"COMPARISON_BASIS={basis}",
+        f"COMPARISON_REASON={reason}",
     ]
+    if required_basis is not None:
+        lines.append(f"REQUIRED_COMPARISON_BASIS={required_basis}")
+    lines.extend(
+        [
+            (
+                f"INVOCATION_IDENTITY_HASH={invocation}  "
+                f"a={_short(h_a['invocation_identity_hash'])} "
+                f"b={_short(h_b['invocation_identity_hash'])}"
+            ),
+            f"INVOCATION_IDENTITY_CONSISTENCY_A={identity_a.value}",
+            f"INVOCATION_BINDING_CONSISTENCY_A={invocation_binding_a.value}",
+            f"INVOCATION_IDENTITY_CONSISTENCY_B={identity_b.value}",
+            f"INVOCATION_BINDING_CONSISTENCY_B={invocation_binding_b.value}",
+            (
+                f"REQUEST_HASH={req}  a={_short(h_a['request_hash'])} "
+                f"b={_short(h_b['request_hash'])}"
+            ),
+            (
+                f"RESPONSE_HASH={resp}  a={_short(h_a['response_hash'])} "
+                f"b={_short(h_b['response_hash'])}"
+            ),
+            f"BINDING_HASH={bind}",
+            f"TS_UTC_A={h_a['ts_utc'] or 'N/A'}",
+            f"TS_UTC_B={h_b['ts_utc'] or 'N/A'}",
+        ]
+    )
+    detail = None
+    hint = None
+    if reason == "REQUEST_HASH_UNAVAILABLE":
+        detail = "Bundles do not contain capture metadata (request_hash missing)"
+        hint = "Use a supported capture adapter instead of aelitium pack"
+        lines.extend([f"DETAIL={detail}", f"HINT={hint}"])
+    lines.append(f"INTERPRETATION={interpretation}")
 
-    _out(args, lines,
-         {"status": status, "rc": rc,
-          "request_hash": req,
-          "response_hash": resp,
-          "binding_hash": bind,
-          "request_hash_a": h_a["request_hash"],
-          "request_hash_b": h_b["request_hash"],
-          "response_hash_a": h_a["response_hash"],
-          "response_hash_b": h_b["response_hash"],
-          "ts_utc_a": h_a["ts_utc"],
-          "ts_utc_b": h_b["ts_utc"],
-          "interpretation": interpretation})
+    json_result = {
+        "status": status,
+        "rc": rc,
+        "comparison_contract": COMPARISON_CONTRACT,
+        "comparison_mode": mode,
+        "comparison_basis": basis,
+        "required_comparison_basis": required_basis,
+        "comparison_reason": reason,
+        "invocation_identity_hash": invocation,
+        "invocation_identity_hash_a": h_a["invocation_identity_hash"],
+        "invocation_identity_hash_b": h_b["invocation_identity_hash"],
+        "invocation_identity_consistency_a": identity_a.value,
+        "invocation_binding_consistency_a": invocation_binding_a.value,
+        "invocation_identity_consistency_b": identity_b.value,
+        "invocation_binding_consistency_b": invocation_binding_b.value,
+        "request_hash": req,
+        "response_hash": resp,
+        "binding_hash": bind,
+        "request_hash_a": h_a["request_hash"],
+        "request_hash_b": h_b["request_hash"],
+        "response_hash_a": h_a["response_hash"],
+        "response_hash_b": h_b["response_hash"],
+        "ts_utc_a": h_a["ts_utc"],
+        "ts_utc_b": h_b["ts_utc"],
+        "interpretation": interpretation,
+    }
+    if detail is not None:
+        json_result["detail"] = detail
+        json_result["hint"] = hint
+    _out(args, lines, json_result)
     return rc
 
 
@@ -599,19 +897,37 @@ def main() -> int:
 
     cmp = sub.add_parser(
         "compare",
-        help="Compare selected v1 request/response hashes between bundles",
+        help="Compare validated bundle hashes using invocation-first semantics",
         description=(
-            "Comparison basis in v0.3.x: request_hash v1. UNCHANGED means the "
-            "selected v1 request_hash and selected response_hash match; CHANGED "
-            "means request_hash matches and response_hash differs; NOT_COMPARABLE "
-            "means the selected request hashes differ or request_hash capture "
-            "metadata is missing. Invalid bundles report INVALID_BUNDLE. Current "
-            "0.3.x compare does not use invocation_identity as its comparison basis."
+            "Comparison contract: aelitium-compare-v1. The default uses validated "
+            "invocation identity and binding evidence from both bundles, with a "
+            "visible request_hash v1 fallback when that evidence is unavailable. "
+            "UNCHANGED and CHANGED describe selected identity and response-hash "
+            "relationships only; they do not establish causation or unchanged "
+            "model behavior."
         ),
     )
     cmp.add_argument("bundle_a", help="Path to first evidence bundle directory")
     cmp.add_argument("bundle_b", help="Path to second evidence bundle directory")
     cmp.add_argument("--json", action="store_true", help="Output as JSON")
+    compare_mode = cmp.add_mutually_exclusive_group()
+    compare_mode.add_argument(
+        "--require-invocation-evidence",
+        action="store_true",
+        help=(
+            "Require invocation_identity_consistency=VALID and "
+            "invocation_binding_consistency=VALID for both bundles; disable "
+            "request_hash v1 fallback."
+        ),
+    )
+    compare_mode.add_argument(
+        "--legacy-request-hash-v1",
+        action="store_true",
+        help=(
+            "Use v0.3.x request_hash v1 comparison semantics even when "
+            "validated invocation evidence is present."
+        ),
+    )
     cmp.set_defaults(fn=cmd_compare)
 
     sc = sub.add_parser("scan", help="Scan Python files for uninstrumented LLM call sites")

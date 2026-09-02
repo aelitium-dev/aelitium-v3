@@ -1,7 +1,8 @@
 # Comparing Recorded Responses Across Runs with AELITIUM
 
-When outputs differ across runs, AELITIUM compares selected v1 request and response
-hashes from internally consistent recorded evidence.
+When outputs differ across runs, AELITIUM compares selected identity and response
+hashes from internally consistent recorded evidence under an explicitly reported
+comparison basis.
 
 ---
 
@@ -39,60 +40,106 @@ trusted external anchor.
 
 ---
 
-## Detecting a change
+## Historical v0.3.x comparison
 
-**Comparison basis in v0.3.x: `request_hash` v1.** Current 0.3.x comparison
+**Comparison basis in v0.3.x: `request_hash` v1.** The v0.3.x comparison
 does not use `invocation_identity` as its comparison basis. That separate
 identity records a broader call surface when present, but it is not necessarily
 complete for every provider call.
+
+The v0.3.x status contract remains documented and can be selected explicitly in
+v0.4 development with `--legacy-request-hash-v1`.
+
+## Invocation-first comparison in v0.4 development
+
+**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+mode is `INVOCATION_FIRST`.
+
+Both bundles are verified before a basis is selected. A bundle has usable
+invocation evidence only when both `invocation_identity_consistency` and
+`invocation_binding_consistency` are `VALID`:
+
+- If both bundles have usable evidence, the basis is
+  `INVOCATION_IDENTITY_V1`. Different invocation-identity hashes produce
+  `NOT_COMPARABLE`; matching hashes allow selected response hashes to be
+  compared.
+- If one or both valid bundles do not have usable invocation evidence, the
+  basis is `REQUEST_HASH_V1_FALLBACK`. This visible fallback also applies to
+  asymmetric and legacy-bundle comparisons.
+- `--require-invocation-evidence` selects strict mode and disables fallback.
+- `--legacy-request-hash-v1` selects the v0.3.x request-hash decisions even
+  when validated invocation evidence is present.
+- Invalid bundles fail before comparison with basis `NONE`; invalid invocation
+  evidence never causes fallback.
 
 ```bash
 # Bundle from a previous run (e.g. last week)
 aelitium compare ./bundle_baseline ./bundle_today
 ```
 
-### Same selected request and response hashes
+### Matching selected identity and response hashes
 
 ```
 STATUS=UNCHANGED rc=0
+COMPARISON_CONTRACT=aelitium-compare-v1
+COMPARISON_MODE=INVOCATION_FIRST
+COMPARISON_BASIS=INVOCATION_IDENTITY_V1
+COMPARISON_REASON=RESPONSE_HASH_SAME
+INVOCATION_IDENTITY_HASH=SAME
 REQUEST_HASH=SAME
 RESPONSE_HASH=SAME
 BINDING_HASH=SAME
-INTERPRETATION=Same request_hash and response_hash observed
 ```
 
-The bundles have the same selected v1 `request_hash` and the same
-`response_hash` over selected recorded response fields. This does not establish
-that every invocation parameter, mode, provider route, client configuration, or
-execution context was unchanged.
+Under the reported comparison basis, the selected comparison identity hashes
+and selected `response_hash` values match. This does not establish unchanged
+invocation configuration or unchanged model behavior.
 
-### Same selected request hash, different response hash
+### Matching selected identity, different response hash
 
 ```
 STATUS=CHANGED rc=2
+COMPARISON_CONTRACT=aelitium-compare-v1
+COMPARISON_MODE=INVOCATION_FIRST
+COMPARISON_BASIS=INVOCATION_IDENTITY_V1
+COMPARISON_REASON=RESPONSE_HASH_DIFFERENT
+INVOCATION_IDENTITY_HASH=SAME
 REQUEST_HASH=SAME
 RESPONSE_HASH=DIFFERENT
 BINDING_HASH=DIFFERENT
-INTERPRETATION=Same request_hash with different response_hash observed
 ```
 
-The bundles have the same selected v1 `request_hash` and different selected
-`response_hash` values. This status does not by itself establish model drift or
-explain causation.
+Under the reported comparison basis, the selected comparison identity hashes
+match and selected `response_hash` values differ. This status does not identify
+a cause.
 
-### Different selected request hashes
+### Different selected invocation-identity hashes
 
 ```
 STATUS=NOT_COMPARABLE rc=1
-REQUEST_HASH=DIFFERENT
-INTERPRETATION=Requests differ — bundles are not comparable
+COMPARISON_BASIS=INVOCATION_IDENTITY_V1
+COMPARISON_REASON=INVOCATION_IDENTITY_HASH_DIFFERENT
+INVOCATION_IDENTITY_HASH=DIFFERENT
 ```
 
-The selected v1 request identities differ, so comparison reports
-`NOT_COMPARABLE`. Missing required `request_hash` capture metadata also
-produces this status. An invalid bundle is reported separately as
-`INVALID_BUNDLE`. Comparison does not establish full invocation equivalence or
-inequality.
+No response-change conclusion is made. Under fallback or legacy basis, different
+selected v1 request hashes likewise produce `NOT_COMPARABLE`; a missing required
+request hash reports reason `REQUEST_HASH_UNAVAILABLE`. An invalid bundle is
+reported separately as `INVALID_BUNDLE` with basis `NONE`.
+
+### Strict mode with unavailable evidence
+
+```bash
+aelitium compare baseline today --require-invocation-evidence
+```
+
+```text
+STATUS=NOT_COMPARABLE rc=1
+COMPARISON_MODE=STRICT_INVOCATION
+COMPARISON_BASIS=NONE
+REQUIRED_COMPARISON_BASIS=INVOCATION_IDENTITY_V1
+COMPARISON_REASON=INVOCATION_EVIDENCE_UNAVAILABLE
+```
 
 ---
 
@@ -106,15 +153,48 @@ aelitium compare ./baseline ./today --json
 {
   "status": "CHANGED",
   "rc": 2,
+  "comparison_contract": "aelitium-compare-v1",
+  "comparison_mode": "INVOCATION_FIRST",
+  "comparison_basis": "INVOCATION_IDENTITY_V1",
+  "required_comparison_basis": null,
+  "comparison_reason": "RESPONSE_HASH_DIFFERENT",
+  "invocation_identity_hash": "SAME",
+  "invocation_identity_consistency_a": "VALID",
+  "invocation_binding_consistency_a": "VALID",
+  "invocation_identity_consistency_b": "VALID",
+  "invocation_binding_consistency_b": "VALID",
   "request_hash": "SAME",
   "response_hash": "DIFFERENT",
-  "binding_hash": "DIFFERENT",
-  "interpretation": "Same request_hash with different response_hash observed"
+  "binding_hash": "DIFFERENT"
 }
 ```
 
+JSON also includes the full, untruncated per-side request, response, and
+invocation-identity hashes plus timestamps and a bounded interpretation. Raw
+invocation hashes are not emitted after bundle verification failure.
+
 Exit codes: `0` = `UNCHANGED`, `1` = `NOT_COMPARABLE`, and `2` = `CHANGED`
 or `INVALID_BUNDLE`.
+
+### Migration from v0.3.x
+
+The numeric exit codes are unchanged, but the v0.4 default can intentionally
+change a decision: bundles with matching v1 request hashes and different
+validated invocation-identity hashes now report `NOT_COMPARABLE` instead of
+reaching response-hash comparison. CI must continue inspecting `STATUS` because
+exit code `2` remains shared by `CHANGED` and `INVALID_BUNDLE`.
+
+Text output retains `STATUS` as its first line and retains the request, response,
+legacy binding, timestamps, and interpretation diagnostics, with new contract,
+mode, basis, reason, invocation-hash, and assurance-state lines. Successful JSON
+output retains its existing keys and adds the versioned comparison fields; JSON
+consumers should tolerate additive keys and read `comparison_basis` before
+interpreting a status.
+
+Use `--legacy-request-hash-v1` during migration when a workflow must reproduce
+v0.3.x request-hash decisions. Use `--require-invocation-evidence` when fallback
+is unacceptable. The flags are mutually exclusive and using both is an argparse
+usage error with exit code `2`, not a comparison result.
 
 ---
 
@@ -137,19 +217,26 @@ or `INVALID_BUNDLE`.
 
 ## Baseline management
 
-Store one bundle per request type as your selected-hash baseline.
+Store one bundle per recorded comparison case as your selected-hash baseline.
 Run `aelitium compare` against it in every CI run.
 
-For valid bundles with the same selected v1 request hash, a different selected
-response hash produces `STATUS=CHANGED rc=2` and reports:
+For valid bundles whose identity hashes match under the reported basis, a
+different selected response hash produces `STATUS=CHANGED rc=2` and reports:
 
 - the selected v1 request hash fields
 - what was recorded before (previous response hash)
 - what is recorded now (new response hash)
-- whether the selected v1 request identity changed
+- which comparison basis and reason were applied
 
-This is offline comparison of selected hashes in recorded evidence, not full
-invocation comparison, provider attribution, or a causal explanation.
+Equality of validated `aelitium-invocation-v1` hashes describes only fields
+selected by that recorded identity format; it does not establish a complete
+real-world invocation. Fallback request-hash equality covers selected canonical
+model and messages fields, not every invocation parameter, mode, route, client
+configuration, or execution context.
+
+AELITIUM establishes internal consistency of recorded evidence on the validated
+surface. It does not establish provider execution, causation, full invocation
+completeness, model drift, output truth, authorization, or legal compliance.
 
 ---
 
