@@ -9,7 +9,7 @@ LLM → output → user writes JSON → aelitium pack → bundle
 
 **With capture layer:**
 ```
-LLM → capture_chat_completion() → bundle (automatic)
+LLM → capture_openai() → bundle (automatic)
 ```
 
 The bundle is created in the adapter-controlled call path without a manual JSON
@@ -31,11 +31,11 @@ pip install aelitium openai
 
 ```python
 import openai
-from engine.capture.openai import capture_chat_completion
+from aelitium import capture_openai
 
 client = openai.OpenAI()
 
-result = capture_chat_completion(
+result = capture_openai(
     client=client,
     model="gpt-4o",
     messages=[{"role": "user", "content": "Explain quantum computing."}],
@@ -89,7 +89,7 @@ aelitium verify-bundle ./evidence
 Extra metadata can be passed via the `metadata` argument:
 
 ```python
-result = capture_chat_completion(
+result = capture_openai(
     client, model, messages, out_dir,
     metadata={"run_id": "abc-123", "env": "production"},
 )
@@ -180,7 +180,7 @@ Set environment variables to sign every bundle at capture time:
 export AEL_ED25519_PRIVKEY_B64=<your-32-byte-key-base64>
 ```
 
-When set, every `capture_chat_completion()` call writes `verification_keys.json`
+When set, every `capture_openai()` call writes `verification_keys.json`
 alongside the bundle. The `CaptureResult.signed` field is `True`.
 
 This supports mathematical Ed25519 signature verification. Because the public key
@@ -193,11 +193,11 @@ must fail. Binding evidence is likewise optional by default; use
 ## Chain of custody (EvidenceLog)
 
 ```python
-from engine.capture.log import EvidenceLog
+from aelitium import EvidenceLog
 
 log = EvidenceLog("./evidence_log")
 
-result = capture_chat_completion(client, model, messages, "./evidence/run-1")
+result = capture_openai(client, model, messages, "./evidence/run-1")
 log.append(result.bundle_dir, result.ai_hash_sha256)
 
 # Later: verify chain
@@ -208,7 +208,7 @@ assert log2.verify_chain(), "Chain tampered!"
 ## Article 12-oriented record mapping
 
 ```python
-from engine.compliance import export_eu_ai_act_art12
+from aelitium import export_eu_ai_act_art12
 
 record = export_eu_ai_act_art12("./evidence/run-1")
 # record["log_entry"] contains selected fields for a record workflow
@@ -234,7 +234,7 @@ python scripts/aelitium_verify_standalone.py --bundle ./evidence/run-1
 ## Streaming
 
 ```python
-from engine.capture.openai import capture_chat_completion_stream
+from aelitium import capture_chat_completion_stream
 
 result = capture_chat_completion_stream(client, model, messages, "./evidence/stream-1")
 print(result.ai_hash_sha256)  # hash of full accumulated content
@@ -243,9 +243,9 @@ print(result.ai_hash_sha256)  # hash of full accumulated content
 ## Anthropic
 
 ```python
-from engine.capture.anthropic import capture_message
+from aelitium import capture_anthropic
 
-result = capture_message(anthropic_client, "claude-3-5-sonnet-20241022", messages, "./evidence/run-1")
+result = capture_anthropic(anthropic_client, "claude-3-5-sonnet-20241022", messages, "./evidence/run-1")
 print(result.ai_hash_sha256)
 ```
 
@@ -268,9 +268,9 @@ pip install aelitium[litellm]
 ### Usage
 
 ```python
-from engine.capture.litellm import capture_completion
+from aelitium import capture_litellm
 
-result = capture_completion(
+result = capture_litellm(
     model="openai/gpt-4o",           # LiteLLM model string (provider/model)
     messages=[{"role": "user", "content": "What is 2+2?"}],
     out_dir="./evidence",
@@ -285,10 +285,10 @@ Examples of provider routes exposed by LiteLLM include:
 
 ```python
 # Anthropic via LiteLLM
-capture_completion("anthropic/claude-3-5-sonnet-20241022", messages, "./evidence")
+capture_litellm("anthropic/claude-3-5-sonnet-20241022", messages, "./evidence")
 
 # AWS Bedrock via LiteLLM
-capture_completion("bedrock/anthropic.claude-3-sonnet-20240229-v1:0", messages, "./evidence")
+capture_litellm("bedrock/anthropic.claude-3-sonnet-20240229-v1:0", messages, "./evidence")
 ```
 
 ### Model string in the bundle

@@ -1,6 +1,6 @@
 # FEATURE MATRIX — AELITIUM
 
-Status: DRAFT — non-exhaustive inventory of the unreleased 0.3.0 source baseline
+Status: DRAFT — non-exhaustive inventory of the released 0.3.0 baseline
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
 ---

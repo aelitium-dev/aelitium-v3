@@ -5,25 +5,23 @@ All notable changes to AELITIUM are documented here.
 Format: `[version] — date — description`
 
 A dated `[version]` heading in this file means that version was released and
-tagged. The current line under development appears under `[Unreleased]` and is
-converted to a dated heading in the release commit that immediately precedes its
-annotated tag.
+tagged. A line under development appears under `[Unreleased]` and is converted to
+a dated heading in the release commit that immediately precedes its annotated
+tag.
 
 Entries below `[0.2.4]` are historical and are retained as originally written.
 Two known artefacts of that history are preserved rather than rewritten: a legacy
 `[unreleased] — 2026-03-10` heading whose work shipped in the 0.2.x line, and a
-`[0.2.1]` entry recorded after `[0.1.0]`. Neither refers to the current
-`[Unreleased]` section at the top of this file.
+`[0.2.1]` entry recorded after `[0.1.0]`. Neither denotes a currently unreleased
+version.
 
 ---
 
 ## [0.3.0] — 2026-08-27
 
-**Release status.** The repository and package baseline is `0.3.0`. No `v0.3.0`
-tag, GitHub Release, or PyPI publication exists. The latest released and tagged
-version remains `v0.2.4` (2026-03-14). This section is converted to
-`## [0.3.0] — <release date>` in the release commit that immediately precedes the
-annotated `v0.3.0` tag.
+**Release status.** The repository and package baseline is `0.3.0`, released
+through the annotated `v0.3.0` tag, its GitHub Release, and the `0.3.0` PyPI
+publication.
 
 The entries below cover all material work on the 0.3.0 line through
 `7e007f60ca884a6dc44e63aec1f8f5243ab2ed6e` (merge of PR #23).

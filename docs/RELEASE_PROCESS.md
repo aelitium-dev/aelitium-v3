@@ -1,20 +1,21 @@
 # AELITIUM — Release Process
 
-**Releases are manual.** There is no automated release, tagging, or publication
-workflow in this repository. `.github/workflows/` contains only `tests.yml` and
-`release-audit.yml`; neither creates a tag, a GitHub Release, or a PyPI upload.
-Every step below that changes a published artefact is performed by a human.
+**Releases are human-authorized.** The test and release-audit workflows do not
+create a tag, GitHub Release, or PyPI publication. The tag and GitHub Release are
+created manually. `.github/workflows/publish-pypi.yml` handles the separately
+authorized PyPI publication for a published, non-draft, non-prerelease `v0.3.0`
+GitHub Release.
 
-The source/package version is `0.3.0`, but `0.3.0` is unreleased: no `v0.3.0`
-tag, GitHub Release, or PyPI publication exists. The latest current-line release
-and PyPI publication is `0.2.4`; its historical upload used Twine.
+The source/package version is `0.3.0`, and `v0.3.0` is released through an
+annotated tag, a GitHub Release, and a PyPI publication. The preceding
+current-line release is `v0.2.4`; its historical upload used Twine.
 
 ---
 
 ## Current release line and tag authority
 
 The current release line uses explicit `v0.x` tags. The latest released version is
-`v0.2.4`.
+`v0.3.0`.
 
 **Do not determine the current AELITIUM release using version-sorted tags.**
 
@@ -39,10 +40,10 @@ done, it is a separate governance decision.
 
 ## Release authority
 
-An actual release is manual. Explicit human approval is required before each of
-these actions: creating the `v0.3.0` tag, creating its GitHub Release, and
-publishing `0.3.0` to PyPI. Merged documentation, a source-version change, or
-green CI must never be interpreted as release authorization.
+An actual release is human-authorized. Explicit human approval is required before each
+of these actions: creating its tag, creating its GitHub Release, and authorizing
+the corresponding PyPI publication. Merged documentation, a source-version
+change, or green CI must never be interpreted as release authorization.
 
 Once separately authorized, the intended release includes all three publication
 surfaces: an annotated git tag, a GitHub Release, and a PyPI publication.
@@ -153,19 +154,24 @@ corresponding `CHANGELOG.md` entry, including its `### Breaking` section.
 
 ### 8. Publish to PyPI through Trusted Publishing
 
-PyPI Trusted Publishing is the preferred publication mechanism for `0.3.0`.
-Reconfirm operator access and the configured publisher at the actual release
-checkpoint. If Trusted Publishing is not configured or available, **stop for a
-human decision**; do not silently fall back to Twine. The fact that the historical
-`0.2.4` upload used Twine does not authorize that fallback.
+PyPI Trusted Publishing is the preferred publication mechanism. For `v0.3.0`,
+publishing the non-draft, non-prerelease GitHub Release triggers
+`.github/workflows/publish-pypi.yml`. The workflow accepts only the `v0.3.0` tag,
+verifies distribution metadata for `aelitium` `0.3.0`, and uploads through PyPI
+Trusted Publishing.
 
-PyPI publication remains a separately approved action and is not implied by the
-tag or GitHub Release.
+PyPI publication remains a separately approved action: authorization to publish
+the GitHub Release must explicitly include the resulting PyPI workflow. Reconfirm
+operator access and the configured publisher at the actual release checkpoint.
+If Trusted Publishing is not configured or available, **stop for a human
+decision**; do not silently fall back to Twine. The fact that the historical
+`0.2.4` upload used Twine does not authorize that fallback. A future version must
+update and review the workflow's version-specific guards before publication.
 
 ### 9. Perform post-publication verification
 
 Confirm that the remote annotated tag resolves to `release_commit_sha`, the
-GitHub Release targets that tag, and PyPI serves exactly the intended `0.3.0`
+GitHub Release targets that tag, and PyPI serves exactly the intended version's
 artifact and metadata. Record any discrepancy and stop instead of attempting an
 unapproved replacement release.
 
