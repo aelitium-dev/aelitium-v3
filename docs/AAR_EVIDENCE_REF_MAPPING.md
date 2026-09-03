@@ -146,7 +146,7 @@ The AELITIUM commands can provide:
 **Comparison basis in v0.3.x: `request_hash` v1.** It does not use the separate,
 broader `invocation_identity`.
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** Default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** Default
 comparison prefers validated invocation identity and binding evidence on both
 sides, with a visible `REQUEST_HASH_V1_FALLBACK` for valid inputs when that
 evidence is unavailable. Strict and explicit v0.3 legacy modes are available.

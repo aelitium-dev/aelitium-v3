@@ -2,20 +2,15 @@
 
 ## Supported Versions
 
-Support is stated against **released, tagged versions**. `v0.3.0` is the current
-published release, so `0.3.x` remains the supported line. The repository contains
-unreleased `0.4.x` development, but `0.4.x` is not yet a released support line.
+Support is stated against **released, tagged versions**. `v0.4.0` is the current
+published release, so `0.4.x` is the supported line and `0.3.x` is superseded.
 
 | Version | State | Released support |
 |---------|-------|------------------|
-| 0.4.x   | Pending release line; `v0.4.0` is not yet published | Not yet applicable |
-| 0.3.x   | Current published line (latest release: `v0.3.0`) | ✅ |
+| 0.4.x   | Current published line (latest release: `v0.4.0`) | ✅ |
+| 0.3.x   | Superseded (latest release: `v0.3.0`) | ❌ |
 | 0.2.x   | Superseded (latest release: `v0.2.4`) | ❌ |
 | < 0.2   | Superseded | ❌ |
-
-Once `v0.4.0` is separately authorized and published, `0.4.x` becomes the current
-supported line and `0.3.x` becomes superseded unless a separate support decision
-states otherwise. Until then, `0.3.x` remains current and supported.
 
 Patch releases within the current supported pre-1.0 line must not deliberately
 introduce breaking changes to existing public assurance dimension names,

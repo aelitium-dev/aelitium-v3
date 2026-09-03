@@ -105,9 +105,9 @@ configuration, or execution context. A `CHANGED` result does not by itself
 establish model drift or explain causation. An `UNCHANGED` result does not
 establish that the full invocation configuration was unchanged.
 
-## Relationship to Compare in v0.4 Development
+## Relationship to Compare in v0.4.0
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** Default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** Default
 mode is `INVOCATION_FIRST`.
 
 The command verifies both bundles before selecting a comparison basis. A bundle
@@ -146,7 +146,7 @@ Two explicit migration modes are available:
   `REQUEST_HASH_V1_LEGACY`. It reproduces the v0.3.x request-hash decisions;
   invocation evidence remains diagnostic.
 
-The v0.4 comparison policy does not introduce a cross-field verifier assurance
+The v0.4.0 comparison policy does not introduce a cross-field verifier assurance
 that projects invocation-identity model/messages fields onto `request_hash`.
 That relationship is outside this contract and the two identities remain
 separately versioned recorded surfaces.

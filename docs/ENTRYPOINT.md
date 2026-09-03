@@ -2,7 +2,7 @@
 
 <!-- "v3" in the repo name and directory denotes the third-generation product
      codebase, not a package semantic-version major. Current published package:
-     0.3.0; repository development version: 0.4.0. -->
+     0.4.0. -->
 
 **Release-process status:** the Machine A / Machine B flow below is retained as
 legacy operational documentation and is not the release authority for the current

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check release-candidate version agreement without duplicating a version constant."""
+"""Check released-version agreement without duplicating a version constant."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 class VersionConsistencyError(ValueError):
-    """Raised when an authoritative release-candidate surface disagrees."""
+    """Raised when an authoritative release surface disagrees."""
 
 
 def _read(root: Path, relative_path: str) -> str:
@@ -80,21 +80,23 @@ def check_release_versions(root: Path) -> str:
     major, minor, _patch = project_version.split(".")
     expected_literals = {
         "README.md": (
-            f"repository `main` branch carries unreleased **v{project_version}** development",
+            f"`v{project_version}` is the current published GitHub and PyPI release",
+            f"`pip install aelitium` installs AELITIUM {project_version}",
         ),
         "CHANGELOG.md": (
             "## [Unreleased]",
-            f"development for v{project_version}",
-            f"source/package development version is `{project_version}`",
+            f"## [{project_version}] — ",
+            f"source/package version is `{project_version}`",
         ),
         "SECURITY.md": (
-            f"| {major}.{minor}.x   | Pending release line; `v{project_version}` is not yet published",
+            f"| {major}.{minor}.x   | Current published line (latest release: `v{project_version}`) | ✅ |",
         ),
         "docs/ONE_PAGER.md": (
-            f"Repository `main` source/package development version: **{project_version}** (unreleased)",
+            f"Current published release: **v{project_version}** on GitHub and **{project_version}** on PyPI",
         ),
         "docs/RELEASE_PROCESS.md": (
-            f"source/package development version is `{project_version}`",
+            f"source/package version is `{project_version}`",
+            f"current published release is `v{project_version}`",
             f"workflow accepts only the `v{project_version}` tag",
             f"metadata for `aelitium` `{project_version}`",
         ),

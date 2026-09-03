@@ -62,7 +62,7 @@ python3 -m engine.ai_cli verify-bundle examples/drift_demo/bundle_a
 ## Check 4 — compare (unchanged)
 
 **Comparison basis in v0.3.x: `request_hash` v1.** The frozen bundles used by
-Checks 4 and 5 predate invocation evidence. Under the v0.4 development contract
+Checks 4 and 5 predate invocation evidence. Under the v0.4.0 contract
 they therefore exercise the visible `REQUEST_HASH_V1_FALLBACK` basis. The status
 labels describe selected identity/response hash relationships; they do not
 establish complete invocation identity or causation.

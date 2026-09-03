@@ -19,6 +19,13 @@ version.
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] — 2026-09-03
+
+**Release status.** The source/package version is `0.4.0`, released through the
+annotated `v0.4.0` tag, its GitHub Release, and the `0.4.0` PyPI publication.
+
 ### Breaking / Compatibility
 
 - **Default compare decision basis changes in v0.4.0** — v0.3.x `compare`
@@ -36,8 +43,8 @@ version.
 
 ### Changed
 
-- **Versioned invocation-first compare contract** — development for v0.4.0
-  introduces `aelitium-compare-v1`. The default `compare` mode uses validated
+- **Versioned invocation-first compare contract** — v0.4.0 introduces
+  `aelitium-compare-v1`. The default `compare` mode uses validated
   `aelitium-invocation-v1` hashes when both bundles report
   `invocation_identity_consistency=VALID` and
   `invocation_binding_consistency=VALID`; otherwise valid bundles visibly use
@@ -47,13 +54,13 @@ version.
   request-hash decision contract. Comparison output now reports its contract,
   mode, basis, reason, invocation-hash relationship, and per-side invocation
   assurance states.
-- The source/package development version is `0.4.0`. This remains unreleased;
-  the current published release is v0.3.0 until separately authorized
-  publication completes.
+- The source/package version is `0.4.0`.
 
-This development work does not change `request_hash` v1, evidence schemas,
-capture adapter semantics, or verifier trust boundaries. It is not a v0.4.0
-release entry and has no release date.
+This release does not change `request_hash` v1, evidence schemas, capture adapter
+semantics, or verifier trust boundaries. Compare results describe selected
+recorded hash relationships under the reported basis; they do not establish
+provider execution, causation, full invocation completeness, model drift, output
+truth, authorization, or legal compliance.
 
 ---
 

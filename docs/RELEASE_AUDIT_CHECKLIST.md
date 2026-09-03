@@ -36,8 +36,7 @@ phrase-pattern authority; do not duplicate its patterns in this checklist.
   `authorization`.
 - Freshness is `NOT_EVALUATED` without its complete explicit policy pair and is
   evaluated when both inputs are supplied; authorization is always
-  `NOT_EVALUATED` in the released v0.3.0 baseline and unreleased v0.4.0
-  development.
+  `NOT_EVALUATED` in v0.4.0.
 - Request identity is scoped to selected v1 fields.
 - Signature validity is not presented as trusted signer identity.
 - Invocation identity/binding consistency is not presented as provider execution
@@ -83,6 +82,6 @@ python3 scripts/check_release_versions.py
 - release-process tag authority is `release_commit_sha`, with an unsigned
   annotated tag sufficient for v0.4.0
 - source, public-package version, PyPI workflow guards, and active release
-  documentation agree on the v0.4.0 candidate
+  documentation agree on the v0.4.0 release
 - PyPI Trusted Publishing is preferred and has a human stop/checkpoint if it is
   unavailable

@@ -126,7 +126,7 @@ No network access is required. The result distinguishes exactly eight dimensions
 `signature_validity`, `trusted_signer_identity`, `freshness`, and
 `authorization`. Their exact reachable states are defined in
 [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md); authorization is always
-`NOT_EVALUATED` in v0.3.0, while Freshness is `NOT_EVALUATED` without its
+`NOT_EVALUATED` in v0.4.0, while Freshness is `NOT_EVALUATED` without its
 explicit complete policy pair and is evaluable when both inputs are supplied.
 
 Unsigned and unbound bundles remain valid by default. Callers can require those

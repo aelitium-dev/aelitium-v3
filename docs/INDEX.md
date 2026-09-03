@@ -1,8 +1,7 @@
 # AELITIUM — Index
 
 <!-- "v3" in the repo name denotes the third-generation product codebase,
-     not a package semantic-version major. Current published package: 0.3.0;
-     repository development version: 0.4.0. -->
+     not a package semantic-version major. Current published package: 0.4.0. -->
 
 ## Entry
 - docs/ENTRYPOINT.md
