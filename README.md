@@ -9,10 +9,8 @@
 > offline-verifiable evidence bundles for recorded LLM interactions under
 > deterministic canonicalization.
 
-> **Release status:** `v0.3.0` is the current published GitHub and PyPI release.
-> The repository `main` branch carries unreleased **v0.4.0** development;
-> `pip install aelitium` continues to install the public 0.3.0 release until a
-> separately authorized v0.4.0 publication occurs.
+> **Release status:** `v0.4.0` is the current published GitHub and PyPI release.
+> `pip install aelitium` installs AELITIUM 0.4.0.
 
 LLM outputs can change silently. AELITIUM currently enforces fail-closed
 verification semantics on the validated surface and checks the internal consistency
@@ -83,7 +81,7 @@ cd aelitium-v3 && pip install -e .
 bash examples/drift_demo/run_demo.sh  # no API key required
 ```
 
-The frozen demo bundles predate invocation evidence, so v0.4 development output
+The frozen demo bundles predate invocation evidence, so v0.4.0 output
 reports `COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK`. Their selected v1 request
 hashes match and their selected response hashes differ.
 
@@ -141,7 +139,7 @@ real-world provider invocation produced a particular response.
 
 Verification reports exactly eight separate assurance dimensions:
 
-| Dimension | Reachable states in v0.3.0 |
+| Dimension | Reachable states in v0.4.0 |
 |---|---|
 | `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
 | `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
@@ -158,7 +156,7 @@ does not establish trusted signer identity — mathematical signature validity i
 separate property. `trusted_signer_identity` remains `UNESTABLISHED` by default,
 and becomes `VALID` only when the caller explicitly supplies a local trust store
 (`--trust-store PATH`) containing the verified signing key's fingerprint.
-Authorization is not implemented in v0.3.0 and remains `NOT_EVALUATED` in every
+Authorization is not implemented in v0.4.0 and remains `NOT_EVALUATED` in every
 case.
 
 Freshness is `NOT_EVALUATED` by default. Activate it on `verify` or
@@ -240,9 +238,9 @@ the full claim boundary.
 
 `invocation_identity` is a separate, broader recorded identity when present.
 Historical v0.3.x `compare` does not use `invocation_identity` or
-`invocation_binding` as its comparison basis. The unreleased v0.4 development
-contract uses a validated invocation identity only when validated invocation
-binding evidence is also present in both bundles.
+`invocation_binding` as its comparison basis. The v0.4.0 contract uses a
+validated invocation identity only when validated invocation binding evidence
+is also present in both bundles.
 
 ---
 
@@ -309,9 +307,9 @@ aelitium compare ./bundle_last_week ./bundle_today
 **Comparison basis in v0.3.x: `request_hash` v1.**
 
 That remains the historical v0.3.x contract. It can be selected explicitly in
-v0.4 development with `--legacy-request-hash-v1`.
+v0.4.0 with `--legacy-request-hash-v1`.
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
 mode is `INVOCATION_FIRST`:
 
 - When both bundles have `invocation_identity_consistency=VALID` and

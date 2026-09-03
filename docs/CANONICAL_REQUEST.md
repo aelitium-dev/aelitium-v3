@@ -92,10 +92,10 @@ It is **not** stable if:
 **Comparison basis in v0.3.x: `request_hash` v1.**
 
 Historically, v0.3.x `aelitium compare` determines status from the selected v1
-request and response hashes. That behavior remains available explicitly in v0.4
-development with `--legacy-request-hash-v1`.
+request and response hashes. That behavior remains available explicitly in
+v0.4.0 with `--legacy-request-hash-v1`.
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
 mode first uses validated `aelitium-invocation-v1` hashes when both bundles have
 `invocation_identity_consistency=VALID` and
 `invocation_binding_consistency=VALID`. Otherwise, valid inputs use a visible

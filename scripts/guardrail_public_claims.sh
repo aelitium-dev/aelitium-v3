@@ -99,7 +99,7 @@ done
 require_literal "pyproject.toml" "Internally consistent, offline-verifiable"
 forbid_literal "pyproject.toml" 'description = "Tamper-evident evidence bundles for AI outputs"'
 
-unreleased_changelog="$(sed -n '/^## \[Unreleased\]/,/^## \[0\.2\.4\]/p' CHANGELOG.md)"
+unreleased_changelog="$(sed -n '/^## \[Unreleased\]/,/^## \[0\.4\.0\]/p' CHANGELOG.md)"
 for stale_literal in \
   "14c8202626f85637d44bc7209ed64f3ba7f646ce" \
   "CI test-suite gate (PR #21)" \
@@ -116,16 +116,31 @@ require_literal "docs/RELEASE_PROCESS.md" "Explicit human approval is required b
 require_literal "docs/RELEASE_PROCESS.md" "PyPI Trusted Publishing is the preferred publication mechanism"
 require_literal "docs/RELEASE_PROCESS.md" "do not silently fall back to Twine"
 require_literal "docs/RELEASE_PROCESS.md" "annotated, unsigned tag is sufficient"
+require_literal "docs/RELEASE_PROCESS.md" "final release-state changes may be prepared on a release branch"
+require_literal "docs/RELEASE_PROCESS.md" "git pull --ff-only origin main"
+require_literal "docs/RELEASE_PROCESS.md" "git rev-parse HEAD"
+require_literal "docs/RELEASE_PROCESS.md" 'exact `main` `HEAD` commit that first contains the'
+require_literal "docs/RELEASE_PROCESS.md" "merge commit, squash merge, or rebased commit"
+require_literal "docs/RELEASE_PROCESS.md" "Do not tag the release-readiness PR SHA."
+require_literal "docs/RELEASE_PROCESS.md" 'Do not tag the pre-merge `release/v0.4.0-final` branch SHA.'
+require_literal "docs/RELEASE_PROCESS.md" 'The annotated `v0.4.0` tag must target exactly `release_commit_sha`.'
+require_literal "docs/RELEASE_PROCESS.md" '`HEAD == release_commit_sha`'
+forbid_literal "docs/RELEASE_PROCESS.md" 'an ambiguously named “merge SHA.”'
 require_literal "docs/RELEASE_CHECKLIST_v0.2.0.md" "historical record, not current release instructions"
 require_literal "CHANGELOG.md" '**Release status.** The repository and package baseline is `0.3.0`, released'
-require_literal "FEATURE_MATRIX.md" "inventory of the released 0.3.0 baseline"
-require_literal "README.md" '`v0.3.0` is the current published GitHub and PyPI release'
-require_literal "docs/ONE_PAGER.md" "Current published release: **v0.3.0**"
-require_literal "docs/RELEASE_PROCESS.md" 'current published release remains `v0.3.0`'
-require_literal "SECURITY.md" '`v0.3.0` is the current'
-require_literal "SECURITY.md" '`0.4.x` is not yet a released support line'
+require_literal "FEATURE_MATRIX.md" "inventory of the released 0.4.0 surface"
+require_literal "README.md" '`v0.4.0` is the current published GitHub and PyPI release'
+require_literal "docs/ONE_PAGER.md" "Current published release: **v0.4.0**"
+require_literal "docs/RELEASE_PROCESS.md" 'current published release is `v0.4.0`'
+require_literal "SECURITY.md" '`v0.4.0` is the current'
+require_literal "SECURITY.md" '| 0.3.x   | Superseded (latest release: `v0.3.0`) | ❌ |'
+require_literal "CHANGELOG.md" "## [0.4.0] — 2026-09-03"
 require_literal "CHANGELOG.md" "### Breaking / Compatibility"
 require_literal "CHANGELOG.md" "same rich bundle pair can move from"
+forbid_literal "README.md" "unreleased **v0.4.0** development"
+forbid_literal "SECURITY.md" "Pending release line"
+forbid_literal "docs/ONE_PAGER.md" "development version: **0.4.0** (unreleased)"
+forbid_literal "CHANGELOG.md" "This remains unreleased"
 
 compare_contract_docs=(
   "README.md"
@@ -138,12 +153,15 @@ compare_contract_docs=(
 
 for file in "${compare_contract_docs[@]}"; do
   require_literal "$file" 'Comparison basis in v0.3.x: `request_hash` v1'
-  require_literal "$file" 'Comparison contract in v0.4 development: `aelitium-compare-v1`'
+  require_literal "$file" 'Comparison contract in v0.4.0: `aelitium-compare-v1`'
 done
 
 require_literal "docs/MESSAGING_GUARDRAILS.md" 'does not use `invocation_identity`'
 require_literal "CHANGELOG.md" "## [Unreleased]"
-require_literal "FEATURE_MATRIX.md" 'Comparison contract in v0.4 development: `aelitium-compare-v1`'
+require_literal "FEATURE_MATRIX.md" 'Comparison contract in v0.4.0: `aelitium-compare-v1`'
+for file in README.md docs/ONE_PAGER.md docs/TRUST_BOUNDARY.md docs/MESSAGING_GUARDRAILS.md; do
+  require_literal "$file" "Reachable states in v0.4.0"
+done
 require_literal "engine/ai_cli.py" 'COMPARISON_CONTRACT = "aelitium-compare-v1"'
 require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_INVOCATION_IDENTITY_V1 = "INVOCATION_IDENTITY_V1"'
 require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK = "REQUEST_HASH_V1_FALLBACK"'

@@ -155,7 +155,7 @@ python3 -m engine.ai_cli compare tests/fixtures/compare/v030_invocation_a tests/
 - Non-goal:
   Does not establish full invocation equivalence or explain why selected
   response hashes differ. Comparison basis in v0.3.x is `request_hash` v1.
-  Comparison contract in v0.4 development is `aelitium-compare-v1`; the frozen
+  Comparison contract in v0.4.0 is `aelitium-compare-v1`; the frozen
   inputs exercise its fallback rather than its preferred invocation basis.
 
 ---

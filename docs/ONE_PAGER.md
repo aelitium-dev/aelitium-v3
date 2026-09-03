@@ -39,7 +39,7 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ## Key commands
 
 ```bash
-# Install the current published release (v0.3.0)
+# Install the current published release (v0.4.0)
 pip install aelitium
 # with provider extras: pip install "aelitium[all]"
 
@@ -68,7 +68,7 @@ invocation parameter, mode, provider route, client configuration, or execution
 context. The separate, broader recorded `invocation_identity`, when present, is
 not used by historical v0.3.x comparison.
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
 uses `INVOCATION_IDENTITY_V1` only when both identity and binding consistency are
 `VALID` in both bundles. Otherwise valid inputs visibly use
 `REQUEST_HASH_V1_FALLBACK`. `--require-invocation-evidence` disables fallback;
@@ -88,11 +88,11 @@ Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` reject the corresponding absence. A mathematically valid
 signature under key material bundled with the artifact does not establish signer
 identity: `trusted_signer_identity` remains `UNESTABLISHED` unless an explicitly
-supplied external trust store contains the verified key. In v0.3.0, Freshness is
+supplied external trust store contains the verified key. In v0.4.0, Freshness is
 `NOT_EVALUATED` without an explicit complete policy pair; when activated it
 evaluates declared-time recency of
 `ai_canonical.json.ts_utc`, not trusted historical time. Authorization is not
-implemented and remains `NOT_EVALUATED` in every v0.3.0 case.
+implemented and remains `NOT_EVALUATED` in every v0.4.0 case.
 
 Detect an inconsistent edit:
 
@@ -106,7 +106,7 @@ aelitium verify-bundle ./evidence
 
 ## The eight assurance dimensions
 
-| Dimension | Reachable states in v0.3.0 | Bounded meaning |
+| Dimension | Reachable states in v0.4.0 | Bounded meaning |
 |---|---|---|
 | `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Payload/schema/canonical/manifest/hash consistency |
 | `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored v1 request/response/binding field consistency |
@@ -115,7 +115,7 @@ aelitium verify-bundle ./evidence
 | `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical validity of present Ed25519 material |
 | `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
 | `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under an explicit maximum age and reference time |
-| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.4.0 |
 
 ---
 
@@ -153,18 +153,17 @@ compliance determination.
 
 ## Current state
 
-- Current published release: **v0.3.0** on GitHub and **0.3.0** on PyPI
-- Repository `main` source/package development version: **0.4.0** (unreleased)
-- Current public release surfaces: annotated **v0.3.0** tag, GitHub Release, and
+- Current published release: **v0.4.0** on GitHub and **0.4.0** on PyPI
+- Current public release surfaces: annotated **v0.4.0** tag, GitHub Release, and
   PyPI publication
 - Release process: human-authorized, as documented in
   [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
-- Latest PyPI release: **0.3.0**
+- Latest PyPI release: **0.4.0**
 - Native OpenAI and Anthropic capture adapters, plus LiteLLM capture
 - OpenAI streaming capture; Anthropic and LiteLLM capture are synchronous and non-streaming
 - Determinism validated on two independent machines in the documented repro flow
 - Offline verification — no network, no SaaS, no blockchain
-- Unreleased v0.4 development: versioned invocation-first `compare` contract with visible request-hash fallback, strict mode, and explicit v0.3 legacy mode
+- Released v0.4.0 comparison: versioned invocation-first `compare` contract with visible request-hash fallback, strict mode, and explicit v0.3 legacy mode
 
 ---
 

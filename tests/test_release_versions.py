@@ -94,8 +94,8 @@ class ReleaseVersionConsistencyTests(unittest.TestCase):
             path = root / "docs/ONE_PAGER.md"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    f"development version: **{PROJECT_VERSION}** (unreleased)",
-                    f"development version: **{MISMATCH_VERSION}** (unreleased)",
+                    f"**{PROJECT_VERSION}** on PyPI",
+                    f"**{MISMATCH_VERSION}** on PyPI",
                 ),
                 encoding="utf-8",
             )

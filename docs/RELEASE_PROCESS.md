@@ -6,18 +6,16 @@ created manually. `.github/workflows/publish-pypi.yml` handles the separately
 authorized PyPI publication for a published, non-draft, non-prerelease `v0.4.0`
 GitHub Release.
 
-The source/package development version is `0.4.0`. It is not released by that
-declaration: the current published release remains `v0.3.0`, available through
-an annotated tag, a GitHub Release, and PyPI. The preceding current-line release
-is `v0.2.4`; its historical upload used Twine.
+The source/package version is `0.4.0`. The current published release is `v0.4.0`,
+available through an annotated tag, a GitHub Release, and PyPI. The preceding
+current-line release is `v0.3.0`. The historical `0.2.4` upload used Twine.
 
 ---
 
 ## Current release line and tag authority
 
 The current release line uses explicit `v0.x` tags. The latest published version
-is `v0.3.0`; `v0.4.0` is the pending release target and must not be described as
-released before all separately authorized publication steps complete.
+is `v0.4.0`.
 
 **Do not determine the current AELITIUM release using version-sorted tags.**
 
@@ -54,9 +52,8 @@ surfaces: an annotated git tag, a GitHub Release, and a PyPI publication.
 
 ## Pre-1.0 stability policy
 
-Until `v0.4.0` is published, `0.3.x` remains the current supported line. Once
-`v0.4.0` is published, `0.4.x` becomes the current supported line and `0.3.x`
-becomes superseded unless a separate support decision says otherwise.
+The `0.4.x` line is current and supported. The `0.3.x` line is superseded unless
+a separate support decision says otherwise.
 
 Within the current supported pre-1.0 line, patch releases must not deliberately
 introduce breaking changes to existing public assurance dimension names,
@@ -90,23 +87,41 @@ Release, and PyPI publication; it is not inferred from step 1 or CI. At this
 checkpoint, also confirm the release operator's repository/PyPI access and that
 PyPI Trusted Publishing is configured and available.
 
-### 3. Create the release commit required by the current Changelog process
+### 3. Merge the final release-state pull request and record its main SHA
 
-On `main`, convert the populated `[Unreleased]` heading in `CHANGELOG.md` to a
-dated `## [0.4.0] — <date>` heading and add a fresh empty `[Unreleased]` section
-above it for subsequent development. The date is the date intended for the tag.
-Commit that change, then record that commit's exact SHA as
-`release_commit_sha`.
+After step 2, final release-state changes may be prepared on a release branch
+and reviewed through a pull request before they reach protected `main`. For
+`v0.4.0`, the release branch is `release/v0.4.0-final`. Convert the populated
+`[Unreleased]` heading in `CHANGELOG.md` to a dated
+`## [0.4.0] — <date>` heading and add a fresh empty `[Unreleased]` section above
+it for subsequent development. The date is the date intended for the tag. This
+is the point at which the repository first asserts that the version was
+released, so do not prepare or merge that final state without step 2.
 
-For `v0.4.0`, this dated Changelog commit is required and the tag must target
-`release_commit_sha`; it must not target the earlier readiness-PR merge commit or
-an ambiguously named “merge SHA.” This is the point at which the repository first
-asserts that the version was released, so do not create it without step 2.
+After the final release-state pull request is merged, switch to `main`, pull the
+merged `origin/main`, and record the resulting commit:
 
-### 4. Run required verification on `release_commit_sha`
+```bash
+git switch main
+git pull --ff-only origin main
+git rev-parse HEAD
+```
 
-The readiness pull request workflows must have been green, and the equivalent
-gates must be rerun against `release_commit_sha` before tagging:
+`release_commit_sha` is the exact `main` `HEAD` commit that first contains the
+final dated `[0.4.0]` release state.
+A merge commit, squash merge, or rebased commit may be used. In every case, use
+the resulting commit on `main`, not the pre-merge release-branch SHA. The commit
+type does not determine release authority.
+
+Do not tag the release-readiness PR SHA.
+Do not tag the pre-merge `release/v0.4.0-final` branch SHA.
+The annotated `v0.4.0` tag must target exactly `release_commit_sha`.
+
+### 4. Run required verification on the exact `main` release commit
+
+The readiness and final release-state pull request workflows must have been
+green. After the final pull request is merged, rerun the full release gates
+against the exact `main` `HEAD` recorded as `release_commit_sha` before tagging:
 
 - `tests` — `python -m unittest discover -s tests` on Python 3.10, 3.11 and 3.12
   with provider extras (`pip install -e ".[all]"`). The job **fails if any test is
@@ -125,9 +140,10 @@ git diff --check
 ```
 
 Running the suite locally without the `anthropic` extra installed will skip the
-Anthropic adapter tests. CI is the authority for a zero-skip run. Confirm the
-working tree is clean and `HEAD` equals the recorded `release_commit_sha` before
-tagging.
+Anthropic adapter tests. CI is the authority for a zero-skip run. Confirm
+`HEAD == release_commit_sha` and that the working tree is clean before tagging.
+The pull request's earlier checks do not replace this rerun against the exact
+commit that will be tagged.
 
 ### 5. Create an annotated tag at `release_commit_sha`
 

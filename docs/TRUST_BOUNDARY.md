@@ -24,7 +24,7 @@ anchor.
 
 The assurance dimensions must be interpreted separately:
 
-| Dimension | Reachable states in v0.3.0 | Current v1 interpretation |
+| Dimension | Reachable states in v0.4.0 | Current v1 interpretation |
 |---|---|---|
 | `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Payload/schema/canonical/manifest/hash consistency |
 | `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Stored v1 request/response/binding field consistency |
@@ -33,7 +33,7 @@ The assurance dimensions must be interpreted separately:
 | `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical signature result for bundled material |
 | `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
 | `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under the explicit policy pair defined below |
-| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.4.0 |
 
 Unsigned and unbound bundles remain valid by default. `--require-signature` and
 `--require-binding` let callers reject absence for their verification context.

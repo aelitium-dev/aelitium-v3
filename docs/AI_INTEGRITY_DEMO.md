@@ -96,7 +96,7 @@ invocation identity, invocation binding, or signature evidence, so those optiona
 dimensions report `ABSENT` and are accepted by default. Use
 `--require-signature` or `--require-binding` when the corresponding absence must
 fail. Freshness has no policy pair and is therefore `NOT_EVALUATED`;
-authorization is always `NOT_EVALUATED` in v0.3.0.
+authorization is always `NOT_EVALUATED` in v0.4.0.
 
 ---
 

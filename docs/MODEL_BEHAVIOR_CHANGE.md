@@ -48,11 +48,11 @@ identity records a broader call surface when present, but it is not necessarily
 complete for every provider call.
 
 The v0.3.x status contract remains documented and can be selected explicitly in
-v0.4 development with `--legacy-request-hash-v1`.
+v0.4.0 with `--legacy-request-hash-v1`.
 
-## Invocation-first comparison in v0.4 development
+## Invocation-first comparison in v0.4.0
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
 mode is `INVOCATION_FIRST`.
 
 Both bundles are verified before a basis is selected. A bundle has usable

@@ -42,7 +42,7 @@ It does not by itself establish:
 
 Do not collapse the current assurance result into a single authenticity claim.
 
-| Dimension | Reachable states in v0.3.0 | Current meaning |
+| Dimension | Reachable states in v0.4.0 | Current meaning |
 |---|---|---|
 | `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Schema, canonical bytes, manifest contract, and payload-hash consistency |
 | `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Consistency among stored v1 request/response/binding fields |
@@ -51,7 +51,7 @@ Do not collapse the current assurance result into a single authenticity claim.
 | `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` | Mathematical validity of bundled Ed25519 material |
 | `trusted_signer_identity` | `VALID`, `UNESTABLISHED` | Match against an explicitly supplied external trust store |
 | `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` | Declared-time recency under the explicit policy pair defined by the Trust Boundary |
-| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.3.0 |
+| `authorization` | `NOT_EVALUATED` only | No authorization decision is implemented in v0.4.0 |
 
 A valid bundled signature alone does not authenticate a producer or establish
 that its key belongs to an externally trusted party. `trusted_signer_identity`
@@ -174,9 +174,9 @@ broader recorded identity when present. `CHANGED` does not by itself establish
 model drift or explain causation. `UNCHANGED` does not establish that the full
 invocation configuration was unchanged.
 
-### Compare boundary in v0.4 development
+### Compare boundary in v0.4.0
 
-**Comparison contract in v0.4 development: `aelitium-compare-v1`.** The default
+**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
 mode is `INVOCATION_FIRST` and every comparison result reports its mode, basis,
 and reason.
 

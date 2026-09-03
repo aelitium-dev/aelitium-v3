@@ -1,7 +1,6 @@
 # FEATURE MATRIX — AELITIUM
 
-Status: DRAFT — non-exhaustive inventory of the released 0.3.0 baseline and
-explicitly labeled unreleased v0.4 development work
+Status: DRAFT — non-exhaustive inventory of the released 0.4.0 surface
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
 ---
@@ -193,9 +192,9 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
   - Compares supported evidence inputs through the CLI
   - Returns explicit comparison outcomes including `UNCHANGED`, `CHANGED`, `NOT_COMPARABLE`, and `INVALID_BUNDLE`
   - Comparison basis in v0.3.x is `request_hash` v1: that historical behavior
-    remains available in v0.4 development through
+    remains available in v0.4.0 through
     `--legacy-request-hash-v1`
-  - Comparison contract in v0.4 development: `aelitium-compare-v1`
+  - Comparison contract in v0.4.0: `aelitium-compare-v1`
   - The v0.4 default uses `INVOCATION_IDENTITY_V1` only when both bundles have
     validated invocation identity and binding evidence; otherwise valid inputs
     visibly use `REQUEST_HASH_V1_FALLBACK`
