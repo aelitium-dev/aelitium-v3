@@ -480,6 +480,9 @@ See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
 
 ## Documentation
 
+- [External validation guide](docs/EXTERNAL_VALIDATION.md) — install v0.4.0 and exercise frozen evidence offline in about 10 minutes
+- [Interoperability landscape](docs/INTEROP_LANDSCAPE.md) — non-normative positioning across telemetry, receipts, protocols, frameworks, and policy
+- [Research candidates](docs/RESEARCH_CANDIDATES.md) — non-roadmap questions for possible future investigation
 - [Why AELITIUM](docs/WHY_AELITIUM.md) — problem statement, positioning, and what this is for
 - [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
 - [Security model](docs/SECURITY_MODEL.md) — threats addressed, guarantees, limitations
@@ -491,8 +494,8 @@ See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
 - [Engine contract](docs/ENGINE_CONTRACT.md) — legacy generic bundle compatibility contract
 - [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — conceptual, non-normative draft; it is not the current AI v1 runtime contract, and AELITIUM does not currently claim conformance or reference-implementation status
 - [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
-- [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — interoperability note: referencing AELITIUM bundles from Agent Action Receipts
-- [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — referencing AELITIUM bundles as `evidenceRef` in Agent Action Receipts (AAR v1.1)
+- [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — experimental, non-normative analysis of an unresolved AAR/AELITIUM reference mapping
+- [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — proposed `evidenceRef` shape and current encoding/artifact-hash gaps
 
 ---
 

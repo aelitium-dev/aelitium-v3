@@ -1,6 +1,5 @@
 {
-  "_comment": "Example AAR receipt referencing an AELITIUM evidence bundle via evidenceRef. Replace placeholder values with real hashes from your bundle.",
-  "schemaVersion": "aar/1.1",
+  "_comment": "CONCEPTUAL / NON-NORMATIVE AAR-style sketch only. This file is not valid against the current upstream AAR schema: several required fields are absent, several structured fields are simplified strings, and the illustrative 64-hex AELITIUM binding_hash is not directly comparable to the upstream Base64URL content-hash value.",
   "agent": "research-crew/analyst",
   "action": "market_scan",
   "timestamp": "2026-03-20T08:00:00Z",

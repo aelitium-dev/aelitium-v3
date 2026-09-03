@@ -1,27 +1,63 @@
-# AELITIUM ↔ AAR `evidenceRef` Mapping
+# Proposed AELITIUM ↔ AAR `evidenceRef` mapping
 
-**Status:** Non-normative
-**Purpose:** Documentation-only interoperability note between AELITIUM evidence bundles and AAR (Agent Action Receipt)
+**Status:** NON-NORMATIVE / EXPERIMENTAL
 
-This mapping does not implement AAR verification or add AAR assurance semantics to
-the current AELITIUM runtime.
+**Purpose:** Record a possible relationship between AELITIUM evidence and the
+Agent Action Receipt (AAR) `evidenceRef` field without claiming schema
+conformance, a complete conversion, or implemented AAR verification.
 
----
+**Upstream review:** 2026-09-03, against the current upstream
+[`schema/receipt.json`](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/schema/receipt.json)
+and
+[`examples/evidence-ref-receipt.json`](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/examples/evidence-ref-receipt.json)
+on `Cyberweasel777/agent-action-receipt-spec` `main`.
 
-## Overview
+## What the upstream material establishes
 
-AELITIUM and AAR operate at different layers:
+The reviewed AAR schema defines `evidenceRef` as an optional array whose entries
+contain a `type` and `hash`. Its `hash` uses the upstream `hashObject`, where
+`digest` is described as Base64URL-encoded digest bytes. The `evidenceRef.hash`
+description calls for a content hash of the referenced evidence artifact.
 
-- **AELITIUM** → verifies internal consistency of stored v1 evidence fields
-- **AAR (conceptual in this repository)** → can represent an agent action and reference supporting evidence
+The reviewed upstream example includes `aelitium/binding-bundle` as one example
+value for `evidenceRef[].type`. That shared type name is useful evidence of
+naming alignment. It does not define how an AELITIUM value becomes the upstream
+artifact content hash, and it does not demonstrate schema-level interoperability.
 
-This document defines how an AELITIUM bundle can be referenced from an AAR receipt using the `evidenceRef` field.
+## What AELITIUM `binding_hash` means
 
----
+AELITIUM v1 uses these selected-field constructions:
 
-## Canonical reference
+```text
+request_hash  = SHA256(canonical({model, messages}))
+response_hash = SHA256(canonical({content, model}))
+binding_hash  = SHA256(canonical({request_hash, response_hash}))
+```
 
-An AELITIUM bundle is referenced using its `binding_hash`.
+`binding_hash` deterministically commits to the recorded selected
+`request_hash`/`response_hash` pair under the AELITIUM v1 construction. AELITIUM
+exposes it as 64 lowercase hexadecimal SHA-256 characters.
+
+It is not a content hash of the complete AELITIUM bundle, bundle directory, or
+archive. It must not be described as the identifier of all bundle contents.
+
+## Unresolved interoperability gaps
+
+| Dimension | Current upstream AAR material | Current AELITIUM material | Consequence |
+|---|---|---|---|
+| Digest encoding | `hashObject.digest` is described as Base64URL-encoded digest bytes. | `binding_hash` is emitted as a 64-hex SHA-256 digest. | The strings must not be compared directly. |
+| Hashed subject | `evidenceRef.hash` is described as the content hash of the referenced evidence artifact. | `binding_hash` commits to the selected request/response hash pair. | Substituting `binding_hash` would not satisfy the same stated artifact-hash semantics. |
+| Receipt shape | The schema requires structured receipt, identity, action, scope, hash, cost, signature, and metadata fields. | The repository example uses a simplified AAR-style sketch. | The local example is not an upstream-schema-valid receipt or conformance vector. |
+
+Resolving only the text encoding would not resolve the hashed-subject mismatch.
+This document therefore does not specify a hex-to-Base64URL conversion, select a
+bundle serialization to hash, or define a new interoperability format.
+
+## Proposed reference fragment
+
+The following fragment shows only the field placement under discussion. The
+placeholder describes the upstream role; AELITIUM does not currently produce a
+claimed-compatible value for it.
 
 ```json
 {
@@ -30,182 +66,60 @@ An AELITIUM bundle is referenced using its `binding_hash`.
       "type": "aelitium/binding-bundle",
       "hash": {
         "alg": "sha256",
-        "digest": "<binding_hash>"
+        "digest": "<Base64URL content hash of an agreed referenced artifact>"
       },
-      "uri": "optional://location/of/bundle"
+      "uri": "https://example.invalid/evidence/artifact"
     }
   ]
 }
 ```
 
-### Required fields
+This is a proposed reference shape, not a complete receipt, schema test vector,
+or canonical mapping. The exact referenced artifact, its byte representation,
+and its digest derivation remain unresolved.
 
-```
-type         = "aelitium/binding-bundle"
-hash.alg     = "sha256"
-hash.digest  = binding_hash
-```
+## Verification responsibilities remain separate
 
-### Optional fields
-
-```
-uri = retrieval location (IPFS, HTTPS, local path, etc.)
-```
-
----
-
-## Why `binding_hash`
-
-AELITIUM defines three hashes:
-
-```
-request_hash  = sha256(canonical({model, messages}))
-response_hash = sha256(canonical({content, model}))
-binding_hash  = sha256(canonical({request_hash, response_hash}))
-```
-
-Their roles:
-
-| Field | Meaning |
-|-------|---------|
-| `request_hash` | v1 selected-field request identity |
-| `response_hash` | v1 selected-field recorded-response identity |
-| `binding_hash` | commitment over the stored request/response hash pair |
-
-For a bound v1 artifact, this mapping uses the binding commitment as its
-interoperability reference:
-
-```
-bundle_id = binding_hash
-```
-
-This is an interop convention for bound artifacts, not proof that a source request
-caused a source response. Current AELITIUM verification checks stored-field
-consistency and does not independently reconstruct either source artifact.
-
----
-
-## Minimal example
-
-AAR receipt referencing an AELITIUM bundle:
-
-```json
-{
-  "agent": "research-crew/analyst",
-  "action": "market_scan",
-  "inputHash": "sha256:abc...",
-  "outputHash": "sha256:def...",
-  "evidenceRef": [
-    {
-      "type": "aelitium/binding-bundle",
-      "hash": {
-        "alg": "sha256",
-        "digest": "sha256:789..."
-      },
-      "uri": "https://example.com/evidence/789"
-    }
-  ],
-  "signature": "ed25519:..."
-}
-```
-
----
-
-## Verification model
-
-### AAR-only verification (conceptual)
-
-An AAR implementation may define independent receipt verification such as:
-
-```
-- signature valid
-- inputHash / outputHash consistent
-```
-
-This repository note does not implement or evaluate that AAR behavior.
-
-### With AELITIUM bundle
-
-If the bundle is available:
+Given an AELITIUM bundle, the shipped CLI can evaluate that bundle under the
+documented AELITIUM verification contract:
 
 ```bash
 aelitium verify-bundle ./bundle
-# STATUS=VALID
-
-aelitium compare bundle_a bundle_b
-# COMPARISON_BASIS=INVOCATION_IDENTITY_V1 or REQUEST_HASH_V1_FALLBACK
-# selected identity hashes match / RESPONSE_HASH=DIFFERENT
 ```
 
-The AELITIUM commands can provide:
+That command does not validate an AAR receipt, verify an AAR signature, fetch an
+`evidenceRef`, or establish that an AAR digest refers to the inspected bundle.
+No direct digest-comparison procedure is defined here.
 
-- verification of the recorded v1 bundle's internal consistency
-- selected v1 request/response hash comparison across bundles
-- offline audit without provider access
+Likewise, the presence of an AAR receipt or signature does not import the
+underlying evidence's assurance semantics. Receipt verification and evidence
+verification remain distinct operations with distinct trust inputs.
 
-**Comparison basis in v0.3.x: `request_hash` v1.** It does not use the separate,
-broader `invocation_identity`.
+## Status of the repository example
 
-**Comparison contract in v0.4.0: `aelitium-compare-v1`.** Default
-comparison prefers validated invocation identity and binding evidence on both
-sides, with a visible `REQUEST_HASH_V1_FALLBACK` for valid inputs when that
-evidence is unavailable. Strict and explicit v0.3 legacy modes are available.
-`CHANGED` reports matching selected comparison identity hashes and different
-selected response hashes under the reported basis; it does not establish model
-drift or explain causation.
+[`examples/aar_evidence_ref_receipt.json`](../examples/aar_evidence_ref_receipt.json)
+is intentionally labeled as a conceptual AAR-style sketch. Against the reviewed
+upstream schema it:
 
----
+- omits required `receiptId`, `principal`, `scope`, `cost`, and `metadata`
+  fields;
+- includes the explanatory `_comment` property even though the upstream receipt
+  object disallows additional top-level properties;
+- represents `agent`, `action`, `inputHash`, `outputHash`, and `signature` as
+  strings where the upstream schema requires structured objects; and
+- shows the AELITIUM-side 64-hex form in `evidenceRef.hash.digest`, while the
+  upstream field is described as Base64URL-encoded artifact-digest bytes.
 
-## Layer separation
-
-### AELITIUM does
-
-- define bundle structure
-- define hashing and canonicalization
-- provide deterministic, offline verification
-
-### AELITIUM does NOT define here
-
-- define receipt schemas
-- define AAR signatures or identity semantics
-- define transport or storage
-
----
-
-### AAR does
-
-- define receipt structure
-- define signature semantics
-- define agent action provenance
-
-### AAR does NOT
-
-- define LLM request/response canonicalization
-- define evidence bundle internals
-
----
-
-## Design principle
-
-```
-AELITIUM = evidence primitive
-AAR       = receipt layer
-```
-
-The integration point is:
-
-```
-AAR → references AELITIUM via binding_hash
-```
-
-No schema merging is required.
-
----
+It must not be presented as schema-valid AAR, a signed receipt, or demonstrated
+interoperability.
 
 ## Summary
 
-- `binding_hash` is the canonical identifier of an AELITIUM bundle
-- AAR `evidenceRef` can reference it as a typed hash pointer
-- Verification remains deterministic, offline, and independent across layers
-
-This enables composability without introducing shared trust or coupling between systems.
+- Upstream AAR currently includes `aelitium/binding-bundle` as an example
+  `evidenceRef` type name.
+- AELITIUM `binding_hash` is a deterministic commitment to a selected recorded
+  request/response hash pair, not a hash of the complete bundle.
+- Upstream digest encoding and artifact-hash semantics do not currently match a
+  direct use of the printed AELITIUM `binding_hash`.
+- The proposed mapping remains documentation-only, non-normative, experimental,
+  and unresolved.

@@ -12,6 +12,11 @@
 ## Documentation boundary
 - docs/DOCS_SYSTEM.md
 
+## External validation and interoperability
+- [External validation](EXTERNAL_VALIDATION.md)
+- [Interoperability landscape](INTEROP_LANDSCAPE.md)
+- [Research candidates](RESEARCH_CANDIDATES.md)
+
 ## Offline verification
 - docs/OFFLINE_VERIFIER.md
 - scripts/offline_verify.sh

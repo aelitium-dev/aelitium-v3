@@ -2,7 +2,7 @@
 
 **Version:** 1.1
 **Status:** CONCEPTUAL_DRAFT_NON_NORMATIVE
-**Last updated:** 2026-03-10
+**Last updated:** 2026-09-03
 
 > **Quarantine notice:** This document is a conceptual draft specification. It is
 > **not** the current AELITIUM AI evidence bundle v1 runtime contract, and AELITIUM
@@ -236,41 +236,22 @@ records a conceptual upgrade path if the draft's algorithm requirements change.
 
 ## Proposed reference semantics
 
-This section describes a conceptual identity model. Current AELITIUM AI v1 uses a
-selected-field request identity and verifies consistency among stored binding
+This section records a corrected conceptual boundary. Current AELITIUM AI v1 uses
+a selected-field request identity and verifies consistency among stored binding
 fields; it does not independently reconstruct source request or response material.
 
-### Bundle identifier
-
-```
-bundle_id = binding_hash
-```
-
-In this draft, `binding_hash` is the proposed bundle identifier. It is a
-deterministic commitment over the supplied request and response hash pair; it does
-not by itself establish real-world request-to-response causation.
+### Selected-pair commitment
 
 ```
 binding_hash = sha256(canonical({"request_hash": ..., "response_hash": ...}))
 ```
 
-External systems **SHOULD** reference bundles using `binding_hash` as the identifier.
-
-**Required properties:**
-
-- Two valid bundles describing the same canonical request and response **MUST** produce the same `binding_hash`
-- The bundle identifier **MUST** equal `binding_hash` — not `request_hash`, not `response_hash`, not `ai_hash_sha256`
-- The identifier is deterministic, globally unique, offline-derivable, and provider-independent
-
-**Why `binding_hash` and not the other hashes:**
-
-| Field | What it identifies |
-|-------|-------------------|
-| `request_hash` | The input only |
-| `response_hash` | The output only |
-| `binding_hash` | The request ↔ response relationship — the evidence object itself |
-
-The neutral artifact is the *pairing*, not either side independently.
+`binding_hash` deterministically commits to the recorded selected
+`request_hash`/`response_hash` pair under the AELITIUM v1 construction. It is not a
+content hash or identifier of the complete bundle. Equal `binding_hash` values
+therefore establish equality of this recorded pair commitment under the stated
+construction, not byte equality of bundle artifacts or complete invocation
+equivalence.
 
 ### Verification determinism
 
@@ -296,56 +277,23 @@ Verification **MUST be a pure function** of the bundle contents and the canonica
 
 ---
 
-### Reference patterns
+### External reference semantics remain unresolved
 
-How external layers should reference a bundle:
+Referencing a complete bundle requires a defined artifact boundary,
+serialization, hash algorithm, digest encoding, and retrieval semantics. This draft
+does not currently define that mapping, and external systems must not treat the
+64-hex AELITIUM `binding_hash` as though it were a complete-artifact content hash.
 
-**Agent receipt:**
-```json
-{
-  "action": "publish_report",
-  "evidenceRef": {
-    "type": "aelitium/binding-bundle",
-    "hash": { "algorithm": "sha256", "digest": "<binding_hash>" }
-  }
-}
-```
-
-**Payment reference:**
-```json
-{
-  "paid_inference": true,
-  "evidenceRef": "<binding_hash>"
-}
-```
-
-**Audit log:**
-```json
-{
-  "evidence": "<binding_hash>",
-  "verified": true
-}
-```
-
-### Proposed content-addressed identity
-
-Under this draft model, the content-addressed identity is determined by
-`binding_hash`.
-
-If the canonical request or canonical response differ, the resulting `binding_hash` **MUST** differ except with negligible probability due to hash collisions. Therefore:
-
-- Two bundles with the same `binding_hash` **MUST** represent the same canonical request–response pair.
-- Any bundle that produces a different `binding_hash` **MUST** be treated as a distinct evidence object.
-- Implementations **MUST** treat bundles with different `binding_hash` values as distinct evidence objects.
-
-The proposed identifier is content-addressed and stable for the same supplied hash
-pair. That property is not evidence of historical non-modification without an
-independently trusted anchor.
-
-Note: the draft allows non-normative fields (e.g. `ts_utc`, `provider_metadata`,
-`captured_at_utc`) that do not affect its proposed identity. Identity stability in
-this model applies to `request_hash`, `response_hash`, and `binding_hash` only —
-not to metadata fields.
+In particular, the current upstream AAR
+[`evidenceRef.hash`](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/schema/receipt.json)
+describes a content hash of the referenced evidence artifact and encodes digest
+bytes as Base64URL. Its
+[`evidence-ref` example](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/examples/evidence-ref-receipt.json)
+includes the type name `aelitium/binding-bundle`, but that naming alignment does
+not resolve the artifact-hash or encoding mismatch. AELITIUM does not claim
+schema-conformant AAR interoperability or AAR verification. See
+[AAR_EVIDENCE_REF_MAPPING.md](AAR_EVIDENCE_REF_MAPPING.md) for the experimental,
+non-normative mapping notes.
 
 ---
 
@@ -357,7 +305,8 @@ To preserve layer neutrality, this spec does not define:
 - Agent receipt formats
 - Transport envelope structures
 
-It defines only how evidence is identified and referenced. Each layer chooses its own referencing structure; the `binding_hash` is the common anchor.
+It records the selected-pair commitment above. Complete-artifact identification and
+external reference formats require separate specifications.
 
 ---
 
@@ -374,9 +323,9 @@ The following fields are reserved for optional, non-normative use by higher laye
 
 **Constraints — these hold without exception:**
 
-- Neither field alters the canonical identity of the bundle.
+- Neither field alters the selected-pair commitment.
 - `binding_hash = sha256(canonical({request_hash, response_hash}))` is unchanged by these fields.
-- Implementations MUST treat these fields as non-normative metadata — they MUST NOT affect bundle identity or core bundle verification outcomes.
+- Implementations MUST treat these fields as non-normative metadata — they MUST NOT affect the selected-pair commitment or core bundle verification outcomes.
 - A bundle that includes these fields MUST produce the same `binding_hash` as a bundle that omits them, given the same `request_hash` and `response_hash`.
 
 These fields belong to context layers that sit above or adjacent to the evidence primitive. See [EVIDENCE_MODEL.md](EVIDENCE_MODEL.md) for layer separation.
