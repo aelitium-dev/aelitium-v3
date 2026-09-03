@@ -116,11 +116,16 @@ require_literal "docs/RELEASE_PROCESS.md" "Explicit human approval is required b
 require_literal "docs/RELEASE_PROCESS.md" "PyPI Trusted Publishing is the preferred publication mechanism"
 require_literal "docs/RELEASE_PROCESS.md" "do not silently fall back to Twine"
 require_literal "docs/RELEASE_PROCESS.md" "annotated, unsigned tag is sufficient"
+require_literal "docs/RELEASE_CHECKLIST_v0.2.0.md" "historical record, not current release instructions"
 require_literal "CHANGELOG.md" '**Release status.** The repository and package baseline is `0.3.0`, released'
 require_literal "FEATURE_MATRIX.md" "inventory of the released 0.3.0 baseline"
-require_literal "docs/ONE_PAGER.md" "Current repository/package release: **0.3.0**"
-require_literal "docs/RELEASE_PROCESS.md" '`v0.3.0` is released through an'
+require_literal "README.md" '`v0.3.0` is the current published GitHub and PyPI release'
+require_literal "docs/ONE_PAGER.md" "Current published release: **v0.3.0**"
+require_literal "docs/RELEASE_PROCESS.md" 'current published release remains `v0.3.0`'
 require_literal "SECURITY.md" '`v0.3.0` is the current'
+require_literal "SECURITY.md" '`0.4.x` is not yet a released support line'
+require_literal "CHANGELOG.md" "### Breaking / Compatibility"
+require_literal "CHANGELOG.md" "same rich bundle pair can move from"
 
 compare_contract_docs=(
   "README.md"

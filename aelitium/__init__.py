@@ -50,7 +50,7 @@ except ImportError:
         )
     capture_litellm = capture_litellm_completion
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "capture_openai",

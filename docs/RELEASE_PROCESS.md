@@ -3,19 +3,21 @@
 **Releases are human-authorized.** The test and release-audit workflows do not
 create a tag, GitHub Release, or PyPI publication. The tag and GitHub Release are
 created manually. `.github/workflows/publish-pypi.yml` handles the separately
-authorized PyPI publication for a published, non-draft, non-prerelease `v0.3.0`
+authorized PyPI publication for a published, non-draft, non-prerelease `v0.4.0`
 GitHub Release.
 
-The source/package version is `0.3.0`, and `v0.3.0` is released through an
-annotated tag, a GitHub Release, and a PyPI publication. The preceding
-current-line release is `v0.2.4`; its historical upload used Twine.
+The source/package development version is `0.4.0`. It is not released by that
+declaration: the current published release remains `v0.3.0`, available through
+an annotated tag, a GitHub Release, and PyPI. The preceding current-line release
+is `v0.2.4`; its historical upload used Twine.
 
 ---
 
 ## Current release line and tag authority
 
-The current release line uses explicit `v0.x` tags. The latest released version is
-`v0.3.0`.
+The current release line uses explicit `v0.x` tags. The latest published version
+is `v0.3.0`; `v0.4.0` is the pending release target and must not be described as
+released before all separately authorized publication steps complete.
 
 **Do not determine the current AELITIUM release using version-sorted tags.**
 
@@ -52,12 +54,16 @@ surfaces: an annotated git tag, a GitHub Release, and a PyPI publication.
 
 ## Pre-1.0 stability policy
 
-Within the `0.3.x` line, patch releases must not deliberately introduce breaking
-changes to existing public assurance dimension names, assurance states, or
-already-versioned public identifiers/contracts. An incompatible public-contract
-change requires a future pre-1.0 **minor** release with explicit migration notes.
-This is a scoped `0.3.x` rule, not a claim of full 1.0-style backwards
-compatibility.
+Until `v0.4.0` is published, `0.3.x` remains the current supported line. Once
+`v0.4.0` is published, `0.4.x` becomes the current supported line and `0.3.x`
+becomes superseded unless a separate support decision says otherwise.
+
+Within the current supported pre-1.0 line, patch releases must not deliberately
+introduce breaking changes to existing public assurance dimension names,
+assurance states, or already-versioned public identifiers/contracts. An
+incompatible public-contract change requires a future pre-1.0 **minor** release
+with explicit migration notes. This is a scoped pre-1.0 policy, not a claim of
+full 1.0-style backwards compatibility.
 
 ---
 
@@ -68,8 +74,8 @@ compatibility.
 Reconcile the documentation that describes the release before the release exists:
 
 - `CHANGELOG.md` — the `[Unreleased]` section must cover all material work on the
-  line, including a `### Breaking` section where the verification or capture
-  surface changed.
+  line, including a prominent breaking/compatibility section where a public
+  decision contract, verification surface, or capture surface changed.
 - `SECURITY.md` — supported-version table, and any support-transition decision for
   the outgoing line.
 - `docs/ONE_PAGER.md` — version and release wording.
@@ -86,11 +92,13 @@ PyPI Trusted Publishing is configured and available.
 
 ### 3. Create the release commit required by the current Changelog process
 
-On `main`, convert the `[Unreleased]` heading in `CHANGELOG.md` to a dated
-`## [X.Y.Z] — <date>` heading. The date is the date intended for the tag. Commit
-that change, then record that commit's exact SHA as `release_commit_sha`.
+On `main`, convert the populated `[Unreleased]` heading in `CHANGELOG.md` to a
+dated `## [0.4.0] — <date>` heading and add a fresh empty `[Unreleased]` section
+above it for subsequent development. The date is the date intended for the tag.
+Commit that change, then record that commit's exact SHA as
+`release_commit_sha`.
 
-For `v0.3.0`, this dated Changelog commit is required and the tag must target
+For `v0.4.0`, this dated Changelog commit is required and the tag must target
 `release_commit_sha`; it must not target the earlier readiness-PR merge commit or
 an ambiguously named “merge SHA.” This is the point at which the repository first
 asserts that the version was released, so do not create it without step 2.
@@ -113,6 +121,7 @@ Locally, the same gates are:
 python -m unittest discover -s tests
 ./scripts/run_test_matrix.sh
 ./scripts/audit_release.sh
+git diff --check
 ```
 
 Running the suite locally without the `anthropic` extra installed will skip the
@@ -130,7 +139,7 @@ git cat-file -t vX.Y.Z
 git show --no-patch vX.Y.Z
 ```
 
-An annotated, unsigned tag is sufficient for `v0.3.0`; cryptographic tag signing
+An annotated, unsigned tag is sufficient for `v0.4.0`; cryptographic tag signing
 is not a release blocker. `git tag -v` verifies a cryptographic signature and
 must not be used as the expected validation command for an unsigned annotated
 tag. Introducing signed tags later requires a separate process and key-management
@@ -150,14 +159,15 @@ namespace along with the release tag.
 ### 7. Create the GitHub Release
 
 Create the GitHub Release from the pushed tag. The release body is the
-corresponding `CHANGELOG.md` entry, including its `### Breaking` section.
+corresponding `CHANGELOG.md` entry, including its
+`### Breaking / Compatibility` section.
 
 ### 8. Publish to PyPI through Trusted Publishing
 
-PyPI Trusted Publishing is the preferred publication mechanism. For `v0.3.0`,
+PyPI Trusted Publishing is the preferred publication mechanism. For `v0.4.0`,
 publishing the non-draft, non-prerelease GitHub Release triggers
-`.github/workflows/publish-pypi.yml`. The workflow accepts only the `v0.3.0` tag,
-verifies distribution metadata for `aelitium` `0.3.0`, and uploads through PyPI
+`.github/workflows/publish-pypi.yml`. The workflow accepts only the `v0.4.0` tag,
+verifies distribution metadata for `aelitium` `0.4.0`, and uploads through PyPI
 Trusted Publishing.
 
 PyPI publication remains a separately approved action: authorization to publish
@@ -175,6 +185,11 @@ GitHub Release targets that tag, and PyPI serves exactly the intended version's
 artifact and metadata. Record any discrepancy and stop instead of attempting an
 unapproved replacement release.
 
+For `v0.4.0`, also confirm that the published wheel reports
+`aelitium.__version__ == "0.4.0"`, `aelitium compare --help` exposes
+`--require-invocation-evidence` and `--legacy-request-hash-v1`, and an offline
+comparison reports `COMPARISON_CONTRACT=aelitium-compare-v1`.
+
 ---
 
 ## Legacy authority scripts
@@ -187,7 +202,7 @@ of the scripts themselves:
 | Script | Constraint |
 |---|---|
 | `scripts/authority_status.sh` | Requires `AEL_MACHINE=B` and a live `git ls-remote` probe; otherwise exits `AUTHORITY_STATUS=NO_GO`. |
-| `scripts/release_rc.sh` | Accepts only tags matching `^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$`. A final tag such as `v0.3.0` is rejected with `INVALID_TAG_FORMAT`. |
+| `scripts/release_rc.sh` | Accepts only tags matching `^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$`. A final tag such as `v0.4.0` is rejected with `INVALID_TAG_FORMAT`. |
 | `scripts/gate_release.sh` | Fail-closed on evidence-log validation against `governance/logs/EVIDENCE_LOG.md` (override: `AEL_EVIDENCE_LOG_PATH`). That path **does not exist** in this repository, so the gate returns `RELEASE_STATUS=NO_GO reason=EVIDENCE_INVALID`. It also drives the legacy `engine/cli.py` rather than `engine.ai_cli`. |
 | `scripts/gate_release.sh` | Never creates a tag. It reports `TAG_STATUS=SKIPPED reason=AUTHORITY_ONLY`; tag creation was always manual. |
 

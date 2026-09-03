@@ -39,7 +39,7 @@ aelitium verify               ← STATUS=VALID / STATUS=INVALID (offline)
 ## Key commands
 
 ```bash
-# Install the current 0.3.0 release
+# Install the current published release (v0.3.0)
 pip install aelitium
 # with provider extras: pip install "aelitium[all]"
 
@@ -153,8 +153,10 @@ compliance determination.
 
 ## Current state
 
-- Current repository/package release: **0.3.0**
-- Release surfaces: annotated **v0.3.0** tag, GitHub Release, and PyPI publication
+- Current published release: **v0.3.0** on GitHub and **0.3.0** on PyPI
+- Repository `main` source/package development version: **0.4.0** (unreleased)
+- Current public release surfaces: annotated **v0.3.0** tag, GitHub Release, and
+  PyPI publication
 - Release process: human-authorized, as documented in
   [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
 - Latest PyPI release: **0.3.0**
@@ -177,5 +179,5 @@ compliance determination.
 ## Repo
 
 GitHub: https://github.com/aelitium-dev/aelitium-v3
-Install the current release: `pip install aelitium`
+Install the current published release: `pip install aelitium`
 Spec: [docs/EVIDENCE_BUNDLE_SPEC.md](EVIDENCE_BUNDLE_SPEC.md)

@@ -9,7 +9,7 @@ permissions: {}
 jobs:
   build:
     if: >-
-      github.event.release.tag_name == 'v0.3.0' &&
+      github.event.release.tag_name == 'v0.4.0' &&
       github.event.release.draft == false &&
       github.event.release.prerelease == false
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
           import tarfile
           import zipfile
 
-          expected = ("aelitium", "0.3.0")
+          expected = ("aelitium", "0.4.0")
           dist = Path("dist")
           wheels = sorted(dist.glob("*.whl"))
           sdists = sorted(dist.glob("*.tar.gz"))
@@ -94,7 +94,7 @@ jobs:
   publish:
     needs: build
     if: >-
-      github.event.release.tag_name == 'v0.3.0' &&
+      github.event.release.tag_name == 'v0.4.0' &&
       github.event.release.draft == false &&
       github.event.release.prerelease == false
     runs-on: ubuntu-latest

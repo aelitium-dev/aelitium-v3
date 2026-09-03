@@ -1,7 +1,8 @@
 # AELITIUM — Index
 
 <!-- "v3" in the repo name denotes the third-generation product codebase,
-     not a package semantic-version major. Current package version: 0.3.0 -->
+     not a package semantic-version major. Current published package: 0.3.0;
+     repository development version: 0.4.0. -->
 
 ## Entry
 - docs/ENTRYPOINT.md
@@ -18,6 +19,7 @@
 - scripts/verify_release_zip.sh
 
 ## Authority / Release
+- docs/RELEASE_PROCESS.md (current release authority)
 - scripts/authority_status.sh
 - scripts/gate_release.sh
 - scripts/release_rc.sh

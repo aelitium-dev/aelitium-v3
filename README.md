@@ -9,6 +9,11 @@
 > offline-verifiable evidence bundles for recorded LLM interactions under
 > deterministic canonicalization.
 
+> **Release status:** `v0.3.0` is the current published GitHub and PyPI release.
+> The repository `main` branch carries unreleased **v0.4.0** development;
+> `pip install aelitium` continues to install the public 0.3.0 release until a
+> separately authorized v0.4.0 publication occurs.
+
 LLM outputs can change silently. AELITIUM currently enforces fail-closed
 verification semantics on the validated surface and checks the internal consistency
 of recorded AI evidence under the v1 schema and canonicalization contract.
