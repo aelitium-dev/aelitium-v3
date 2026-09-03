@@ -19,6 +19,21 @@ version.
 
 ## [Unreleased]
 
+### Breaking / Compatibility
+
+- **Default compare decision basis changes in v0.4.0** — v0.3.x `compare`
+  decides comparability from `request_hash` v1. The v0.4 default instead
+  prefers validated invocation identity and invocation binding evidence when
+  both bundles contain it. As a result, the same rich bundle pair can move from
+  a v0.3.x `UNCHANGED` or `CHANGED` decision to `NOT_COMPARABLE` in v0.4 when
+  its validated invocation-identity hashes differ even though its
+  `request_hash` values match.
+- This is a comparison-contract migration, not an evidence-schema break.
+  Existing bundles remain readable. `--legacy-request-hash-v1` retains the
+  v0.3.x request-hash decisions, while `--require-invocation-evidence` disables
+  request-hash fallback. Numeric exit codes remain `0` for `UNCHANGED`, `1` for
+  `NOT_COMPARABLE`, and `2` for `CHANGED` or `INVALID_BUNDLE`.
+
 ### Changed
 
 - **Versioned invocation-first compare contract** — development for v0.4.0
@@ -32,9 +47,9 @@ version.
   request-hash decision contract. Comparison output now reports its contract,
   mode, basis, reason, invocation-hash relationship, and per-side invocation
   assurance states.
-- Existing exit codes remain unchanged: `0` for `UNCHANGED`, `1` for
-  `NOT_COMPARABLE`, and `2` for `CHANGED` or `INVALID_BUNDLE`. Existing bundles
-  without invocation evidence remain readable through the visible fallback.
+- The source/package development version is `0.4.0`. This remains unreleased;
+  the current published release is v0.3.0 until separately authorized
+  publication completes.
 
 This development work does not change `request_hash` v1, evidence schemas,
 capture adapter semantics, or verifier trust boundaries. It is not a v0.4.0

@@ -4,6 +4,10 @@ set -euo pipefail
 echo "== AELITIUM release audit =="
 
 echo
+echo "## Release version consistency"
+python3 scripts/check_release_versions.py
+
+echo
 echo "## Public claims guardrail"
 ./scripts/guardrail_public_claims.sh
 

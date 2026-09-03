@@ -1,5 +1,10 @@
 # Release Checklist — v0.2.0
 
+**Status: historical record, not current release instructions.** This checklist
+is retained to document the v0.2.0 process. Do not execute its unchecked steps;
+current releases follow [RELEASE_PROCESS.md](RELEASE_PROCESS.md), including the
+requirement to push only the single explicitly authorized tag.
+
 ## Gate Evidence Summary
 
 | Item | Status | Commit |
