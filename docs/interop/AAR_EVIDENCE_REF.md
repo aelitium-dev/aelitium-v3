@@ -1,41 +1,41 @@
-# AAR evidenceRef mapping
+# Proposed AAR `evidenceRef` mapping
 
-AELITIUM bundles can be referenced from AAR-style receipts using a minimal evidenceRef mapping.
+**Status:** NON-NORMATIVE / EXPERIMENTAL
 
-This document defines the canonical reference shape. It does not define a complete interoperability verification procedure, and it does not add trust semantics beyond normal AELITIUM bundle verification.
+This note summarizes an unresolved reference proposal. It does not define a
+schema-conformant AAR conversion, a canonical mapping, or an AAR verification
+procedure. See
+[`AAR_EVIDENCE_REF_MAPPING.md`](../AAR_EVIDENCE_REF_MAPPING.md) for the full
+analysis.
 
-For full layer analysis and design rationale, see [AAR_EVIDENCE_REF_MAPPING.md](../AAR_EVIDENCE_REF_MAPPING.md).
+The current upstream
+[`receipt.json`](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/schema/receipt.json)
+describes `evidenceRef.hash` as the content hash of the referenced evidence
+artifact and describes `hash.digest` as Base64URL-encoded digest bytes. Its
+current
+[`evidence-ref-receipt.json`](https://github.com/Cyberweasel777/agent-action-receipt-spec/blob/main/examples/evidence-ref-receipt.json)
+uses `aelitium/binding-bundle` as an example `type` value.
 
----
+The presence of that type name does not resolve the following gaps:
 
-## Purpose
+| Field or concept | Upstream AAR | Current AELITIUM | Status |
+|---|---|---|---|
+| `type` | Includes `aelitium/binding-bundle` as an example. | The proposed notes reuse that name. | Naming example only. |
+| `hash.alg` | Allows `sha256`. | `binding_hash` uses SHA-256. | Algorithm name aligns. |
+| `hash.digest` encoding | Described as Base64URL digest bytes. | Printed as 64 lowercase hexadecimal characters. | No direct string comparison. |
+| Hashed subject | Content hash of the referenced evidence artifact. | Commitment to selected recorded request/response hashes. | Semantics are not equivalent. |
 
-An AAR (Agent Action Receipt) records that an agent took a specific action. When that action involved an LLM call, the receipt can reference an AELITIUM evidence bundle to allow independent verification of the recorded LLM interaction.
+## AELITIUM construction
 
-The reference is a typed hash pointer — not an embed. Verification of the bundle is a separate step, independent of the receipt issuer.
-
----
-
-## Field mapping
-
-| Field | Value | Required |
-|-------|-------|----------|
-| `type` | `"aelitium/binding-bundle"` | yes |
-| `hash.alg` | `"sha256"` | yes |
-| `hash.digest` | `binding_hash` from the bundle manifest | yes |
-| `uri` | retrieval location (path, URL, IPFS, etc.) | no |
-
-### Why `binding_hash`
-
+```text
+binding_hash = SHA256(canonical({request_hash, response_hash}))
 ```
-binding_hash = sha256(canonical({request_hash, response_hash}))
-```
 
-The `binding_hash` uniquely identifies the request ↔ response pairing. Using `request_hash` or `response_hash` alone would not identify the full recorded interaction.
+`binding_hash` deterministically commits to the recorded selected
+`request_hash`/`response_hash` pair under the AELITIUM v1 construction. It is not
+a content hash or identifier of the complete bundle.
 
----
-
-## Canonical reference shape
+## Proposed reference fragment
 
 ```json
 {
@@ -44,40 +44,30 @@ The `binding_hash` uniquely identifies the request ↔ response pairing. Using `
       "type": "aelitium/binding-bundle",
       "hash": {
         "alg": "sha256",
-        "digest": "<binding_hash>"
+        "digest": "<Base64URL content hash of an agreed referenced artifact>"
       },
-      "uri": "optional://location/of/bundle"
+      "uri": "https://example.invalid/evidence/artifact"
     }
   ]
 }
 ```
 
----
+This fragment is illustrative only. The artifact boundary, byte serialization,
+digest derivation, and any relationship to AELITIUM `binding_hash` remain
+undefined. This pass deliberately introduces no conversion rule or new format.
 
-## What this guarantees
+## Current verification boundary
 
-- `binding_hash` is a stable, deterministic identifier for the AELITIUM bundle
-- Anyone with the bundle can verify it offline: `aelitium verify-bundle ./bundle`
-- Verification is independent of the receipt issuer and does not require network access
+`aelitium verify-bundle ./bundle` can verify the documented internal consistency
+of an available AELITIUM bundle. It does not validate AAR schema or signatures,
+resolve a URI, or establish a match with an AAR artifact digest. In particular,
+the printed `BINDING_HASH` must not be compared directly with the current
+upstream `evidenceRef[].hash.digest`.
 
-## What this does not guarantee
+## Repository example
 
-- That the model actually produced the recorded output (see [TRUST_BOUNDARY.md](../TRUST_BOUNDARY.md))
-- That the receipt itself is trustworthy — receipt trust depends on the receipt's own signature and issuer
-- That the bundle is retrievable — the `uri` field is advisory only
-
----
-
-## Verification flow
-
-1. Obtain the AELITIUM bundle (via `uri` or other means)
-2. Run `aelitium verify-bundle ./bundle`
-3. If `STATUS=VALID`, note the `BINDING_HASH=<digest>` printed to output
-4. Compare that digest with `evidenceRef[].hash.digest` in the receipt
-5. If they match, the bundle's computed binding hash is consistent with the receipt reference. This does not by itself establish historical non-modification; that additionally requires an independently trusted receipt authority, expected hash, or equivalent external anchor.
-
----
-
-## Example receipt
-
-See [`../../examples/aar_evidence_ref_receipt.json`](../../examples/aar_evidence_ref_receipt.json) for a complete example.
+[`examples/aar_evidence_ref_receipt.json`](../../examples/aar_evidence_ref_receipt.json)
+is a conceptual AAR-style sketch and is explicitly not schema-conformant. It
+uses simplified string fields in place of several required upstream objects and
+shows an illustrative AELITIUM-side hex digest. It is not a complete receipt or
+an interoperability test vector.
