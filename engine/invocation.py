@@ -41,7 +41,11 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from .canonical import canonical_json, sha256_hash
+from .canonical import (
+    CanonicalizationError,
+    canonical_json,
+    sha256_hash,
+)
 
 INVOCATION_FORMAT = "aelitium-invocation-v1"
 
@@ -254,13 +258,19 @@ def _finalize(surface: str, mode: str, request: dict[str, Any]) -> InvocationIde
         "mode": mode,
         "request": request,
     }
-    digest = sha256_hash(canonical_json(hash_material))
+    try:
+        digest = sha256_hash(canonical_json(hash_material))
+        request_canonical_json = canonical_json(request)
+    except CanonicalizationError as exc:
+        raise InvocationIdentityError(
+            "INVOCATION_BAD_VALUE", exc.reason
+        ) from exc
     return InvocationIdentity(
         format=INVOCATION_FORMAT,
         surface=surface,
         mode=mode,
         hash_sha256=digest,
-        request_canonical_json=canonical_json(request),
+        request_canonical_json=request_canonical_json,
     )
 
 

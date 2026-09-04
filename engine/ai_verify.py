@@ -652,6 +652,16 @@ def verify_ai_bundle(
     try:
         expected_canonical, actual_hash = canonicalize_ai_output(canonical)
     except AICanonicalError as exc:
+        if str(exc) == "AI_OUTPUT_INVALID_UNICODE":
+            return _invalid(
+                "CANONICAL_NOT_JSON",
+                str(exc),
+                error_message=str(exc),
+                canonical=canonical,
+                manifest=manifest,
+                payload_integrity=AssuranceState.INVALID,
+                signature_validity=signature_before_evaluation,
+            )
         return _invalid(
             "CANONICAL_SCHEMA_INVALID",
             str(exc),

@@ -115,13 +115,16 @@ Apply checks in this order and stop at the first failure:
    `MANIFEST_BAD_AI_HASH_SHA256`;
 8. canonical payload validation against `ai_output_v1`:
    `CANONICAL_SCHEMA_INVALID`;
-9. exact stored canonical bytes: the canonical byte string with either no
+9. Unicode scalar validation for canonical serialization: an unpaired
+   surrogate in an otherwise processable canonical payload returns
+   `CANONICAL_NOT_JSON` rather than raising an encoding exception;
+10. exact stored canonical bytes: the canonical byte string with either no
    suffix or exactly one terminal LF; any other spelling returns
    `CANONICAL_BYTES_MISMATCH`; and
-10. SHA-256 of the canonical bytes without that optional LF against the
+11. SHA-256 of the canonical bytes without that optional LF against the
     manifest value: `HASH_MISMATCH`.
 
-After step 10 succeeds, `payload_integrity=VALID` and the
+After step 11 succeeds, `payload_integrity=VALID` and the
 `canonical_payload_digest` can be emitted. Earlier structural failures map
 payload integrity to `ABSENT` only when a required artifact is absent;
 otherwise it is `INVALID`. Downstream states remain `NOT_EVALUATED`, except
@@ -191,20 +194,52 @@ object's own selected fields.
 
 ### Cross-language closure gate
 
-Before a clean-room implementation can claim the complete current surface, the
-canonicalization contract needs additional positive and negative vectors for:
+No independent implementation exists. The current readiness gate is:
 
-- floating-point rendering at exponent and rounding boundaries;
-- non-finite numeric tokens accepted by some JSON parsers;
-- Unicode key ordering and escaping at non-BMP boundaries;
-- duplicate object keys and parser behavior; and
-- invalid Unicode scalar sequences.
+| Cross-language issue | Status | Required behavior |
+|---|---|---|
+| Floating-point parsing, exponent thresholds, rounding, and rendering | **CLOSED** | IEEE 754 binary64 conversion and the exact shortest-round-trip formatting rule in `CANONICALIZATION_SPEC.md`; reproduce the frozen boundary vectors. |
+| Exact `NaN`, `Infinity`, and `-Infinity` legacy tokens | **CLOSED legacy behavior** | Preserve their exact case-sensitive acceptance and output in unrestricted metadata. Do not call them standard JSON and do not infer native invocation assurance from them. |
+| Unicode object-key ordering | **CLOSED** | Lexicographic Unicode scalar-value order, not UTF-8-byte or UTF-16-code-unit order. |
+| Unicode escaping and non-BMP output | **CLOSED** | Apply the exact escape table, emit other scalars literally as strict UTF-8, and perform no normalization. |
+| Duplicate names in the canonical payload | **CLOSED** | Parse left to right with the last value retained; the raw duplicate spelling then fails exact canonical-byte equality as `CANONICAL_BYTES_MISMATCH`. |
+| Duplicate names in the manifest | **CLOSED legacy behavior** | Preserve last-value parsing. A global rejection would change v0.4.0 behavior. |
+| Ill-formed UTF-8 and unpaired surrogate payload data | **CLOSED** | Reject at the existing `CANONICAL_NOT_JSON` stage. A valid surrogate pair decodes to one scalar, but its escaped source form is not canonical. |
+| Unpaired surrogates in ignored manifest extensions | **CLOSED legacy behavior** | Preserve acceptance of the escaped form when the extension is not used by a manifest check. The manifest is not canonicalized; exclude this case from the restricted subset. |
+| Canonical whitespace, arrays, literals, and terminal newline | **CLOSED** | Compact recursive encoding, preserved array order, exact lowercase literals, and stored bytes equal to `C` or `C || 0A`, hashing only `C`. |
+| Integer magnitudes of at most 640 decimal digits | **RESTRICTED SUBSET** | Parse and emit exact signed base-10 integers without binary64 conversion in canonical metadata, manifest extensions, explicit inputs, and result output. |
+| Integer magnitudes above 640 decimal digits | **OPEN** | Released v0.4.0 delegates source conversion to a configurable CPython decimal-conversion guard, while direct API values can already be Python integers, so the complete accepted and serializable domain cannot be determined portably from the identifier alone. |
 
-The current Python-aligned text and corpus are sufficient for the committed
-fixtures but do not yet close every metadata value allowed by the broad
-`metadata` schema. A candidate may report a restricted experimental subset, but
-must not silently claim complete equivalence until this gate is closed. This is
-one reason the second verifier is deferred.
+The dedicated corpus is
+[`conformance/canonicalization/manifest.json`](../conformance/canonicalization/manifest.json)
+and its 30 vectors. Every vector freezes source bytes, source digest, exact
+accept/reject result, existing verifier reason, and canonical bytes/digest when
+accepted. The runner compares the implementation to those committed values; it
+does not create expected canonical bytes with the canonicalizer under test.
+
+### Exact restricted domain
+
+A candidate may implement and accurately label this restricted subset:
+
+- strict UTF-8 without BOM, with every parsed string and object-member name in
+  every bundle JSON file limited to Unicode scalar values;
+- JSON objects with canonical stored bytes (therefore no duplicate stored
+  member spellings), arrays in order, strings containing only Unicode scalar
+  values, `null`, and booleans;
+- finite IEEE 754 binary64 numbers serialized by the closed rule; and
+- integer magnitudes containing at most 640 decimal digits.
+
+The subset excludes `NaN`, `Infinity`, `-Infinity`, and integer magnitudes over
+640 digits. Exclusion from the subset is not a new AELITIUM verifier rejection:
+the three non-finite tokens remain accepted legacy behavior, and some v0.4.0
+runtimes accept larger integers.
+
+A candidate limited to this domain must report **RESTRICTED SUBSET** and must
+refuse out-of-subset evidence without claiming it is invalid under every
+v0.4.0 runtime. A candidate cannot claim the complete current surface while the
+extreme-integer row remains **OPEN**. Closing it requires a separately versioned
+rule or evidence that a restriction changes no accepted v0.4.0 artifact; this
+task provides neither.
 
 ## Signature and external signing-key membership
 
@@ -338,9 +373,16 @@ A candidate is not accepted as independent until all of these pass:
 6. all four comparison outcomes and every current mode/basis route;
 7. explicit confirmation that no network, ambient time, or ambient trust input
    was read;
-8. the cross-language canonicalization closure vectors listed above; and
+8. all 30 cross-language canonicalization vectors, with any restricted
+   implementation explicitly refusing and labelling out-of-subset inputs; and
 9. a provenance review demonstrating that the decision engine neither imports
    nor shells out to AELITIUM Python.
 
 The present Python conformance runner is an implementation-aligned oracle and
 corpus exerciser. It is not evidence that a second implementation exists.
+
+As of this document revision, the complete-surface readiness verdict is
+**NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because the accepted domain for integer
+magnitudes above 640 decimal digits remains dependent on the configured Python
+runtime. The restricted subset is specified and testable, but it is not the
+complete v0.4.0 surface.

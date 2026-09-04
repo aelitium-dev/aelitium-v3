@@ -196,6 +196,25 @@ require_literal "docs/interop/SCITT_AI_AGENT_RECEIPT_01.md" "**Implementation st
 require_literal "docs/interop/SCITT_AI_AGENT_RECEIPT_01.md" "draft-noa-scitt-ai-agent-receipt-01"
 require_literal "conformance/README.md" "**Status:** IMPLEMENTATION-ALIGNED"
 require_literal "conformance/manifest.json" '"case_count": 44'
+require_literal "docs/CANONICALIZATION_SPEC.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  '**Current manifest identifier:** `json_sorted_keys_no_whitespace_utf8`'
+require_literal "docs/CANONICALIZATION_SPEC.md" "It is not RFC 8785/JCS"
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  'Integers above 640 magnitude digits | **OPEN**'
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  'Unpaired surrogates in ignored manifest extensions | **CLOSED legacy behavior**'
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
+  "No independent implementation exists."
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
+  "**NOT_READY_FOR_CLEAN_ROOM_VERIFIER**"
+require_literal "conformance/canonicalization/README.md" \
+  "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "conformance/canonicalization/manifest.json" '"case_count": 30'
+require_literal "conformance/canonicalization/manifest.json" \
+  '"canonicalization_identifier": "json_sorted_keys_no_whitespace_utf8"'
+require_literal "conformance/canonicalization/manifest.json" \
+  '"integer_magnitude_more_than_640_decimal_digits"'
 
 for dimension in "${assurance_dimensions[@]}"; do
   require_literal "docs/ASSURANCE_RESULT_V1.md" "$dimension"

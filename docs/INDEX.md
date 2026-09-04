@@ -27,6 +27,8 @@
 - [Contract demo](CONTRACT_DEMO.md)
 - [Independent verifier requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md)
 - [Public conformance corpus](../conformance/README.md)
+- [Cross-language canonicalization corpus](../conformance/canonicalization/README.md)
+- [Cross-language canonicalization audit](internal/CROSS_LANGUAGE_CANONICALIZATION_AUDIT.md)
 
 ## Offline verification
 - docs/OFFLINE_VERIFIER.md
