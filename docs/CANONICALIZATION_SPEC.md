@@ -1,18 +1,22 @@
 # Canonicalization Specification
 
-**Version:** 1.1 clarification (UNRELEASED)
+**Version:** 2.0 coexistence specification (UNRELEASED)
 
 **Status:** IMPLEMENTATION-ALIGNED
 
 **Current manifest identifier:** `json_sorted_keys_no_whitespace_utf8`
 
+**Additional unreleased identifier:** `aelitium_jcs_profile_v2`
+
 ## Purpose and compatibility boundary
 
-This document fixes the byte-level behavior of the canonicalization identifier
-already used by AELITIUM v0.4.0. It does not introduce a new identifier and
-does not change the meaning of an existing valid bundle.
+The first part of this document fixes the byte-level behavior of the
+canonicalization identifier already used by AELITIUM v0.4.0. The later
+"Portable v2" section specifies the separately identified implementation on
+the current unreleased branch. V2 is opt-in and does not change the meaning of
+an existing valid bundle.
 
-This is an AELITIUM-specific, Python-aligned contract. It is not RFC 8785/JCS,
+V1 is an AELITIUM-specific, Python-aligned contract. It is not RFC 8785/JCS,
 does not claim universal JSON canonicalization, and must not be presented as
 equivalent to another canonicalization standard. In particular, its
 floating-point formatting, Unicode key order, and preserved non-finite tokens
@@ -367,7 +371,7 @@ source bytes, acceptance decisions, canonical bytes, digests, and rejection
 reasons. Expected bytes and digests are data in the corpus; the runner does not
 derive them with AELITIUM's canonicalizer.
 
-## Manifest identifier and versioning
+## Released v1 manifest identifier
 
 Manifests continue to use:
 
@@ -377,11 +381,163 @@ Manifests continue to use:
 }
 ```
 
-This clarification preserves existing value-to-byte behavior. A future rule
-that rejects currently accepted non-finite values, globally rejects duplicate
-manifest names, imposes a new extreme-integer limit, normalizes Unicode, or
-changes float formatting must use a new identifier and an explicit
-compatibility plan.
+This definition permanently preserves the existing value-to-byte behavior.
+The portable v2 rules below use a new identifier rather than narrowing v1.
+
+## Portable v2 — unreleased branch implementation
+
+The exact additional identifier is:
+
+```text
+aelitium_jcs_profile_v2
+```
+
+It identifies RFC 8785 / JCS serialization with the AELITIUM source, value,
+manifest, storage, hash-scope, dispatch, and comparison profile in this
+section. It is implemented on the current branch but is not part of the
+published v0.4.0 package. It has no alias, case-insensitive form, prefix
+negotiation, or default-selection rule.
+
+### Pre-dispatch routing
+
+After option checks and required-file checks, the verifier scans the original
+`ai_manifest.json` bytes using `AELITIUM-DISPATCH-JSON-1`. This scanner is a
+structural lexical router, not a value parser. Its grammar is RFC 8259 JSON
+plus the exact legacy tokens `NaN`, `Infinity`, and `-Infinity`. It:
+
+- validates one complete structural value and RFC 8259 string escapes;
+- accepts unmatched surrogate escapes and Unicode noncharacters at scan time;
+- consumes JSON numbers without converting them or imposing a digit limit;
+- retains duplicate members and nesting so only root members participate;
+- compares selector names and string values after legacy escape processing,
+  without normalization; and
+- uses the final top-level `canonicalization` occurrence.
+
+The Python scanner traverses arrays and objects with an explicit stack. A
+Python recursion limit is therefore not treated as a failed lookahead and
+cannot redirect a v2 selector to legacy error resolution. The fresh strict-v2
+parse and recursive profile walk are iterative as well. Operational allocation
+failure is not converted into JSON/profile invalidity. The v1 parser remains
+CPython's released `json.loads` path and retains its existing resource behavior.
+
+If that final selector is exactly `aelitium_jcs_profile_v2`, verification
+reparses the immutable original bytes from byte zero with the strict v2 parser.
+It never retries v1 after a v2 failure. Every other outcome, including exact
+v1, missing, malformed, non-string, unknown, non-object, or scanner failure,
+re-enters the complete legacy v1/error-resolution path using the original
+bytes. Scanner-derived values are never reused by either parser. Canonical
+payload parsing remains observably before manifest parsing and manifest-field
+checks.
+
+### V2 source and value profile
+
+V2 input is exactly one RFC 8259 JSON value encoded as strict shortest-form
+UTF-8, with no leading BOM. Duplicate object names are rejected at every depth
+after escape processing. This applies equally to payloads, manifests, and
+unknown extensions.
+
+Strings and names contain Unicode scalar values except:
+
+- U+FDD0 through U+FDEF; and
+- U+nFFFE and U+nFFFF for every plane `n` from 0 through 16.
+
+Surrogates are never scalar values. A valid source surrogate pair becomes one
+non-BMP scalar; unmatched, reversed, and overlapping surrogate escapes are
+rejected. U+FEFF is allowed inside a string. No NFC/NFD normalization, case
+folding, or other Unicode transformation occurs.
+
+V2 has one number model: IEEE 754 binary64. Source decimals are converted
+directly using round-to-nearest, ties-to-even. A number must be finite and its
+binary64 magnitude must not exceed `9007199254740991` (`2^53 - 1`). An
+integer-form token is additionally checked as a mathematical integer before
+narrowing and must lie in the inclusive range
+`[-9007199254740991, 9007199254740991]`. Programmatic integers have the same
+bound. Programmatic floats must already be finite binary64 values in that
+magnitude range. Arbitrary precision integers/decimals and unsupported host
+types are rejected rather than coerced. Correctly rounded underflow to either
+sign of zero is accepted; both signs serialize as `0`. Overflow, `NaN`, and
+infinities are rejected.
+
+Arrays retain order. Objects require string names unique by exact unescaped
+code-point sequence. NFC and NFD names can coexist because normalization is
+not performed.
+
+### Exact JCS serialization and storage
+
+Every admitted value serializes exactly as RFC 8785. Objects sort recursively
+by unsigned UTF-16 code units, shorter prefix first. Arrays retain order.
+Strings use the RFC 8785 escape table: quote and reverse solidus are escaped;
+U+0008, U+0009, U+000A, U+000C, and U+000D use their short escapes; remaining
+U+0000..U+001F controls use lowercase `\u00xx`; solidus, U+2028, U+2029,
+non-ASCII, and non-BMP scalars remain literal. Binary64 values use the RFC
+8785 ECMAScript shortest representation, including lowercase unpadded
+exponents and unsigned zero.
+
+The canonical byte sequence `C` is strict UTF-8 with no BOM and no terminal
+newline. Stored v2 `ai_canonical.json` may be exactly `C` or `C || 0A`. Only
+`C` is hashed. CRLF, multiple LF, alternate whitespace, order, escapes, and
+number spellings are rejected as `CANONICAL_BYTES_MISMATCH` after successful
+profile and schema validation.
+
+The Python implementation delegates unchanged RFC 8785 serialization to the
+pinned `rfc8785==0.1.4` package (Apache-2.0) after applying the AELITIUM
+profile. The frozen corpus includes applicable RFC Appendix B values and the
+AELITIUM-specific boundaries; the package name alone is not treated as proof
+of conformance.
+
+### V2 governed hash material
+
+The enclosing manifest identifier selects one canonicalizer for every governed
+construction in that bundle:
+
+```text
+ai_hash_sha256 = SHA256(C_v2(ai_output_v1))
+request_hash = SHA256(C_v2(request_payload))
+response_hash = SHA256(C_v2(response_payload))
+binding_hash = SHA256(C_v2({"request_hash": request_hash,
+                            "response_hash": response_hash}))
+invocation_identity.hash_sha256 = SHA256(C_v2({
+  "format": "aelitium-invocation-v1", "surface": surface,
+  "mode": mode, "request": normalized_request
+}))
+invocation_binding.hash_sha256 = SHA256(C_v2({
+  "format": "aelitium-invocation-binding-v1",
+  "invocation_hash": invocation_hash, "response_hash": response_hash
+}))
+```
+
+There is no newline, BOM, identifier prefix, length prefix, NUL separator, or
+manifest data in those hash inputs. Semantic field selections and assurance
+meanings are unchanged. A v2 bundle must not mix v1 and v2 canonicalizers.
+
+### V2 manifest, errors, and comparison
+
+After v2 dispatch, the full manifest—including unknown extensions—must satisfy
+the recursive v2 profile. Existing required fields and ordered checks remain.
+Valid unknown fields are ignored and acquire no verification, assurance,
+authorization, or comparison meaning. Signature verification remains over the
+exact raw manifest bytes; the manifest is not JCS-canonicalized for signature
+scope.
+
+Existing public reason vocabulary and precedence are preserved:
+
+| Condition | Result reason |
+|---|---|
+| malformed/profile-invalid v2 canonical payload | `CANONICAL_NOT_JSON` |
+| valid v2 value stored outside `C` or `C || LF` | `CANONICAL_BYTES_MISMATCH` |
+| malformed/profile-invalid v2 manifest | `MANIFEST_NOT_JSON` |
+| otherwise acceptable unsupported selector | `MANIFEST_BAD_CANONICALIZATION` |
+
+When two bundles both verify but their identifiers differ, every current
+comparison mode returns `NOT_COMPARABLE`, basis `NONE`, reason
+`CANONICALIZATION_IDENTIFIER_MISMATCH`, and a null response relationship.
+Equal parsed values, canonical bytes, or hashes do not create a cross-version
+bridge.
+
+The separate frozen v2 corpus is
+`conformance/canonicalization_v2/vectors.json`; its 114 cases do not modify or
+renumber the released 30-case v1 canonicalization corpus or the 44-case result
+contract corpus.
 
 ## Non-guarantees
 

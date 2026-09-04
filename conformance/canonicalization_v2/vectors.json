@@ -1,0 +1,1894 @@
+{
+  "canonicalization_identifier": "aelitium_jcs_profile_v2",
+  "case_count": 114,
+  "corpus": "aelitium-canonicalization-conformance-v2",
+  "dependency_oracle": {
+    "license": "Apache-2.0",
+    "name": "rfc8785",
+    "version": "0.1.4"
+  },
+  "status": "IMPLEMENTATION-ALIGNED-UNRELEASED",
+  "vectors": [
+    {
+      "case_id": "v2.value.null",
+      "description": "Null literal.",
+      "expected": {
+        "canonical_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+        "canonical_utf8_hex": "6e756c6c",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "6e756c6c",
+      "source_role": "generic_value",
+      "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case_id": "v2.value.true",
+      "description": "True literal.",
+      "expected": {
+        "canonical_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+        "canonical_utf8_hex": "74727565",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "74727565",
+      "source_role": "generic_value",
+      "source_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+    },
+    {
+      "case_id": "v2.value.false",
+      "description": "False literal.",
+      "expected": {
+        "canonical_sha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+        "canonical_utf8_hex": "66616c7365",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "66616c7365",
+      "source_role": "generic_value",
+      "source_sha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+    },
+    {
+      "case_id": "v2.value.string",
+      "description": "Simple string.",
+      "expected": {
+        "canonical_sha256": "1e1d0f251d3a76fa2b1bfc81164078572623403887db02988b504b0492e9f076",
+        "canonical_utf8_hex": "227465787422",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "227465787422",
+      "source_role": "generic_value",
+      "source_sha256": "1e1d0f251d3a76fa2b1bfc81164078572623403887db02988b504b0492e9f076"
+    },
+    {
+      "case_id": "v2.value.array",
+      "description": "Array order is preserved.",
+      "expected": {
+        "canonical_sha256": "30c8681f9b840aceee56b737f3b126ae67ec4eb71d2881db831f86014fba016d",
+        "canonical_utf8_hex": "5b332c322c315d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "5b332c322c315d",
+      "source_role": "generic_value",
+      "source_sha256": "30c8681f9b840aceee56b737f3b126ae67ec4eb71d2881db831f86014fba016d"
+    },
+    {
+      "case_id": "v2.value.object",
+      "description": "Object names are recursively sorted.",
+      "expected": {
+        "canonical_sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772",
+        "canonical_utf8_hex": "7b2261223a322c2262223a317d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b2262223a312c2261223a327d",
+      "source_role": "generic_value",
+      "source_sha256": "a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a"
+    },
+    {
+      "case_id": "v2.unicode.utf8",
+      "description": "Multi-byte UTF-8 scalars remain literal.",
+      "expected": {
+        "canonical_sha256": "0a783799a3bb724871699830738de77e58fc77c1b2b712885b7570eb45cff58f",
+        "canonical_utf8_hex": "22636166c3a920e4bda0e5a5bd22",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22636166c3a920e4bda0e5a5bd22",
+      "source_role": "generic_value",
+      "source_sha256": "0a783799a3bb724871699830738de77e58fc77c1b2b712885b7570eb45cff58f"
+    },
+    {
+      "case_id": "v2.unicode.non_bmp",
+      "description": "A valid non-BMP scalar remains literal UTF-8.",
+      "expected": {
+        "canonical_sha256": "7a0c50b92434b015545fe93ab723db2d4b2cdd14a441405624a9ce8be29f1d5a",
+        "canonical_utf8_hex": "22f09f988022",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75643833645c756465303022",
+      "source_role": "generic_value",
+      "source_sha256": "e30439cb87e140c0b998ad3095285abfec0294e2a8916f9a8f30d85734e6f82b"
+    },
+    {
+      "case_id": "v2.unicode.nfc",
+      "description": "NFC spelling is retained without normalization.",
+      "expected": {
+        "canonical_sha256": "f2886017e9c7abacf804b54d64787dce2b611c9544ba21f3affdd126a6e50086",
+        "canonical_utf8_hex": "22c3a922",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22c3a922",
+      "source_role": "generic_value",
+      "source_sha256": "f2886017e9c7abacf804b54d64787dce2b611c9544ba21f3affdd126a6e50086"
+    },
+    {
+      "case_id": "v2.unicode.nfd",
+      "description": "NFD spelling is distinct and retained.",
+      "expected": {
+        "canonical_sha256": "3d68ce21f2899a475713cdbe7562ba9bdb6b1dfde8af1f221bdff4a0935b53b2",
+        "canonical_utf8_hex": "2265cc8122",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2265cc8122",
+      "source_role": "generic_value",
+      "source_sha256": "3d68ce21f2899a475713cdbe7562ba9bdb6b1dfde8af1f221bdff4a0935b53b2"
+    },
+    {
+      "case_id": "v2.unicode.nfc_nfd_names",
+      "description": "NFC and NFD names coexist and sort without normalization.",
+      "expected": {
+        "canonical_sha256": "c2635d7e15e25b90abc8b3543d92f0ffcee0644372d8b662a0775f88d43278e5",
+        "canonical_utf8_hex": "7b2265cc81223a312c22c3a9223a327d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b22c3a9223a322c2265cc81223a317d",
+      "source_role": "generic_value",
+      "source_sha256": "a0a222de18096dba42fcec2cb58f30bc1569cbec73573cda3b09eb35aa96769e"
+    },
+    {
+      "case_id": "v2.object.utf16_order",
+      "description": "JCS orders a non-BMP name before U+E000 by UTF-16 units.",
+      "expected": {
+        "canonical_sha256": "04208f6cdb854e2ab1b07dd3633a39dec854344fe72824cf7f2fdb4e2e33129e",
+        "canonical_utf8_hex": "7b22f09f9880223a312c22ee8080223a327d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b22ee8080223a322c22f09f9880223a317d",
+      "source_role": "generic_value",
+      "source_sha256": "cddbdeacace14eb6923e88dfafb2a3e7df21ec908682f50a886b7b9567692d02"
+    },
+    {
+      "case_id": "v2.object.prefix_order",
+      "description": "A shorter UTF-16 prefix sorts first.",
+      "expected": {
+        "canonical_sha256": "792cf0409ad5e0c6ebb96ec55d82e4517810bebf918659b12ef4e52396f257d3",
+        "canonical_utf8_hex": "7b2261223a322c226161223a317d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b226161223a312c2261223a327d",
+      "source_role": "generic_value",
+      "source_sha256": "de112c8c6c45f59e94627bfa63735b8d9dae1ccf1638a190df6941a353473bc8"
+    },
+    {
+      "case_id": "v2.string.escaping",
+      "description": "JCS uses short controls, lowercase hex, literal solidus, quote, and reverse solidus.",
+      "expected": {
+        "canonical_sha256": "fd04cf6facf8b3a423aae0c8dbf4d381e2943847e911f68e2f8e5bb2fcb9a2c2",
+        "canonical_utf8_hex": "225c75303030305c625c745c6e5c665c725c75303031665c225c5c2f22",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75303030305c625c745c6e5c665c725c75303031665c225c5c2f22",
+      "source_role": "generic_value",
+      "source_sha256": "fd04cf6facf8b3a423aae0c8dbf4d381e2943847e911f68e2f8e5bb2fcb9a2c2"
+    },
+    {
+      "case_id": "v2.string.u2028_u2029",
+      "description": "U+2028 and U+2029 remain literal.",
+      "expected": {
+        "canonical_sha256": "e3a0e2262ac7790f4df36b522a8fbdd4ee3370d568eb15dc25c5f1775f14ed6c",
+        "canonical_utf8_hex": "22e280a8e280a922",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75323032385c753230323922",
+      "source_role": "generic_value",
+      "source_sha256": "b36c0076c7e28a52a8a9cb89306b164f887df89d715680d7b1ca8a858a8f3d33"
+    },
+    {
+      "case_id": "v2.source.leading_bom",
+      "description": "A leading UTF-8 BOM is prohibited.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "LEADING_BOM",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "efbbbf6e756c6c",
+      "source_role": "generic_value",
+      "source_sha256": "63047947e10336a5ce5e61416c05aaed41f995a7437049af440ffacebd9f04b8"
+    },
+    {
+      "case_id": "v2.source.invalid_continuation",
+      "description": "An invalid UTF-8 continuation byte is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UTF8",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22c32822",
+      "source_role": "generic_value",
+      "source_sha256": "34055271592b3fa7a8c2617f65d0698fe1dc51a6db72fb63e28886da0115845e"
+    },
+    {
+      "case_id": "v2.source.overlong_utf8",
+      "description": "An overlong UTF-8 sequence is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UTF8",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22c08022",
+      "source_role": "generic_value",
+      "source_sha256": "3152957e025ba54af72846da0e2759f93a45dcc9c2e2392bd5f9be63e95359bf"
+    },
+    {
+      "case_id": "v2.source.truncated_utf8",
+      "description": "A truncated UTF-8 sequence is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UTF8",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22f09f98",
+      "source_role": "generic_value",
+      "source_sha256": "8bd06f67ba08882cb25d42c5378e1108ada12d1f9fc8d95076758c20feb9751d"
+    },
+    {
+      "case_id": "v2.source.utf8_surrogate",
+      "description": "A raw UTF-8 encoding of a surrogate is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UTF8",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22eda08022",
+      "source_role": "generic_value",
+      "source_sha256": "ee4a76500d4d714ca691afe56c1fd9e0a5fbcb42d6c8f8d7178aae4ddb683cf7"
+    },
+    {
+      "case_id": "v2.object.duplicate",
+      "description": "Exact duplicate names reject before map collapse.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "DUPLICATE_OBJECT_NAME",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b2261223a312c2261223a327d",
+      "source_role": "generic_value",
+      "source_sha256": "1c53ee0df7b12fd4d65b976120c7fa6b847dc41dffd7f0331c3237a1ceab1756"
+    },
+    {
+      "case_id": "v2.object.escaped_duplicate",
+      "description": "Names equal after escape processing are duplicates.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "DUPLICATE_OBJECT_NAME",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b2261223a312c225c7530303631223a327d",
+      "source_role": "generic_value",
+      "source_sha256": "c95ba945b310a34906bbfc28ce1346b87741d5a2b3066d1d3ecfa0acbd86392c"
+    },
+    {
+      "case_id": "v2.object.nested_duplicate",
+      "description": "Nested object duplicates are rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "DUPLICATE_OBJECT_NAME",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b226f75746572223a7b2261223a312c2261223a327d7d",
+      "source_role": "generic_value",
+      "source_sha256": "4760da1a74435f1d95c0063275e2235b559dd9fe9d1041ea50f7790521515048"
+    },
+    {
+      "case_id": "v2.object.array_nested_duplicate",
+      "description": "Duplicates inside an object nested in an array are rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "DUPLICATE_OBJECT_NAME",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "5b7b2261223a312c2261223a327d5d",
+      "source_role": "generic_value",
+      "source_sha256": "22d9ac5f42c90616f707217dbfc9a1ab4f81950b056e83fa0f52e5c7ab30fac3"
+    },
+    {
+      "case_id": "v2.unicode.surrogate_pair",
+      "description": "A valid surrogate-pair escape becomes one scalar.",
+      "expected": {
+        "canonical_sha256": "80066806fcc52478beec53a2ac42bc6a6324eb67c1161136649a669c15d4b7bf",
+        "canonical_utf8_hex": "22f090808022",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75643830305c756463303022",
+      "source_role": "generic_value",
+      "source_sha256": "a70ae7d05d6e5ff656cd06a277c527fcccd8c5cc7867e02e39a69fb1ecf6cbc0"
+    },
+    {
+      "case_id": "v2.unicode.lone_high_surrogate",
+      "description": "A lone high surrogate escape is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UNICODE_SCALAR",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c756438303022",
+      "source_role": "generic_value",
+      "source_sha256": "8c0c59dd0d275aadcd462a5fe12eb352cbdfeaf961eae4f85a4660521df7d2f5"
+    },
+    {
+      "case_id": "v2.unicode.lone_low_surrogate",
+      "description": "A lone low surrogate escape is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UNICODE_SCALAR",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c756463303022",
+      "source_role": "generic_value",
+      "source_sha256": "353c7370beca95e64c258c908edac60c2ab30d355ca1b5b7fc31c5bce4a4c65a"
+    },
+    {
+      "case_id": "v2.unicode.reversed_surrogates",
+      "description": "A reversed surrogate sequence is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_UNICODE_SCALAR",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75646330305c756438303022",
+      "source_role": "generic_value",
+      "source_sha256": "21b59caaa12b2965ce063778289864b88a44d120c1a47f639d6fb9f6c3ad7a78"
+    },
+    {
+      "case_id": "v2.unicode.noncharacter_fdd0",
+      "description": "U+FDD0 is excluded.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "UNICODE_NONCHARACTER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22efb79022",
+      "source_role": "generic_value",
+      "source_sha256": "f6e6f275c4eb06885c78152147d2eafe8e0802bfa40cb78efa67dc2967bd7a47"
+    },
+    {
+      "case_id": "v2.unicode.noncharacter_fdef",
+      "description": "U+FDEF is excluded.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "UNICODE_NONCHARACTER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "22efb7af22",
+      "source_role": "generic_value",
+      "source_sha256": "23674d439b5a51fdfe7cbfe2279cc4b5528e8fed5972ae4929e81bbc8ccb2fdc"
+    },
+    {
+      "case_id": "v2.unicode.noncharacter_fffe",
+      "description": "U+FFFE is excluded.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "UNICODE_NONCHARACTER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c756666666522",
+      "source_role": "generic_value",
+      "source_sha256": "54508b2b6da45ed963ba5e437794bc2d2e447a86e180152130803efa996f99f7"
+    },
+    {
+      "case_id": "v2.unicode.noncharacter_ffff",
+      "description": "U+FFFF is excluded.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "UNICODE_NONCHARACTER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c756666666622",
+      "source_role": "generic_value",
+      "source_sha256": "1ef1b6da15ca38e4564f03db3fa65252bcdd156176731c3b671fb2a6734fd8f2"
+    },
+    {
+      "case_id": "v2.unicode.noncharacter_plane_1",
+      "description": "A plane-ending noncharacter above the BMP is excluded.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "UNICODE_NONCHARACTER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "225c75643833665c756466666522",
+      "source_role": "generic_value",
+      "source_sha256": "40b9c6328367a30cc7d8fb5585b7d46363a957eb95c33351d80237681f17ab5d"
+    },
+    {
+      "case_id": "v2.number.max_safe",
+      "description": "Positive 2^53 - 1 is accepted.",
+      "expected": {
+        "canonical_sha256": "f40b423c2dd95ff2b2f027e22208f438cf7242862e5e746860e697308c9add26",
+        "canonical_utf8_hex": "39303037313939323534373430393931",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "39303037313939323534373430393931",
+      "source_role": "generic_value",
+      "source_sha256": "f40b423c2dd95ff2b2f027e22208f438cf7242862e5e746860e697308c9add26"
+    },
+    {
+      "case_id": "v2.number.min_safe",
+      "description": "Negative 2^53 - 1 is accepted.",
+      "expected": {
+        "canonical_sha256": "4c933a456bb8f2e9894b2d0b26480439cd72d52fb8a27cbf8fd7f323f22c7815",
+        "canonical_utf8_hex": "2d39303037313939323534373430393931",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d39303037313939323534373430393931",
+      "source_role": "generic_value",
+      "source_sha256": "4c933a456bb8f2e9894b2d0b26480439cd72d52fb8a27cbf8fd7f323f22c7815"
+    },
+    {
+      "case_id": "v2.number.positive_2_pow_53",
+      "description": "Positive 2^53 integer form is rejected before narrowing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NUMBER_OUT_OF_RANGE",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "39303037313939323534373430393932",
+      "source_role": "generic_value",
+      "source_sha256": "c681da39d7273a6a24c15c9cac3a75526ff2ecf8ba4ee60346a0c70c8163bdb2"
+    },
+    {
+      "case_id": "v2.number.negative_2_pow_53",
+      "description": "Negative 2^53 integer form is rejected before narrowing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NUMBER_OUT_OF_RANGE",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d39303037313939323534373430393932",
+      "source_role": "generic_value",
+      "source_sha256": "83e109bfd7fb4984b47a46f363627c18dbbd7e57e36b05a04cd162d304df72e9"
+    },
+    {
+      "case_id": "v2.number.extreme_integer",
+      "description": "An arbitrary-precision integer token is not coerced.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NUMBER_OUT_OF_RANGE",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "39393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939",
+      "source_role": "generic_value",
+      "source_sha256": "fef16b9aeae5bd0429ce938cce9e6aff09b0f693052247db3d5c5cbdbdff902c"
+    },
+    {
+      "case_id": "v2.number.fractions",
+      "description": "Current fractional parameter values remain native numbers.",
+      "expected": {
+        "canonical_sha256": "7f5f55adc20d39cca9857e9a2632ef4074fc80aa6930d6f74f80c36bdeab6eba",
+        "canonical_utf8_hex": "5b302e322c302e37352c302e395d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "5b302e322c302e37352c302e395d",
+      "source_role": "generic_value",
+      "source_sha256": "7f5f55adc20d39cca9857e9a2632ef4074fc80aa6930d6f74f80c36bdeab6eba"
+    },
+    {
+      "case_id": "v2.number.rfc_rounding",
+      "description": "The RFC sample rounds to its shortest binary64 spelling.",
+      "expected": {
+        "canonical_sha256": "6bd9be1c141028789cc35db62f1b43e80d5d4ee24d6d542e775deb16799ff4c7",
+        "canonical_utf8_hex": "3333333333333333332e33333333333333",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "3333333333333333332e3333333333333239",
+      "source_role": "generic_value",
+      "source_sha256": "2fb055804e802dbfe5e2151dd2dcca21ef676c0764ea7b270e46fa159842daf2"
+    },
+    {
+      "case_id": "v2.number.rounding_alias",
+      "description": "A longer decimal alias rounds to the same binary64 value.",
+      "expected": {
+        "canonical_sha256": "06bad31060c1212ae832de4c031f7b31e3b48aed57858294478cb19450cf34ca",
+        "canonical_utf8_hex": "302e3330303030303030303030303030303034",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "302e3330303030303030303030303030303035",
+      "source_role": "generic_value",
+      "source_sha256": "7b98c61c6700c24e20113a0c98f87d2f0a71a901f138a451cca5da2e3f1f104b"
+    },
+    {
+      "case_id": "v2.number.scientific",
+      "description": "Scientific output uses lowercase e without exponent padding.",
+      "expected": {
+        "canonical_sha256": "5b33e02f2c5103a05d32f6ba9cb058294452bfbf393967f68bb30c1bdcbbab22",
+        "canonical_utf8_hex": "31652d37",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "31452d3037",
+      "source_role": "generic_value",
+      "source_sha256": "9b20c58536b6c9d1f280cc4907fc535f5aa162d153c007abffef8aefd5c8096f"
+    },
+    {
+      "case_id": "v2.number.fixed_threshold",
+      "description": "The JCS fixed-notation threshold includes 1e-6.",
+      "expected": {
+        "canonical_sha256": "159fb29a827ad04b260aa6c8ab6d8637f8f2b38af5c4f3cb49d6a21205e040f8",
+        "canonical_utf8_hex": "302e303030303031",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "31652d36",
+      "source_role": "generic_value",
+      "source_sha256": "f465f55ffed8578e62d598c801779430834a6a908a7b2d25b4b6e9cb1e65b68d"
+    },
+    {
+      "case_id": "v2.number.exponent_alias",
+      "description": "A positive source exponent serializes to the unique in-range fixed form.",
+      "expected": {
+        "canonical_sha256": "40510175845988f13f6162ed8526f0b09f73384467fa855e1e79b44a56562a58",
+        "canonical_utf8_hex": "31303030",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "31452b33",
+      "source_role": "generic_value",
+      "source_sha256": "7797ebe305f08d02a874b12cdf9e74dca476af710922bfb657194686f825ad6c"
+    },
+    {
+      "case_id": "v2.number.negative_zero_float",
+      "description": "Binary64 negative zero serializes as zero.",
+      "expected": {
+        "canonical_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "canonical_utf8_hex": "30",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d302e30",
+      "source_role": "generic_value",
+      "source_sha256": "c26617c7ccbcaa6631b45d851b8cf56e21d2ca624bdb1193afdbd4b560702cec"
+    },
+    {
+      "case_id": "v2.number.negative_zero_integer",
+      "description": "Integer-form negative zero serializes as zero.",
+      "expected": {
+        "canonical_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "canonical_utf8_hex": "30",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d30",
+      "source_role": "generic_value",
+      "source_sha256": "ed79f26d03f412bde3db206601a698e0bb451bea9e3cc25289636ac17ea74b0a"
+    },
+    {
+      "case_id": "v2.number.nan",
+      "description": "NaN is not RFC 8259 JSON.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NON_JSON_NUMBER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "4e614e",
+      "source_role": "generic_value",
+      "source_sha256": "d5b592c05dc25b5032553f1b27f4139be95e881f73db33b02b05ab20c3f9981e"
+    },
+    {
+      "case_id": "v2.number.infinity",
+      "description": "Infinity is not RFC 8259 JSON.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NON_JSON_NUMBER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "496e66696e697479",
+      "source_role": "generic_value",
+      "source_sha256": "d0067cad9a63e0813759a2bb841051ca73570c0da2e08e840a8eb45db6a7a010"
+    },
+    {
+      "case_id": "v2.number.negative_infinity",
+      "description": "Negative infinity is not RFC 8259 JSON.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NON_JSON_NUMBER",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d496e66696e697479",
+      "source_role": "generic_value",
+      "source_sha256": "c64ddf11bcd45660f0cf66dd0c22d2b4570ef3d3fc6527a9a6f6c722aefa3c39"
+    },
+    {
+      "case_id": "v2.number.decimal_overflow",
+      "description": "Decimal overflow to infinity is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NUMBER_NOT_FINITE",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "316534303030",
+      "source_role": "generic_value",
+      "source_sha256": "10b3ed7ddef74618d963e27bf6a1db9a154807b24cf53388c7a5e497882c964a"
+    },
+    {
+      "case_id": "v2.number.positive_underflow",
+      "description": "Correctly rounded positive underflow emits zero.",
+      "expected": {
+        "canonical_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "canonical_utf8_hex": "30",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "31652d34303030",
+      "source_role": "generic_value",
+      "source_sha256": "d6fac0e27fbb0e5d78c81385c2da562d91268170339e7edadb177d839b20147f"
+    },
+    {
+      "case_id": "v2.number.negative_underflow",
+      "description": "Correctly rounded negative underflow emits unsigned zero.",
+      "expected": {
+        "canonical_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "canonical_utf8_hex": "30",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "2d31652d34303030",
+      "source_role": "generic_value",
+      "source_sha256": "5ff7d0d2fcd1ebcb817a5e68dd8f7e47cfd3464b1334efb5a3ca3f109e115c3c"
+    },
+    {
+      "case_id": "v2.number.minimum_subnormal",
+      "description": "The smallest positive binary64 value uses the RFC spelling.",
+      "expected": {
+        "canonical_sha256": "c46e7ca1be4c8734f373a56530787288fa2058d73d07855e9247e949f811a42a",
+        "canonical_utf8_hex": "35652d333234",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "342e39343036353634353834313234363534652d333234",
+      "source_role": "generic_value",
+      "source_sha256": "bf6ac664f467d7b49f9eba67be43367729d0fd07441a46b1a11d5387c430bc2e"
+    },
+    {
+      "case_id": "v2.number.round_to_even",
+      "description": "The RFC round-to-even sample uses the ECMAScript output.",
+      "expected": {
+        "canonical_sha256": "e1547479d27f057e3197d49417a1dcbe19dd8781b34fa9f83b789925943d00cb",
+        "canonical_utf8_hex": "313432343935333932333738313230362e32",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "313432343935333932333738313230362e3235",
+      "source_role": "generic_value",
+      "source_sha256": "6dddf54021bf9c215582b685d6e13cff2784cd64c0d3861e980c76e2968c265f"
+    },
+    {
+      "case_id": "v2.number.rounded_out_of_range",
+      "description": "A fractional token whose binary64 result is 2^53 is rejected.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "NUMBER_OUT_OF_RANGE",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "393030373139393235343734303939312e39",
+      "source_role": "generic_value",
+      "source_sha256": "34b13bb708434d51bb6dde8425fccf595fdeddaf6978e2bf52d58ade6eafd4f7"
+    },
+    {
+      "case_id": "v2.source.whitespace",
+      "description": "Legal source whitespace is removed by canonicalization.",
+      "expected": {
+        "canonical_sha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+        "canonical_utf8_hex": "7b2261223a312c2262223a327d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "200a207b20226222203a20322c20226122203a2031207d2009",
+      "source_role": "generic_value",
+      "source_sha256": "de74868c5c0396e2adf01a24092ff85a5f521aefdeeaf0726a625a58eed82890"
+    },
+    {
+      "case_id": "v2.source.multiple_values",
+      "description": "Exactly one top-level value is required.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_JSON",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "6e756c6c2074727565",
+      "source_role": "generic_value",
+      "source_sha256": "ad236d7f4676896e70541dee4692615dd4b494a1c9a99eb5ce9fd97909f876da"
+    },
+    {
+      "case_id": "v2.source.trailing_comma",
+      "description": "Trailing commas are not RFC 8259 syntax.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_JSON",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b2261223a312c7d",
+      "source_role": "generic_value",
+      "source_sha256": "aa99a5ce3eb0dd8355f0bfb15376ea1d862ad75d0d278af1f8c280ca8c02c640"
+    },
+    {
+      "case_id": "v2.source.comment",
+      "description": "Comments are not RFC 8259 syntax.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "INVALID_JSON",
+        "routing_target": null
+      },
+      "operation": "canonicalize",
+      "source_bytes_hex": "7b2261223a312f2a782a2f7d",
+      "source_role": "generic_value",
+      "source_sha256": "fec085cfc8a968852edcfb105e658d6a5d49ec66ac612b76c4109d042774d56c"
+    },
+    {
+      "case_id": "v2.storage.c",
+      "description": "Stored canonical bytes may be exactly C.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d"
+    },
+    {
+      "case_id": "v2.storage.c_lf",
+      "description": "Stored canonical bytes may be C followed by one LF.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d0a",
+      "source_role": "canonical_payload",
+      "source_sha256": "b0c1c1f15898ede5e49d049a7acf15ab8bf86ea22214db21d6e6beaa0fbd7db5"
+    },
+    {
+      "case_id": "v2.storage.crlf",
+      "description": "CRLF is outside the storage envelope.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d0d0a",
+      "source_role": "canonical_payload",
+      "source_sha256": "27e13bf663ead8e849970ff0be89ac57253b0eeecd223cc90e86199efe91c0ed"
+    },
+    {
+      "case_id": "v2.storage.multiple_lf",
+      "description": "More than one terminal LF is rejected.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d0a0a",
+      "source_role": "canonical_payload",
+      "source_sha256": "b2c8d409a9bb444b06aeb235e2dcf8790a98de878db9f8eb13ac408a3f9f4a18"
+    },
+    {
+      "case_id": "v2.storage.whitespace",
+      "description": "Alternate insignificant whitespace is not canonical storage.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b20226d6574616461746122203a207b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "d17078753dfa02344e49cdef2c26cffb253e67004bfe740208046adafc61b4aa"
+    },
+    {
+      "case_id": "v2.storage.member_order",
+      "description": "Alternate member order is not canonical storage.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d6f64656c223a226d222c226d65746164617461223a7b7d2c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "07987311f2144869fc2925b87f03379b6904d7b22a5f57c126d5fe9504bb84d6"
+    },
+    {
+      "case_id": "v2.storage.escape_spelling",
+      "description": "An unnecessary Unicode escape is not canonical storage.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a225c7530303730222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "f8cbcf05897baec2168b20f95d98dfa4c13f2d6e73c9819c93094b0f58d3db8d"
+    },
+    {
+      "case_id": "v2.storage.number_spelling",
+      "description": "An alternate binary64 spelling is not canonical storage.",
+      "expected": {
+        "canonical_sha256": "5a8b8b25b9c46eb3bcd4d45c9d72bdacd8b79ed331b2ab4e6769aeacf5b0e0ab",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b226e223a317d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b226e223a312e307d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "6d1da78a1232d9be14cad34ee6114c7be1a8fee262588666cf0d7eeefa98d7f4"
+    },
+    {
+      "case_id": "v2.storage.v1_key_order",
+      "description": "V1 scalar order is not accepted where JCS UTF-16 order differs.",
+      "expected": {
+        "canonical_sha256": "b85af3e00687dde1a04200f22e2828512d6d324c62496f878458a5bf47f2f50c",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b22f09f9880223a312c22ee8080223a327d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "REJECT",
+        "error_category": "CANONICAL_BYTES_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b22ee8080223a322c22f09f9880223a317d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "e9771f768d216fe482f826eeac24a96815a7ef010a0e0d089db65e4d14a9e369"
+    },
+    {
+      "case_id": "v2.storage.duplicate",
+      "description": "A duplicate in stored canonical data is profile-invalid JSON.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "CANONICAL_NOT_JSON",
+        "routing_target": null
+      },
+      "operation": "storage_verify",
+      "source_bytes_hex": "7b226d65746164617461223a7b2261223a312c2261223a327d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "17e7504e5118408897e0c3d0ec34ebd91ed12e1da32212eb1bb4bc27bceeda00"
+    },
+    {
+      "case_id": "v2.hash.request",
+      "description": "Frozen byte vector for request_hash.",
+      "expected": {
+        "canonical_sha256": "6a6283706e695c8e94efad152bc1560b621d2f743bafe51f69ed8133c85f4832",
+        "canonical_utf8_hex": "7b226d65737361676573223a5b7b22636f6e74656e74223a2270222c22726f6c65223a2275736572227d5d2c226d6f64656c223a226d227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "hash_material",
+      "parameters": {
+        "construction": "request_hash"
+      },
+      "source_bytes_hex": "7b226d65737361676573223a5b7b22636f6e74656e74223a2270222c22726f6c65223a2275736572227d5d2c226d6f64656c223a226d227d",
+      "source_role": "hash_material",
+      "source_sha256": "6a6283706e695c8e94efad152bc1560b621d2f743bafe51f69ed8133c85f4832"
+    },
+    {
+      "case_id": "v2.hash.response",
+      "description": "Frozen byte vector for response_hash.",
+      "expected": {
+        "canonical_sha256": "43c1f9e7804b871fcfad5299bb691af2f13e4b29739f7ac6de7d6f98363a9637",
+        "canonical_utf8_hex": "7b22636f6e74656e74223a226f222c226d6f64656c223a226d227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "hash_material",
+      "parameters": {
+        "construction": "response_hash"
+      },
+      "source_bytes_hex": "7b22636f6e74656e74223a226f222c226d6f64656c223a226d227d",
+      "source_role": "hash_material",
+      "source_sha256": "43c1f9e7804b871fcfad5299bb691af2f13e4b29739f7ac6de7d6f98363a9637"
+    },
+    {
+      "case_id": "v2.hash.binding",
+      "description": "Frozen byte vector for binding_hash.",
+      "expected": {
+        "canonical_sha256": "ef4a677b231e08fff0f0d2aea37dd3ba011826387e9c94417ea6b1a49a8ede2a",
+        "canonical_utf8_hex": "7b22726571756573745f68617368223a2236613632383337303665363935633865393465666164313532626331353630623632316432663734336261666535316636396564383133336338356634383332222c22726573706f6e73655f68617368223a2234336331663965373830346238373166636661643532393962623639316166326631336534623239373339663761633664653764366639383336336139363337227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "hash_material",
+      "parameters": {
+        "construction": "binding_hash"
+      },
+      "source_bytes_hex": "7b22726571756573745f68617368223a2236613632383337303665363935633865393465666164313532626331353630623632316432663734336261666535316636396564383133336338356634383332222c22726573706f6e73655f68617368223a2234336331663965373830346238373166636661643532393962623639316166326631336534623239373339663761633664653764366639383336336139363337227d",
+      "source_role": "hash_material",
+      "source_sha256": "ef4a677b231e08fff0f0d2aea37dd3ba011826387e9c94417ea6b1a49a8ede2a"
+    },
+    {
+      "case_id": "v2.hash.invocation_identity",
+      "description": "Frozen byte vector for invocation_identity.hash_sha256.",
+      "expected": {
+        "canonical_sha256": "58bd072c8a78fdd5e423e155cf06600fcfdcebebf4edd69fcfbe466ab373f4fa",
+        "canonical_utf8_hex": "7b22666f726d6174223a2261656c697469756d2d696e766f636174696f6e2d7631222c226d6f6465223a2273796e635f6e6f6e5f73747265616d696e67222c2272657175657374223a7b226d65737361676573223a5b7b22636f6e74656e74223a2270222c22726f6c65223a2275736572227d5d2c226d6f64656c223a226d227d2c2273757266616365223a226f70656e61692e636861742e636f6d706c6574696f6e73227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "hash_material",
+      "parameters": {
+        "construction": "invocation_identity.hash_sha256"
+      },
+      "source_bytes_hex": "7b22666f726d6174223a2261656c697469756d2d696e766f636174696f6e2d7631222c226d6f6465223a2273796e635f6e6f6e5f73747265616d696e67222c2272657175657374223a7b226d65737361676573223a5b7b22636f6e74656e74223a2270222c22726f6c65223a2275736572227d5d2c226d6f64656c223a226d227d2c2273757266616365223a226f70656e61692e636861742e636f6d706c6574696f6e73227d",
+      "source_role": "hash_material",
+      "source_sha256": "58bd072c8a78fdd5e423e155cf06600fcfdcebebf4edd69fcfbe466ab373f4fa"
+    },
+    {
+      "case_id": "v2.hash.invocation_binding",
+      "description": "Frozen byte vector for invocation_binding.hash_sha256.",
+      "expected": {
+        "canonical_sha256": "fd8edc1d38580ac24a0c6ad502d256fadb6434690e0b10f161ae9b001a2900f3",
+        "canonical_utf8_hex": "7b22666f726d6174223a2261656c697469756d2d696e766f636174696f6e2d62696e64696e672d7631222c22696e766f636174696f6e5f68617368223a2235386264303732633861373866646435653432336531353563663036363030666366646365626562663465646436396663666265343636616233373366346661222c22726573706f6e73655f68617368223a2234336331663965373830346238373166636661643532393962623639316166326631336534623239373339663761633664653764366639383336336139363337227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": null
+      },
+      "operation": "hash_material",
+      "parameters": {
+        "construction": "invocation_binding.hash_sha256"
+      },
+      "source_bytes_hex": "7b22666f726d6174223a2261656c697469756d2d696e766f636174696f6e2d62696e64696e672d7631222c22696e766f636174696f6e5f68617368223a2235386264303732633861373866646435653432336531353563663036363030666366646365626562663465646436396663666265343636616233373366346661222c22726573706f6e73655f68617368223a2234336331663965373830346238373166636661643532393962623639316166326631336534623239373339663761633664653764366639383336336139363337227d",
+      "source_role": "hash_material",
+      "source_sha256": "fd8edc1d38580ac24a0c6ad502d256fadb6434690e0b10f161ae9b001a2900f3"
+    },
+    {
+      "case_id": "v2.dispatch.v1",
+      "description": "An exact final v1 selector enters the frozen v1 path.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "70fcd9aacc4b5cc1b64731a3abd064a7e9277b6e1efc1f8dcca792733e37e889"
+    },
+    {
+      "case_id": "v2.dispatch.v2",
+      "description": "An exact final v2 selector enters the strict v2 path.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "c201274563f8a9ab9f747f5994b287023e109eae0c809f3053b3b03e2107c5d6"
+    },
+    {
+      "case_id": "v2.dispatch.escaped_name_value",
+      "description": "Equivalent selector name and value escapes select v2.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c225c7530303633616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f5c753030373632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "511a08acb381b7f7dd7d5ff4dd7f1ec8f9619361af5243a4fd749c3390948dcd"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_escaped_name_value",
+      "description": "Legacy escape processing in the selector name and value still selects v1.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c225c7530303633616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f7574665c7530303338222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "c3548ed698027dddbf2953a4822744eb2c1214050dc733a042ffca94fc5accf1"
+    },
+    {
+      "case_id": "v2.dispatch.final_v1_wins",
+      "description": "The final duplicate selector chooses v1 and retains last-name-wins.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "09f4e392808620606afb42176ed3588178eff1ff96ab2c7a07639ed13dc68036"
+    },
+    {
+      "case_id": "v2.dispatch.final_v2_rejects_duplicate",
+      "description": "The final duplicate selector chooses v2, whose fresh parse rejects both occurrences.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "e3e65dabdf33cc411f4c2b1d048ff0ed543d9fd66c493d1ebb1a7e106501cb0f"
+    },
+    {
+      "case_id": "v2.dispatch.nested_selector_ignored",
+      "description": "A nested selector cannot select v2.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_MISSING_FIELD",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a7b2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632227d2c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "976f0595e8e9d84bae16991f5d06bc7afd41b4f26bb9b9b734e132d8446b59ea"
+    },
+    {
+      "case_id": "v2.dispatch.missing_selector",
+      "description": "A missing selector uses legacy required-field precedence.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_MISSING_FIELD",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "2c7f96f2c33ef14443211d535e32f1e50e2064107f8d645725888928af4e2e5c"
+    },
+    {
+      "case_id": "v2.dispatch.unknown_selector",
+      "description": "An unknown selector reaches the legacy identifier check.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_BAD_CANONICALIZATION",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_BAD_CANONICALIZATION"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a22756e6b6e6f776e222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "f7a1b8d616772d126aea3a525b35a4213148886771786fa0069cdbd2182137bc"
+    },
+    {
+      "case_id": "v2.dispatch.non_string_selector",
+      "description": "A non-string selector reaches the legacy identifier check.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_BAD_CANONICALIZATION",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_BAD_CANONICALIZATION"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a322c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "d866fc9c77648d48c29b0b07b1d19cb5b3f62f34945b4943fc020d9110c28914"
+    },
+    {
+      "case_id": "v2.dispatch.malformed_suffix",
+      "description": "A partial v2 selector before malformed trailing data cannot dispatch.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d20747261696c696e67",
+      "source_role": "manifest",
+      "source_sha256": "b144f4ac86921049d04f17f186108ca4dc2a1d681b95b55d5a747b32055c54ee"
+    },
+    {
+      "case_id": "v2.dispatch.non_object",
+      "description": "A non-object root retains legacy MANIFEST_NOT_OBJECT.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_OBJECT",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_OBJECT"
+      },
+      "source_bytes_hex": "5b5d",
+      "source_role": "manifest",
+      "source_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "case_id": "v2.dispatch.unknown_after_missing_schema",
+      "description": "Missing-field precedence remains ahead of an unknown selector.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_MISSING_FIELD",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "source_bytes_hex": "7b2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a22756e6b6e6f776e222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "536d32d8ad00c8ca1c3f26ac0d5dfec0c2dd0adc5b22132350f2a20f9bc5c9eb"
+    },
+    {
+      "case_id": "v2.dispatch.unknown_after_bad_schema",
+      "description": "Bad-schema precedence remains ahead of an unknown selector.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_BAD_SCHEMA",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_BAD_SCHEMA"
+      },
+      "source_bytes_hex": "7b22736368656d61223a22626164222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a22756e6b6e6f776e222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "03457ebf16a72d986d1ce9bba14edf7d707c4c0a28cf896aa104851d2e059eb4"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_nan",
+      "description": "NaN before a final v1 selector reaches unchanged v1 parsing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a4e614e2c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "2f377a823c25c591d8bb154ed3621d177b07b482c9979b9538b6482d3c435bcc"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_infinity",
+      "description": "Infinity before a final v1 selector reaches unchanged v1 parsing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a496e66696e6974792c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "7cb077e0d4f0ee873d48f16d41e442b67221b6bdc035d4e7f8bd388181fa123b"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_negative_infinity",
+      "description": "Negative infinity before a final v1 selector reaches unchanged v1 parsing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a2d496e66696e6974792c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "18f66aa6903e9a0992eba72ec854d30da8bc81cf25a671426f29ffd958434d65"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_surrogate",
+      "description": "An ignored unpaired surrogate reaches unchanged v1 parsing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a225c7564383030222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "4f8c3654ab1a11f1529b5ffae7d8683ba2b173064755a0ad429ff468425370b0"
+    },
+    {
+      "case_id": "v2.dispatch.legacy_unrelated_duplicate",
+      "description": "An unrelated duplicate retains v1 last-name-wins behavior.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a312c22657874656e73696f6e223a322c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "76415d1abcf3ef0de7e9a0bbe298769260fb452a69c6915da9631c7892c6c03d"
+    },
+    {
+      "case_id": "v2.dispatch.v2_rejects_legacy_forms",
+      "description": "The same legacy forms with a final v2 selector fail the strict fresh parse.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c226e616e223a4e614e2c22696e66223a496e66696e6974792c226e696e66223a2d496e66696e6974792c22737572726f67617465223a225c7564383030222c22647570223a312c22647570223a322c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "afce49e0154b9fcc92b4ad0a3754487c6f02bc77c380e85881137437b8e5fab5"
+    },
+    {
+      "case_id": "v2.manifest.unknown_valid_extension",
+      "description": "A profile-valid unknown extension is ignored under v2.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a7b2261223a5b312c747275652c6e756c6c5d7d2c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "373c4177dc5e3a508cd2569730975f55e92d039a2f142415f24523590945e13b"
+    },
+    {
+      "case_id": "v2.manifest.unknown_invalid_unicode",
+      "description": "Invalid Unicode in an ignored extension rejects the v2 manifest.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a225c7564383030222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "fcf50122dea0f4907b3f0a8bd678c6b7b6e13c6387322dd8f5323a304a6a97d6"
+    },
+    {
+      "case_id": "v2.manifest.unknown_noncharacter",
+      "description": "A noncharacter in an ignored extension rejects the v2 manifest.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a225c7566646430222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "dd66a5e79b45e3403593917e9c87274b497028ec90e196dc00fcb5eca098592d"
+    },
+    {
+      "case_id": "v2.manifest.unknown_out_of_range_number",
+      "description": "An out-of-range number in an ignored extension rejects the v2 manifest.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a393030373139393235343734303939322c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "68cd39d820093146e2a15ec349ce5b4d9d75b8c33ffdc8259058dbf01ab23164"
+    },
+    {
+      "case_id": "v2.manifest.nested_duplicate",
+      "description": "A nested duplicate in an ignored extension rejects the v2 manifest.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a7b2261223a312c2261223a327d2c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "4069663155bdec45d2d7ec5f82fc6a098e34eca73f2c9b4d4086e92d70b27739"
+    },
+    {
+      "case_id": "v2.manifest.bom_no_partial_dispatch",
+      "description": "A BOM prevents partial v2 dispatch and legacy parsing reports malformed JSON.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "efbbbf7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "95bc42994311584f445b2bdec3d88e6843448573137f6e30a979e98c94ef9d47"
+    },
+    {
+      "case_id": "v2.dispatch.deep_array_before_v2",
+      "description": "A deeply nested array before the final v2 selector routes independently of Python recursion limits.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 520,
+        "recursion_limits": [
+          500,
+          1000
+        ],
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b305d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d2c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "63a827a6c31f6d6e354c163aaccd93a8770ade95aea4203419fa17e47069e738"
+    },
+    {
+      "case_id": "v2.dispatch.deep_object_after_v2",
+      "description": "A deeply nested object after the final v2 selector does not alter v2 routing.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 520,
+        "recursion_limits": [
+          500,
+          1000
+        ],
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c22657874656e73696f6e223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a307d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d2c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "d1510547a3c3042b0dc8df4b71b5f591c4b4a994d800c0977a979051c285fc2d"
+    },
+    {
+      "case_id": "v2.dispatch.deep_array_before_v1",
+      "description": "A deeply nested array before the final v1 selector still enters the legacy parser.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 260,
+        "recursion_limits": [
+          500,
+          1000
+        ],
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b305d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d2c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "dd573c668fc018a6653974393bbc4d66ddaeee3558e597bc486bc1e6a7788273"
+    },
+    {
+      "case_id": "v2.dispatch.deep_object_after_v1",
+      "description": "A deeply nested object after the final v1 selector still enters the legacy parser.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 520,
+        "recursion_limits": [
+          1000
+        ],
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c22657874656e73696f6e223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a307d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d2c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "8ffb7fb33bcd90d530aad062173c9534fc546587ee8d4e2444a9fa8d44495f66"
+    },
+    {
+      "case_id": "v2.dispatch.deep_malformed_array_before_selector",
+      "description": "A malformed deeply nested array cannot partially dispatch on the later v2 text.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 520,
+        "recursion_limits": [
+          500,
+          1000
+        ],
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b305d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d2c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "77ab2737fbd199728b43ea99fdaab5ce115acb0eb9973ea8af8a744b298ff7b8"
+    },
+    {
+      "case_id": "v2.dispatch.deep_malformed_object_after_selector",
+      "description": "A malformed deeply nested object after a v2 selector causes complete-scan legacy error resolution.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "legacy_error_resolution"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "nesting_depth": 520,
+        "recursion_limits": [
+          500,
+          1000
+        ],
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c22657874656e73696f6e223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a7b2278223a307d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d2c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "4a8576b42ac7cdef669c234ffb6b3d1014c90df58f598848b5d3e8a521cff039"
+    },
+    {
+      "case_id": "v2.dispatch.integer_640_at_640",
+      "description": "A 640-digit legacy extension is routed without scanner conversion.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 640,
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "9e2c0cadb1f7f0d5baf3bd350f3c135af1d889978a8ae31bd235d4e372727846"
+    },
+    {
+      "case_id": "v2.dispatch.integer_641_at_640",
+      "description": "A 641-digit legacy extension is routed without scanner conversion.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 640,
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a39393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "901805a33df09fdf2559098f0ef4c00e799a3ef3f7da51921771fb6f8b0e5c62"
+    },
+    {
+      "case_id": "v2.dispatch.integer_4300_at_4300",
+      "description": "A 4300-digit legacy extension is routed without scanner conversion.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 4300,
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "a43a6a66a635e22ef5522c3ddbc1a92ccbddf651abf50f233149e07bec13ff3a"
+    },
+    {
+      "case_id": "v2.dispatch.integer_4301_at_4300",
+      "description": "A 4301-digit legacy extension is routed without scanner conversion.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 4300,
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a39393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "45af24a85cd1d9d431761292cc8a4e2f28e964709ff00a0b9a2029d6c563a9ea"
+    },
+    {
+      "case_id": "v2.dispatch.integer_10000_disabled",
+      "description": "A 10000-digit legacy extension is routed without scanner conversion.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 0,
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "ea4531f969a08ec57fb340a9e04b315e55ed6db8e2dc54b409eb2e1d92604696"
+    },
+    {
+      "case_id": "v2.dispatch.integer_10000_final_v2",
+      "description": "A 10,000-digit token with final v2 is rejected by the strict profile, even with the legacy limit disabled.",
+      "expected": {
+        "canonical_sha256": null,
+        "canonical_utf8_hex": null,
+        "decision": "REJECT",
+        "error_category": "MANIFEST_NOT_JSON",
+        "routing_target": "v2"
+      },
+      "operation": "dispatch_verify",
+      "parameters": {
+        "int_digit_limit": 0,
+        "verifier_reason": "MANIFEST_NOT_JSON"
+      },
+      "source_bytes_hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c22657874656e73696f6e223a393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939393939392c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2238323232383534663130393234323535636139363966306438616664623032333634343430623164646530333966303935326464323565643436633936653164227d",
+      "source_role": "manifest",
+      "source_sha256": "8620155dd3eb1f0b2597b425ccd2ff022e72989eb1af5dadcf668680d9e9326f"
+    },
+    {
+      "case_id": "v2.comparison.identifier_mismatch",
+      "description": "Verified v1 and v2 bundles have no current comparison basis.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "NOT_COMPARABLE",
+        "error_category": "CANONICALIZATION_IDENTIFIER_MISMATCH",
+        "routing_target": null
+      },
+      "operation": "comparison",
+      "parameters": {
+        "comparison_basis": "NONE",
+        "response_relationship": null
+      },
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d"
+    },
+    {
+      "case_id": "v2.compatibility.v1_shared_domain_artifact",
+      "description": "A frozen v1 artifact retains its exact payload digest and result.",
+      "expected": {
+        "canonical_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d",
+        "canonical_utf8_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+        "decision": "ACCEPT",
+        "error_category": null,
+        "routing_target": "v1"
+      },
+      "operation": "v1_artifact",
+      "parameters": {
+        "verifier_reason": "OK"
+      },
+      "source_bytes_hex": "7b226d65746164617461223a7b7d2c226d6f64656c223a226d222c226f7574707574223a226f222c2270726f6d7074223a2270222c22736368656d615f76657273696f6e223a2261695f6f75747075745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a227d",
+      "source_role": "canonical_payload",
+      "source_sha256": "8222854f10924255ca969f0d8afdb02364440b1dde039f0952dd25ed46c96e1d"
+    }
+  ]
+}

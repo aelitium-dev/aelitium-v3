@@ -4,8 +4,14 @@ from typing import Any, Tuple
 
 from jsonschema import Draft7Validator
 
-from .ai_contract import AI_OUTPUT_SCHEMA_FILENAME, AI_OUTPUT_SCHEMA_VERSION
+from .ai_contract import (
+    AI_CANONICALIZATION,
+    AI_CANONICALIZATION_V2,
+    AI_OUTPUT_SCHEMA_FILENAME,
+    AI_OUTPUT_SCHEMA_VERSION,
+)
 from .canonical import CanonicalizationError, canonical_json, sha256_hash
+from .canonical_v2 import canonical_json_v2
 
 
 class AICanonicalError(ValueError):
@@ -31,7 +37,10 @@ def validate_ai_output(obj: Any) -> None:
         raise AICanonicalError("AI_OUTPUT_SCHEMA_INVALID")
 
 
-def canonicalize_ai_output(obj: Any) -> Tuple[str, str]:
+def canonicalize_ai_output(
+    obj: Any,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> Tuple[str, str]:
     """
     Canonicalize an ai_output_v1 object into deterministic JSON bytes (as str)
     and return (canonical_json_str, sha256_hex).
@@ -42,9 +51,14 @@ def canonicalize_ai_output(obj: Any) -> Tuple[str, str]:
     """
     validate_ai_output(obj)
 
-    # Canonical JSON: sorted keys, UTF-8, no whitespace
     try:
-        canonical = canonical_json(obj)
+        if canonicalization == AI_CANONICALIZATION:
+            # This is the complete frozen v1 operation.
+            canonical = canonical_json(obj)
+        elif canonicalization == AI_CANONICALIZATION_V2:
+            canonical = canonical_json_v2(obj)
+        else:
+            raise ValueError(f"unsupported canonicalization: {canonicalization}")
     except CanonicalizationError as exc:
         raise AICanonicalError("AI_OUTPUT_INVALID_UNICODE") from exc
     digest = sha256_hash(canonical)

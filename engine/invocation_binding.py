@@ -48,7 +48,9 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from .canonical import canonical_json, sha256_hash
+from .ai_contract import AI_CANONICALIZATION
+from .canonical import sha256_hash
+from .canonicalization import canonical_json_for_identifier
 
 INVOCATION_BINDING_FORMAT = "aelitium-invocation-binding-v1"
 
@@ -103,13 +105,19 @@ def _validate_hash_field(value: Any, reason: str, field_name: str) -> str:
     return value
 
 
-def _finalize(invocation_hash: str, response_hash: str) -> InvocationBinding:
+def _finalize(
+    invocation_hash: str,
+    response_hash: str,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> InvocationBinding:
     hash_material = {
         "format": INVOCATION_BINDING_FORMAT,
         "invocation_hash": invocation_hash,
         "response_hash": response_hash,
     }
-    digest = sha256_hash(canonical_json(hash_material))
+    digest = sha256_hash(
+        canonical_json_for_identifier(hash_material, canonicalization)
+    )
     return InvocationBinding(
         format=INVOCATION_BINDING_FORMAT,
         invocation_hash=invocation_hash,
@@ -122,6 +130,7 @@ def build_invocation_binding(
     *,
     invocation_hash: str,
     response_hash: str,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> InvocationBinding:
     """Build and validate an invocation binding from live values.
 
@@ -140,10 +149,18 @@ def build_invocation_binding(
         "INVOCATION_BINDING_BAD_RESPONSE_HASH",
         "response_hash",
     )
-    return _finalize(invocation_hash, response_hash)
+    return _finalize(
+        invocation_hash,
+        response_hash,
+        canonicalization=canonicalization,
+    )
 
 
-def parse_invocation_binding(data: Any) -> InvocationBinding:
+def parse_invocation_binding(
+    data: Any,
+    *,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> InvocationBinding:
     """Strictly validate a stored invocation-binding object and recompute
     its hash from the stored invocation_hash/response_hash fields.
 
@@ -192,7 +209,11 @@ def parse_invocation_binding(data: Any) -> InvocationBinding:
         "hash_sha256",
     )
 
-    binding = _finalize(invocation_hash, response_hash)
+    binding = _finalize(
+        invocation_hash,
+        response_hash,
+        canonicalization=canonicalization,
+    )
     if binding.hash_sha256 != stored_hash:
         raise InvocationBindingError(
             "INVOCATION_BINDING_HASH_MISMATCH",

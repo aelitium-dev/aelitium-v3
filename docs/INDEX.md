@@ -27,8 +27,11 @@
 - [Contract demo](CONTRACT_DEMO.md)
 - [Independent verifier requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md)
 - [Public conformance corpus](../conformance/README.md)
-- [Cross-language canonicalization corpus](../conformance/canonicalization/README.md)
+- [Released-v1 cross-language canonicalization corpus](../conformance/canonicalization/README.md)
+- [Unreleased portable-v2 canonicalization corpus](../conformance/canonicalization_v2/README.md)
+- [Canonicalization specification](CANONICALIZATION_SPEC.md)
 - [Cross-language canonicalization audit](internal/CROSS_LANGUAGE_CANONICALIZATION_AUDIT.md)
+- [Approved portable-v2 design](internal/CANONICALIZATION_V2_PORTABLE_DESIGN.md)
 
 ## Offline verification
 - docs/OFFLINE_VERIFIER.md

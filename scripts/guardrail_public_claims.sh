@@ -215,6 +215,29 @@ require_literal "conformance/canonicalization/manifest.json" \
   '"canonicalization_identifier": "json_sorted_keys_no_whitespace_utf8"'
 require_literal "conformance/canonicalization/manifest.json" \
   '"integer_magnitude_more_than_640_decimal_digits"'
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  '**Additional unreleased identifier:** `aelitium_jcs_profile_v2`'
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  "AELITIUM-DISPATCH-JSON-1"
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  "CANONICALIZATION_IDENTIFIER_MISMATCH"
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  "rather than narrowing v1"
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
+  "aelitium_jcs_profile_v2"
+require_literal "README.md" \
+  '`json_sorted_keys_no_whitespace_utf8` and all v0.4.0 behavior remain unchanged.'
+require_literal "README.md" \
+  "No Go, Rust, or other second verifier is"
+require_literal "FEATURE_MATRIX.md" \
+  "Portable canonicalization v2 — UNRELEASED"
+require_literal "conformance/canonicalization_v2/README.md" \
+  "**Status:** IMPLEMENTATION-ALIGNED-UNRELEASED"
+require_literal "conformance/canonicalization_v2/manifest.json" \
+  '"case_count": 114'
+require_literal "conformance/canonicalization_v2/manifest.json" \
+  '"canonicalization_identifier": "aelitium_jcs_profile_v2"'
+require_literal "pyproject.toml" '"rfc8785==0.1.4"'
 
 for dimension in "${assurance_dimensions[@]}"; do
   require_literal "docs/ASSURANCE_RESULT_V1.md" "$dimension"

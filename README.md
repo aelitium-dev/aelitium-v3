@@ -101,7 +101,7 @@ offer `--json`. Successful `verify` and `verify-bundle` calls emit JSON when
 requested; invalid results currently retain key/value compatibility output. The
 standalone verifier emits JSON for invalid verification results.
 
-## Unreleased contract-conformance surface
+## Unreleased implementation surfaces
 
 The current `[Unreleased]` branch work adds an explicit opt-in result contract
 without changing the published v0.4.0 text or legacy JSON surfaces:
@@ -117,6 +117,26 @@ retains its `aelitium-compare-v1` identity and old keys while adding per-side
 verification summaries, explicit comparability and response relationships, and
 claim boundaries.
 
+The same unreleased branch also implements the separately identified portable
+canonicalization profile `aelitium_jcs_profile_v2`. It uses strict UTF-8 JSON,
+rejects duplicate names and invalid/noncharacter Unicode recursively, bounds
+all native numbers to finite binary64 values of magnitude at most `2^53 - 1`,
+and emits exact RFC 8785 / JCS bytes. The released identifier
+`json_sorted_keys_no_whitespace_utf8` and all v0.4.0 behavior remain unchanged.
+V2 is selected only by the final top-level manifest selector after a
+non-converting lexical dispatch scan.
+
+Producer CLI calls remain v1 by default. An explicit unreleased v2 build uses:
+
+```bash
+aelitium pack --input ai_output.json --out ./bundle \
+  --canonicalization aelitium_jcs_profile_v2
+```
+
+A valid v1 bundle and a valid v2 bundle are not comparable under any current
+basis: comparison reports `NOT_COMPARABLE`, basis `NONE`, reason
+`CANONICALIZATION_IDENTIFIER_MISMATCH`, and a null response relationship.
+
 The public deterministic corpus contains 44 adversarial vectors, and the
 contract demo writes separate verification, assurance, `CHANGED`, and
 `NOT_COMPARABLE` results without an API call:
@@ -124,6 +144,7 @@ contract demo writes separate verification, assurance, `CHANGED`, and
 ```bash
 python3 conformance/run.py
 python3 conformance/run_canonicalization.py
+python3 conformance/run_canonicalization_v2.py
 python3 examples/contract_demo/run_demo.py \
   --output-dir /tmp/aelitium-contract-demo
 ```
@@ -136,6 +157,13 @@ non-finite legacy tokens and integer magnitudes above 640 digits. The latter
 range remains explicitly `OPEN`; legacy acceptance of an escaped surrogate in
 an ignored manifest extension is documented outside the subset, and no
 complete clean-room verifier is claimed.
+
+The separate portable-v2 runner checks 114 frozen cases spanning RFC 8785
+serialization, the AELITIUM value profile, exact storage and hash inputs,
+manifest dispatch, legacy CPython integer-limit isolation, unknown extensions,
+and v1/v2 comparison refusal. Its expected bytes are committed independently
+of the production canonicalizer. No Go, Rust, or other second verifier is
+implemented or claimed.
 
 See [Verification result v1](docs/VERIFICATION_RESULT_V1.md),
 [assurance result v1](docs/ASSURANCE_RESULT_V1.md),
@@ -501,10 +529,10 @@ are independently trusted.
 | `scan <path>` | Scan Python files for uninstrumented LLM call sites |
 | `compare <bundle_a> <bundle_b>` | Compare validated recorded hashes using an explicit invocation-first, fallback, strict, or legacy basis |
 | `verify-bundle <dir>` | Verify the eight-dimension assurance result, including invocation consistency and optional declared-time Freshness evaluation |
-| `pack --input <file> --out <dir>` | Generate canonical JSON + manifest |
+| `pack --input <file> --out <dir>` | Generate canonical JSON + manifest; defaults to released v1 and accepts an explicit unreleased `--canonicalization` identifier |
 | `verify` with `--out=<dir>` | Verify the same eight-dimension assurance result for a pack output directory |
 | `validate --input <file>` | Validate against `ai_output_v1` schema |
-| `canonicalize --input <file>` | Print deterministic hash |
+| `canonicalize --input <file>` | Print a deterministic hash; defaults to released v1 and accepts an explicit unreleased `--canonicalization` identifier |
 | `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
 | `export --bundle <dir>` | Export a project-defined Article 12-oriented record mapping |
 
@@ -528,8 +556,9 @@ See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
 - [Compare result v1](docs/COMPARE_RESULT_V1.md) — hardened additive JSON representation of `aelitium-compare-v1`
 - [Contract demo](docs/CONTRACT_DEMO.md) — deterministic verification, assurance, `CHANGED`, and `NOT_COMPARABLE` walkthrough
 - [Independent verifier requirements](docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md) — research gate for a later clean-room implementation
-- [Canonicalization specification](docs/CANONICALIZATION_SPEC.md) — implementation-aligned byte rules, restricted subset, and explicit open integer boundary
+- [Canonicalization specification](docs/CANONICALIZATION_SPEC.md) — released-v1 preservation and the separately identified unreleased portable-v2 rules
 - [Cross-language canonicalization corpus](conformance/canonicalization/README.md) — 30 frozen positive and negative byte vectors
+- [Portable-v2 canonicalization corpus](conformance/canonicalization_v2/README.md) — 114 frozen serialization, profile, dispatch, integration, and compatibility vectors
 - [SCITT AI-Agent Action Receipt 01 mapping](docs/interop/SCITT_AI_AGENT_RECEIPT_01.md) — experimental exact-version analysis and implementation blocker
 - [External validation guide](docs/EXTERNAL_VALIDATION.md) — install v0.4.0 and exercise frozen evidence offline in about 10 minutes
 - [Interoperability landscape](docs/INTEROP_LANDSCAPE.md) — non-normative positioning across telemetry, receipts, protocols, frameworks, and policy

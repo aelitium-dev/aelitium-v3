@@ -3,8 +3,9 @@
 Status: DRAFT — non-exhaustive inventory of the released 0.4.0 surface
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
-Sections 1–13 inventory the published v0.4.0 release. Section 14 is explicitly
-unreleased, additive branch work and does not redefine the released behavior.
+Sections 1–13 inventory the published v0.4.0 release. Sections 14–15 are
+explicitly unreleased, additive branch work and do not redefine the released
+behavior.
 
 ---
 
@@ -311,3 +312,44 @@ unreleased, additive branch work and does not redefine the released behavior.
   - Does not claim complete cross-language closure for integer magnitudes above
     the explicit 640-digit restricted subset
   - Does not change existing text output, legacy JSON behavior, or exit codes
+
+---
+
+## 15. Portable canonicalization v2 — UNRELEASED
+
+- Feature: opt-in `aelitium_jcs_profile_v2` bundle canonicalization
+- Interface: verifier dispatch, Python producer APIs, explicit `pack` and
+  `canonicalize --canonicalization` CLI selection, frozen corpus
+- Source: `engine/canonical_v2.py`, `engine/manifest_dispatch.py`,
+  `engine/canonicalization.py`, `conformance/canonicalization_v2/`
+- Status: implemented on the current unreleased branch
+
+- Guarantees on this branch:
+  - Preserves `json_sorted_keys_no_whitespace_utf8` as the released v1 default
+    and keeps v0.4.0 parsing, last-name-wins, reasons, and hashes unchanged
+  - Dispatches from the final top-level selector using the non-converting
+    `AELITIUM-DISPATCH-JSON-1` scanner over original manifest bytes
+  - Uses iterative structural and v2-profile traversal so Python recursion
+    limits cannot redirect a valid v2 selector into the legacy route
+  - Applies strict UTF-8 RFC 8259 parsing, recursive duplicate rejection,
+    Unicode scalar/noncharacter checks, and the finite binary64 safe-number
+    profile only after v2 selection
+  - Emits exact RFC 8785 / JCS bytes using pinned `rfc8785==0.1.4`
+    (Apache-2.0), accepts storage as `C` or `C || LF`, and hashes only `C`
+  - Uses the selected v2 canonicalizer consistently for payload, request,
+    response, original binding, invocation identity, and invocation binding
+    hash material
+  - Keeps signatures over exact raw manifest bytes and gives valid unknown
+    manifest extensions no verification or assurance meaning
+  - Refuses verified v1/v2 comparison as `NOT_COMPARABLE` with basis `NONE`
+    and reason `CANONICALIZATION_IDENTIFIER_MISMATCH`
+  - Exercises 114 separately frozen positive, negative, routing, integration,
+    compatibility, and exact-byte cases
+
+- Non-guarantees:
+  - Does not release, tag, publish, or migrate existing evidence
+  - Does not solve v1 arbitrary-integer portability or apply RFC 8785 to v1
+  - Does not provide a cross-version comparison bridge
+  - Does not implement or claim a second independent verifier
+  - Does not establish semantic truth, provider execution, response causation,
+    capture completeness, authorization, or legal compliance

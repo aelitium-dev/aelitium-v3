@@ -20,8 +20,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..canonical import canonical_json, sha256_hash
+from ..ai_contract import AI_CANONICALIZATION
 from ..ai_pack import ai_pack_from_obj
+from ..canonical import sha256_hash
+from ..canonicalization import canonical_json_for_identifier
 from ..invocation import (
     MODE_SYNC_NON_STREAMING,
     MODE_SYNC_STREAMING,
@@ -87,6 +89,7 @@ def capture_chat_completion(
     messages: List[Dict[str, str]],
     out_dir: str | Path,
     metadata: Optional[Dict[str, Any]] = None,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> CaptureResult:
     """
     Call OpenAI chat completions and pack the result into a tamper-evident bundle.
@@ -113,7 +116,9 @@ def capture_chat_completion(
     """
     # 1. Hash the request before sending — records what was asked
     request_payload = {"messages": messages, "model": model}
-    request_hash = sha256_hash(canonical_json(request_payload))
+    request_hash = sha256_hash(
+        canonical_json_for_identifier(request_payload, canonicalization)
+    )
 
     # 2. Call the API
     response = client.chat.completions.create(model=model, messages=messages)
@@ -123,10 +128,17 @@ def capture_chat_completion(
 
     # 4. Hash the response — records what the model returned
     response_data = {"content": output_text, "model": response.model}
-    response_hash = sha256_hash(canonical_json(response_data))
+    response_hash = sha256_hash(
+        canonical_json_for_identifier(response_data, canonicalization)
+    )
 
     # 5. Binding hash — single proof linking request↔response
-    binding_hash = sha256_hash(canonical_json({"request_hash": request_hash, "response_hash": response_hash}))
+    binding_hash = sha256_hash(
+        canonical_json_for_identifier(
+            {"request_hash": request_hash, "response_hash": response_hash},
+            canonicalization,
+        )
+    )
 
     # 6. Provider metadata
     choices = getattr(response, "choices", [])
@@ -162,7 +174,7 @@ def capture_chat_completion(
         finish_reason = _safe_str(raw_fr)
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prompt_str = canonical_json(messages)
+    prompt_str = canonical_json_for_identifier(messages, canonicalization)
 
     # 6.5. Invocation identity (P1.2b) -- additive metadata, not part of
     # request_hash/response_hash/binding_hash. The OpenAI adapter exposes no
@@ -172,6 +184,7 @@ def capture_chat_completion(
         mode=MODE_SYNC_NON_STREAMING,
         model=model,
         messages=messages,
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     # Invocation binding (P1.2d2): links the invocation identity above to
@@ -180,6 +193,7 @@ def capture_chat_completion(
     invocation_binding = build_invocation_binding(
         invocation_hash=invocation_identity["hash_sha256"],
         response_hash=response_hash,
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     base_metadata: Dict[str, Any] = {
@@ -208,7 +222,7 @@ def capture_chat_completion(
     }
 
     # 7. Pack into evidence bundle
-    result = ai_pack_from_obj(payload)
+    result = ai_pack_from_obj(payload, canonicalization=canonicalization)
 
     # 8. Add binding_hash to manifest
     manifest_with_binding = {**result.manifest, "binding_hash": binding_hash}
@@ -240,6 +254,7 @@ def capture_chat_completion_stream(
     messages: List[Dict[str, str]],
     out_dir: str | Path,
     metadata: Optional[Dict[str, Any]] = None,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> CaptureResult:
     """
     Call OpenAI chat completions with streaming and pack the accumulated result
@@ -258,7 +273,9 @@ def capture_chat_completion_stream(
     """
     # 1. Hash request before calling
     request_payload = {"messages": messages, "model": model}
-    request_hash = sha256_hash(canonical_json(request_payload))
+    request_hash = sha256_hash(
+        canonical_json_for_identifier(request_payload, canonicalization)
+    )
 
     # 2. Call API with stream=True and accumulate
     stream = client.chat.completions.create(model=model, messages=messages, stream=True)
@@ -281,14 +298,21 @@ def capture_chat_completion_stream(
 
     # 3. response_hash over accumulated content
     response_data = {"content": output_text, "model": model}
-    response_hash = sha256_hash(canonical_json(response_data))
+    response_hash = sha256_hash(
+        canonical_json_for_identifier(response_data, canonicalization)
+    )
 
     # 4. binding_hash
-    binding_hash = sha256_hash(canonical_json({"request_hash": request_hash, "response_hash": response_hash}))
+    binding_hash = sha256_hash(
+        canonical_json_for_identifier(
+            {"request_hash": request_hash, "response_hash": response_hash},
+            canonicalization,
+        )
+    )
 
     # 5. Build payload
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prompt_str = canonical_json(messages)
+    prompt_str = canonical_json_for_identifier(messages, canonicalization)
 
     # Invocation identity (P1.2b): mode=sync_streaming ensures this has a
     # different hash than an equivalent non-streaming call for the same
@@ -298,12 +322,14 @@ def capture_chat_completion_stream(
         mode=MODE_SYNC_STREAMING,
         model=model,
         messages=messages,
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     # Invocation binding (P1.2d2): see capture_chat_completion for rationale.
     invocation_binding = build_invocation_binding(
         invocation_hash=invocation_identity["hash_sha256"],
         response_hash=response_hash,
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     base_metadata: Dict[str, Any] = {
@@ -329,7 +355,7 @@ def capture_chat_completion_stream(
         "ts_utc": ts,
     }
 
-    result = ai_pack_from_obj(payload)
+    result = ai_pack_from_obj(payload, canonicalization=canonicalization)
     manifest_with_binding = {**result.manifest, "binding_hash": binding_hash}
 
     out_path = Path(out_dir)

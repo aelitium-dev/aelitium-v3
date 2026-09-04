@@ -9,7 +9,13 @@ from pathlib import Path
 #  - running as a script   (python engine/ai_cli.py)
 if __package__:
     from .ai_canonical import AICanonicalError, canonicalize_ai_output
+    from .ai_contract import (
+        AI_CANONICALIZATION,
+        AI_CANONICALIZATION_IDENTIFIERS,
+        AI_CANONICALIZATION_V2,
+    )
     from .ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
+    from .canonical_v2 import parse_json_v2
     from .result_contracts import (
         build_comparison_contract_fields,
         build_verification_result,
@@ -19,7 +25,13 @@ else:
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
     from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
+    from engine.ai_contract import (
+        AI_CANONICALIZATION,
+        AI_CANONICALIZATION_IDENTIFIERS,
+        AI_CANONICALIZATION_V2,
+    )
     from engine.ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
+    from engine.canonical_v2 import parse_json_v2
     from engine.result_contracts import (
         build_comparison_contract_fields,
         build_verification_result,
@@ -120,8 +132,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 def cmd_canonicalize(args: argparse.Namespace) -> int:
-    obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    canonical, h = canonicalize_ai_output(obj)
+    source = Path(args.input)
+    if args.canonicalization == AI_CANONICALIZATION_V2:
+        obj = parse_json_v2(source.read_bytes())
+    else:
+        obj = json.loads(source.read_text(encoding="utf-8"))
+    canonical, h = canonicalize_ai_output(obj, args.canonicalization)
     if args.print:
         print(canonical)
     print(f"AI_CANON_SHA256={h}")
@@ -364,7 +380,13 @@ def cmd_compare(args: argparse.Namespace) -> int:
     def _short(value) -> str:
         return value[:16] + "..." if value else "N/A"
 
-    def _interpretation(status: str) -> str:
+    def _interpretation(status: str, reason: str = "") -> str:
+        if reason == "CANONICALIZATION_IDENTIFIER_MISMATCH":
+            return (
+                "No response-change conclusion is made because the bundles "
+                "select different canonicalization identifiers and no current "
+                "comparison basis defines a cross-version bridge."
+            )
         if status == "NOT_COMPARABLE":
             return (
                 "No response-change conclusion is made because the selected "
@@ -516,9 +538,15 @@ def cmd_compare(args: argparse.Namespace) -> int:
         identity_b is AssuranceState.VALID
         and invocation_binding_b is AssuranceState.VALID
     )
+    canonicalization_mismatch = (
+        result_a.manifest["canonicalization"]
+        != result_b.manifest["canonicalization"]
+    )
 
     required_basis = None
-    if mode == COMPARISON_MODE_LEGACY_REQUEST_HASH_V1:
+    if canonicalization_mismatch:
+        basis = COMPARISON_BASIS_NONE
+    elif mode == COMPARISON_MODE_LEGACY_REQUEST_HASH_V1:
         basis = COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY
     elif usable_a and usable_b:
         basis = COMPARISON_BASIS_INVOCATION_IDENTITY_V1
@@ -528,14 +556,21 @@ def cmd_compare(args: argparse.Namespace) -> int:
     else:
         basis = COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK
 
-    req = _relation(h_a["request_hash"], h_b["request_hash"])
-    resp = _relation(h_a["response_hash"], h_b["response_hash"])
-    bind = _relation(h_a["binding_hash"], h_b["binding_hash"])
-    invocation = _relation(
-        h_a["invocation_identity_hash"], h_b["invocation_identity_hash"]
-    )
+    if canonicalization_mismatch:
+        req = resp = bind = invocation = "UNAVAILABLE"
+    else:
+        req = _relation(h_a["request_hash"], h_b["request_hash"])
+        resp = _relation(h_a["response_hash"], h_b["response_hash"])
+        bind = _relation(h_a["binding_hash"], h_b["binding_hash"])
+        invocation = _relation(
+            h_a["invocation_identity_hash"], h_b["invocation_identity_hash"]
+        )
 
-    if required_basis is not None:
+    if canonicalization_mismatch:
+        status = "NOT_COMPARABLE"
+        rc = 1
+        reason = "CANONICALIZATION_IDENTIFIER_MISMATCH"
+    elif required_basis is not None:
         status = "NOT_COMPARABLE"
         rc = 1
         reason = "INVOCATION_EVIDENCE_UNAVAILABLE"
@@ -604,7 +639,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
             rc = 2
             reason = "RESPONSE_HASH_DIFFERENT"
 
-    interpretation = _interpretation(status)
+    interpretation = _interpretation(status, reason)
     lines = [
         f"STATUS={status} rc={rc}",
         f"COMPARISON_CONTRACT={COMPARISON_CONTRACT}",
@@ -827,9 +862,16 @@ def cmd_pack(args: argparse.Namespace) -> int:
     # import lazy: não rebenta validate/canonicalize se pack tiver bugs
     from engine.ai_pack import ai_pack_from_obj
 
-    obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    source = Path(args.input)
+    if args.canonicalization == AI_CANONICALIZATION_V2:
+        obj = parse_json_v2(source.read_bytes())
+    else:
+        obj = json.loads(source.read_text(encoding="utf-8"))
     try:
-        res = ai_pack_from_obj(obj)
+        res = ai_pack_from_obj(
+            obj,
+            canonicalization=args.canonicalization,
+        )
     except AICanonicalError as exc:
         reason = str(exc)
         _out(
@@ -862,6 +904,12 @@ def main() -> int:
     pck = sub.add_parser("pack", help="Write canonical + manifest artifacts")
     pck.add_argument("--input", required=True)
     pck.add_argument("--out", required=True)
+    pck.add_argument(
+        "--canonicalization",
+        choices=sorted(AI_CANONICALIZATION_IDENTIFIERS),
+        default=AI_CANONICALIZATION,
+        help="Canonicalization identifier (default: released v1 contract)",
+    )
     pck.add_argument("--json", action="store_true", help="Output as JSON")
     pck.set_defaults(fn=cmd_pack)
 
@@ -911,6 +959,12 @@ def main() -> int:
 
     c = sub.add_parser("canonicalize", help="Canonicalize AI output and print hash")
     c.add_argument("--input", required=True)
+    c.add_argument(
+        "--canonicalization",
+        choices=sorted(AI_CANONICALIZATION_IDENTIFIERS),
+        default=AI_CANONICALIZATION,
+        help="Canonicalization identifier (default: released v1 contract)",
+    )
     c.add_argument("--print", action="store_true", help="Print canonical JSON")
     c.set_defaults(fn=cmd_canonicalize)
 
