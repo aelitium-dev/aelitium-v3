@@ -41,11 +41,13 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from .ai_contract import AI_CANONICALIZATION
 from .canonical import (
     CanonicalizationError,
-    canonical_json,
     sha256_hash,
 )
+from .canonical_v2 import V2CanonicalizationError
+from .canonicalization import canonical_json_for_identifier
 
 INVOCATION_FORMAT = "aelitium-invocation-v1"
 
@@ -251,7 +253,12 @@ def _validate_request(surface: str, request: Any) -> dict[str, Any]:
     return normalized
 
 
-def _finalize(surface: str, mode: str, request: dict[str, Any]) -> InvocationIdentity:
+def _finalize(
+    surface: str,
+    mode: str,
+    request: dict[str, Any],
+    canonicalization: str = AI_CANONICALIZATION,
+) -> InvocationIdentity:
     hash_material = {
         "format": INVOCATION_FORMAT,
         "surface": surface,
@@ -259,9 +266,13 @@ def _finalize(surface: str, mode: str, request: dict[str, Any]) -> InvocationIde
         "request": request,
     }
     try:
-        digest = sha256_hash(canonical_json(hash_material))
-        request_canonical_json = canonical_json(request)
-    except CanonicalizationError as exc:
+        digest = sha256_hash(
+            canonical_json_for_identifier(hash_material, canonicalization)
+        )
+        request_canonical_json = canonical_json_for_identifier(
+            request, canonicalization
+        )
+    except (CanonicalizationError, V2CanonicalizationError) as exc:
         raise InvocationIdentityError(
             "INVOCATION_BAD_VALUE", exc.reason
         ) from exc
@@ -281,6 +292,7 @@ def build_invocation_identity(
     model: str,
     messages: Any,
     parameters: dict[str, Any] | None = None,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> InvocationIdentity:
     """Build and validate an invocation identity from live adapter values.
 
@@ -295,10 +307,19 @@ def build_invocation_identity(
     if parameters:
         raw_request["parameters"] = dict(parameters)
     normalized_request = _validate_request(surface, raw_request)
-    return _finalize(surface, mode, normalized_request)
+    return _finalize(
+        surface,
+        mode,
+        normalized_request,
+        canonicalization=canonicalization,
+    )
 
 
-def parse_invocation_identity(data: Any) -> InvocationIdentity:
+def parse_invocation_identity(
+    data: Any,
+    *,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> InvocationIdentity:
     """Strictly validate a stored invocation-identity object and recompute
     its hash from the stored semantic fields.
 
@@ -338,7 +359,12 @@ def parse_invocation_identity(data: Any) -> InvocationIdentity:
             "hash_sha256 must be 64 lowercase hexadecimal characters",
         )
 
-    identity = _finalize(surface, mode, normalized_request)
+    identity = _finalize(
+        surface,
+        mode,
+        normalized_request,
+        canonicalization=canonicalization,
+    )
     if identity.hash_sha256 != stored_hash:
         raise InvocationIdentityError(
             "INVOCATION_HASH_MISMATCH",

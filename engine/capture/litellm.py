@@ -23,8 +23,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..canonical import canonical_json, sha256_hash
+from ..ai_contract import AI_CANONICALIZATION
 from ..ai_pack import ai_pack_from_obj
+from ..canonical import sha256_hash
+from ..canonicalization import canonical_json_for_identifier
 from ..invocation import (
     InvocationIdentityError,
     MODE_SYNC_NON_STREAMING,
@@ -40,6 +42,7 @@ def _build_litellm_invocation_identity(
     model: str,
     messages: List[Dict[str, str]],
     litellm_kwargs: Dict[str, Any],
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> Optional[Dict[str, Any]]:
     """Best-effort invocation-identity construction for a LiteLLM call.
 
@@ -66,6 +69,7 @@ def _build_litellm_invocation_identity(
             model=model,
             messages=messages,
             parameters=candidates,
+            canonicalization=canonicalization,
         ).to_stored_object()
     except InvocationIdentityError:
         return None
@@ -77,6 +81,7 @@ def capture_completion(
     out_dir: str | Path,
     metadata: Optional[Dict[str, Any]] = None,
     _pre_response: Optional[Any] = None,
+    canonicalization: str = AI_CANONICALIZATION,
     **litellm_kwargs: Any,
 ) -> CaptureResult:
     """
@@ -125,7 +130,9 @@ def capture_completion(
 
     # 1. Hash the request before sending — records exactly what was asked
     request_payload = {"messages": messages, "model": model}
-    request_hash = sha256_hash(canonical_json(request_payload))
+    request_hash = sha256_hash(
+        canonical_json_for_identifier(request_payload, canonicalization)
+    )
 
     # 2. Call LiteLLM (or use pre-obtained response — avoids double LLM call in enable())
     if _pre_response is not None:
@@ -148,13 +155,20 @@ def capture_completion(
     # 4. Hash the response — use provider-confirmed model name
     confirmed_model = getattr(response, "model", model)
     response_data = {"content": output_text, "model": confirmed_model}
-    response_hash = sha256_hash(canonical_json(response_data))
+    response_hash = sha256_hash(
+        canonical_json_for_identifier(response_data, canonicalization)
+    )
 
     # 5. Binding hash — single proof linking request↔response
-    binding_hash = sha256_hash(canonical_json({
-        "request_hash": request_hash,
-        "response_hash": response_hash,
-    }))
+    binding_hash = sha256_hash(
+        canonical_json_for_identifier(
+            {
+                "request_hash": request_hash,
+                "response_hash": response_hash,
+            },
+            canonicalization,
+        )
+    )
 
     # 6. Provider metadata
     def _safe_str(val: Any) -> Optional[str]:
@@ -181,14 +195,14 @@ def capture_completion(
             }
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prompt_str = canonical_json(messages)
+    prompt_str = canonical_json_for_identifier(messages, canonicalization)
 
     # Invocation identity (P1.2b): best-effort over the allowlisted
     # temperature/max_tokens/top_p/seed/stop parameters this adapter
     # forwards. Absent from metadata entirely if litellm_kwargs contains
     # anything outside that grammar (see _build_litellm_invocation_identity).
     invocation_identity = _build_litellm_invocation_identity(
-        model, messages, litellm_kwargs
+        model, messages, litellm_kwargs, canonicalization
     )
 
     base_metadata: Dict[str, Any] = {
@@ -212,6 +226,7 @@ def capture_completion(
         base_metadata["invocation_binding"] = build_invocation_binding(
             invocation_hash=invocation_identity["hash_sha256"],
             response_hash=response_hash,
+            canonicalization=canonicalization,
         ).to_stored_object()
     capture_meta = merge_capture_metadata(base_metadata, metadata)
 
@@ -225,7 +240,7 @@ def capture_completion(
     }
 
     # 7. Pack into evidence bundle
-    result = ai_pack_from_obj(payload)
+    result = ai_pack_from_obj(payload, canonicalization=canonicalization)
 
     # 8. Add binding_hash to manifest
     manifest_with_binding = {**result.manifest, "binding_hash": binding_hash}

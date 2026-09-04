@@ -1,18 +1,18 @@
 # Portable canonicalization v2 design
 
-**Status:** DESIGN ONLY — NOT IMPLEMENTED
+**Status:** APPROVED — IMPLEMENTED ON UNRELEASED BRANCH
 
 **Audit baseline:** `7b3d7c040d749cc73bb2d481a7b67c5a9f9490b6`
 
 **Current v1 identifier (unchanged):**
 `json_sorted_keys_no_whitespace_utf8`
 
-**Proposed v2 identifier:** `aelitium_jcs_profile_v2`
+**V2 identifier:** `aelitium_jcs_profile_v2`
 
-The capitalized requirement words in this document describe the proposed v2
-contract. They do not change the current runtime, schemas, bundle formats,
-verification results, assurance results, comparison results, or any released
-artifact.
+The capitalized requirement words in this document define the approved v2
+contract implemented on the current unreleased branch. They do not reinterpret
+v1 or change any released v0.4.0 artifact. The only comparison addition is the
+explicit identifier-mismatch result defined in section 9.
 
 ## 1. Executive decision
 

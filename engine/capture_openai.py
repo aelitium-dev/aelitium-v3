@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
+from .ai_contract import AI_CANONICALIZATION
 from .ai_pack import ai_pack_from_obj
 
 
@@ -95,6 +96,7 @@ def pack_openai_chat_completion(
     out_dir: str | Path,
     model: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> OpenAICaptureResult:
     """
     Convert an OpenAI chat completion response into ai_output_v1 and pack it.
@@ -128,7 +130,7 @@ def pack_openai_chat_completion(
         "metadata": dict(metadata or {}),
     }
 
-    packed = ai_pack_from_obj(payload)
+    packed = ai_pack_from_obj(payload, canonicalization=canonicalization)
 
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -144,4 +146,3 @@ def pack_openai_chat_completion(
         ai_hash_sha256=packed.ai_hash_sha256,
         ai_output=payload,
     )
-

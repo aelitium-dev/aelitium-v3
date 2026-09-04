@@ -22,6 +22,7 @@ classifiers = [
 dependencies = [
   "cryptography>=41",
   "jsonschema>=4.18",
+  "rfc8785==0.1.4",
 ]
 
 [project.optional-dependencies]

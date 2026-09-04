@@ -13,8 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..canonical import canonical_json, sha256_hash
+from ..ai_contract import AI_CANONICALIZATION
 from ..ai_pack import ai_pack_from_obj
+from ..canonical import sha256_hash
+from ..canonicalization import canonical_json_for_identifier
 from ..invocation import (
     MODE_SYNC_NON_STREAMING,
     SURFACE_ANTHROPIC_MESSAGES,
@@ -32,6 +34,7 @@ def capture_message(
     out_dir: str | Path,
     metadata: Optional[Dict[str, Any]] = None,
     max_tokens: int = 1024,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> CaptureResult:
     """
     Call Anthropic Messages API and pack the result into a tamper-evident bundle.
@@ -54,7 +57,9 @@ def capture_message(
     """
     # 1. Hash the request before sending
     request_payload = {"messages": messages, "model": model}
-    request_hash = sha256_hash(canonical_json(request_payload))
+    request_hash = sha256_hash(
+        canonical_json_for_identifier(request_payload, canonicalization)
+    )
 
     # 2. Call the API
     response = client.messages.create(model=model, messages=messages, max_tokens=max_tokens)
@@ -73,10 +78,17 @@ def capture_message(
 
     # 4. Hash the response
     response_data = {"content": output_text, "model": model}
-    response_hash = sha256_hash(canonical_json(response_data))
+    response_hash = sha256_hash(
+        canonical_json_for_identifier(response_data, canonicalization)
+    )
 
     # 5. Binding hash
-    binding_hash = sha256_hash(canonical_json({"request_hash": request_hash, "response_hash": response_hash}))
+    binding_hash = sha256_hash(
+        canonical_json_for_identifier(
+            {"request_hash": request_hash, "response_hash": response_hash},
+            canonicalization,
+        )
+    )
 
     # 6. Provider metadata
     usage_obj = getattr(response, "usage", None)
@@ -89,7 +101,7 @@ def capture_message(
         usage = None
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prompt_str = canonical_json(messages)
+    prompt_str = canonical_json_for_identifier(messages, canonicalization)
 
     # Invocation identity (P1.2b): `max_tokens` here is the adapter's own
     # local variable value -- whatever was actually emitted to
@@ -101,6 +113,7 @@ def capture_message(
         model=model,
         messages=messages,
         parameters={"max_tokens": max_tokens},
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     # Invocation binding (P1.2d2): links the invocation identity above to
@@ -109,6 +122,7 @@ def capture_message(
     invocation_binding = build_invocation_binding(
         invocation_hash=invocation_identity["hash_sha256"],
         response_hash=response_hash,
+        canonicalization=canonicalization,
     ).to_stored_object()
 
     base_metadata: Dict[str, Any] = {
@@ -136,7 +150,7 @@ def capture_message(
     }
 
     # 7. Pack into evidence bundle
-    result = ai_pack_from_obj(payload)
+    result = ai_pack_from_obj(payload, canonicalization=canonicalization)
 
     # 8. Add binding_hash to manifest
     manifest_with_binding = {**result.manifest, "binding_hash": binding_hash}

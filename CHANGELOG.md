@@ -46,6 +46,19 @@ version.
   whitespace, and terminal-LF behavior. Extreme metadata integers above the
   documented 640-digit restricted subset remain explicitly open; no second
   verifier is implemented.
+- Add opt-in, unreleased `aelitium_jcs_profile_v2` support with
+  `AELITIUM-DISPATCH-JSON-1`, strict recursive source/profile validation, exact
+  RFC 8785 serialization through pinned `rfc8785==0.1.4`, version-consistent
+  bundle hash constructions, raw-manifest signature scope, and explicit
+  cross-version comparison refusal.
+- Add a separate frozen 114-case portable-v2 corpus covering JCS bytes,
+  Unicode/noncharacter and number boundaries, storage envelopes, exact hash
+  inputs, manifest extensions, dispatch, CPython integer-limit isolation, v1
+  compatibility, and v1/v2 `NOT_COMPARABLE` behavior. The existing 44- and
+  30-case corpora are not modified or renumbered.
+- Replace recursive dispatch/profile traversal with explicit stacks so
+  deeply nested selector lookahead cannot fall through to legacy routing when
+  Python's recursion limit is reached; add six frozen deep-routing vectors.
 
 ### Compatibility
 
@@ -55,6 +68,10 @@ version.
 - Existing v0.4.0 canonical bytes and numeric acceptance are unchanged. The
   only runtime hardening converts previously unhashable unpaired-surrogate
   payload input into the existing `CANONICAL_NOT_JSON` failure stage.
+- Portable v2 is selected only by its new exact identifier. The released v1
+  identifier, CPython parser behavior, last-name-wins cases, reason precedence,
+  assurance meanings, and released artifact digests remain unchanged. V2 is
+  implemented on this branch but is not released, tagged, or published.
 
 ---
 

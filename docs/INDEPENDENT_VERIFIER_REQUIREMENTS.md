@@ -1,8 +1,8 @@
 # Independent Verifier Requirements
 
 **Status:** RESEARCH
-**Target:** a future clean-room implementation of the current AELITIUM bundle
-verification and comparison contracts
+**Target:** a future clean-room implementation of the released v1 and
+unreleased portable-v2 AELITIUM bundle verification and comparison contracts
 
 No second verifier is implemented on this branch. The existing Python
 standalone wrapper imports the same Python verification kernel and therefore is
@@ -158,6 +158,8 @@ item in this final precedence list selects the top-level reason.
 
 ## Canonicalization and hashing
 
+### Released v0.4.0 / v1
+
 The current identifier is `json_sorted_keys_no_whitespace_utf8`. The hash input
 is UTF-8 encoding of JSON with recursively sorted object keys, array order
 preserved, no insignificant whitespace, and non-ASCII characters emitted
@@ -191,6 +193,48 @@ invocation_binding.hash_sha256 = SHA256(UTF8(canonical({
 The verifier does not reconstruct `request_hash` or `response_hash` from source
 provider traffic. It checks the stored binding formula and the invocation
 object's own selected fields.
+
+### Unreleased portable v2
+
+The current branch additionally implements the exact identifier
+`aelitium_jcs_profile_v2`. A clean-room verifier must implement the complete
+`AELITIUM-DISPATCH-JSON-1` lexical router before either manifest parser. The
+router scans original bytes, performs no number conversion, profile validation,
+duplicate rejection, or normalization, uses only the final top-level selector,
+and never supplies parsed values to a version verifier.
+
+Structural traversal must not depend on the host call stack. Exhausting a host
+recursion limit is not a malformed-selector outcome and must not redirect v2 to
+the v1/error-resolution path. The Python implementation uses iterative stacks
+for selector traversal, its fresh strict-v2 parse, and profile validation while
+leaving the released v1 parser unchanged.
+
+An exact final v1 selector re-enters the complete CPython-aligned path. An
+exact final v2 selector reparses from byte zero under strict UTF-8 RFC 8259,
+rejects duplicates and the complete v2 Unicode/number profile recursively,
+and never retries v1. Missing, malformed, non-string, unknown, and non-object
+outcomes use legacy error resolution so existing field-check precedence is
+unchanged.
+
+V2 canonical output is exact RFC 8785 / JCS for the profiled value domain:
+Unicode scalars excluding noncharacters, no normalization, UTF-16 key order,
+finite binary64 numbers of magnitude at most `2^53 - 1`, and a mathematical
+pre-narrowing check for integer-form tokens in that same inclusive range.
+Canonical bytes `C` contain no BOM or newline; storage permits only `C` or
+`C || LF`; every hash consumes `C` alone.
+
+The enclosing identifier governs the payload, request, response, original
+binding, invocation identity, and invocation binding constructions. Semantic
+field selection does not change, and no identifier/prefix bytes are added.
+The strict profile applies throughout a v2 manifest, including ignored
+extensions, while signatures remain over exact raw manifest bytes.
+
+The normative byte corpus is
+[`conformance/canonicalization_v2/manifest.json`](../conformance/canonicalization_v2/manifest.json).
+Its 114 frozen cases include applicable RFC 8785 Appendix B values, AELITIUM
+profile boundaries, storage, exact hash inputs, dispatch and CPython digit-limit
+isolation, manifest extensions, cross-version refusal, and v1 preservation.
+This corpus supplements and does not renumber either existing corpus.
 
 ### Cross-language closure gate
 
@@ -346,7 +390,11 @@ In particular:
   `NOT_COMPARABLE`, basis `NONE`, and required basis
   `INVOCATION_IDENTITY_V1`;
 - different selected identities yield `NOT_COMPARABLE` and no response
-  relationship; and
+  relationship;
+- two valid bundles with different canonicalization identifiers yield
+  `NOT_COMPARABLE`, basis `NONE`, reason
+  `CANONICALIZATION_IDENTIFIER_MISMATCH`, and no response relationship before
+  any current comparison basis is applied; and
 - `NOT_COMPARABLE` is a semantic result that must not be turned into an
   exception or negative equality claim.
 
@@ -373,15 +421,20 @@ A candidate is not accepted as independent until all of these pass:
 6. all four comparison outcomes and every current mode/basis route;
 7. explicit confirmation that no network, ambient time, or ambient trust input
    was read;
-8. all 30 cross-language canonicalization vectors, with any restricted
-   implementation explicitly refusing and labelling out-of-subset inputs; and
-9. a provenance review demonstrating that the decision engine neither imports
+8. all 30 released-v1 cross-language canonicalization vectors, with any
+   restricted implementation explicitly refusing and labelling out-of-subset
+   inputs;
+9. all 114 portable-v2 vectors, including dispatch under CPython integer digit
+   limits 640, 4300, and disabled; and
+10. a provenance review demonstrating that the decision engine neither imports
    nor shells out to AELITIUM Python.
 
 The present Python conformance runner is an implementation-aligned oracle and
 corpus exerciser. It is not evidence that a second implementation exists.
 
-As of this document revision, the complete-surface readiness verdict is
+As of this document revision, the portable-v2 Python implementation and frozen
+corpus are present, but no independent implementation exists. The
+complete-surface readiness verdict remains
 **NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because the accepted domain for integer
 magnitudes above 640 decimal digits remains dependent on the configured Python
 runtime. The restricted subset is specified and testable, but it is not the

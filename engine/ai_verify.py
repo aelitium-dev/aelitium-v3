@@ -13,6 +13,8 @@ from typing import Any
 from .ai_canonical import AICanonicalError, canonicalize_ai_output
 from .ai_contract import (
     AI_CANONICALIZATION,
+    AI_CANONICALIZATION_IDENTIFIERS,
+    AI_CANONICALIZATION_V2,
     AI_CANONICAL_FILENAME,
     AI_MANIFEST_FILENAME,
     AI_MANIFEST_REQUIRED_FIELDS,
@@ -21,6 +23,8 @@ from .ai_contract import (
     AI_OUTPUT_SCHEMA_VERSION,
     AI_VERIFICATION_KEYS_FILENAME,
 )
+from .canonical_v2 import V2CanonicalizationError, parse_json_v2
+from .canonicalization import canonical_json_for_identifier
 from .freshness import (
     FRESHNESS_POLICY_INVALID,
     FRESHNESS_TIMESTAMP_MALFORMED,
@@ -30,6 +34,7 @@ from .freshness import (
 )
 from .invocation import InvocationIdentityError, parse_invocation_identity
 from .invocation_binding import InvocationBindingError, parse_invocation_binding
+from .manifest_dispatch import DispatchScanError, scan_manifest_selector
 from .trust import TrustStore, TrustStoreError, fingerprint_public_key, load_trust_store
 
 
@@ -158,7 +163,18 @@ class _BindingEvaluation:
 _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
-def _evaluate_binding_fields(canonical: Any, manifest: Any) -> _BindingEvaluation:
+def _decode_v1_manifest_bytes(source: bytes) -> str:
+    """Reproduce ``Path.read_text(encoding="utf-8")`` newline handling."""
+
+    return source.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _evaluate_binding_fields(
+    canonical: Any,
+    manifest: Any,
+    *,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> _BindingEvaluation:
     """Evaluate consistency among the four stored v1 binding hash fields.
 
     This does not reconstruct a request, provider invocation, action, or
@@ -207,11 +223,9 @@ def _evaluate_binding_fields(canonical: Any, manifest: Any) -> _BindingEvaluatio
     manifest_binding = values["manifest.binding_hash"]
     metadata_binding = values["canonical.metadata.binding_hash"]
 
-    payload = json.dumps(
+    payload = canonical_json_for_identifier(
         {"request_hash": request_hash, "response_hash": response_hash},
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
+        canonicalization,
     )
     computed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     if computed != manifest_binding:
@@ -246,7 +260,11 @@ class _InvocationIdentityEvaluation:
     detail: str = ""
 
 
-def _evaluate_invocation_identity(canonical: Any) -> _InvocationIdentityEvaluation:
+def _evaluate_invocation_identity(
+    canonical: Any,
+    *,
+    canonicalization: str = AI_CANONICALIZATION,
+) -> _InvocationIdentityEvaluation:
     """Evaluate the stored invocation-identity object, if present.
 
     `engine.invocation` is the sole authority for grammar, surface/mode
@@ -270,7 +288,10 @@ def _evaluate_invocation_identity(canonical: Any) -> _InvocationIdentityEvaluati
         return _InvocationIdentityEvaluation(AssuranceState.ABSENT)
 
     try:
-        parse_invocation_identity(metadata["invocation_identity"])
+        parse_invocation_identity(
+            metadata["invocation_identity"],
+            canonicalization=canonicalization,
+        )
     except InvocationIdentityError as exc:
         return _InvocationIdentityEvaluation(
             AssuranceState.INVALID,
@@ -291,6 +312,8 @@ class _InvocationBindingEvaluation:
 def _evaluate_invocation_binding(
     canonical: Any,
     invocation: _InvocationIdentityEvaluation,
+    *,
+    canonicalization: str = AI_CANONICALIZATION,
 ) -> _InvocationBindingEvaluation:
     """Evaluate the stored invocation-binding object, if present.
 
@@ -323,7 +346,10 @@ def _evaluate_invocation_binding(
         return _InvocationBindingEvaluation(AssuranceState.ABSENT)
 
     try:
-        binding = parse_invocation_binding(metadata["invocation_binding"])
+        binding = parse_invocation_binding(
+            metadata["invocation_binding"],
+            canonicalization=canonicalization,
+        )
     except InvocationBindingError as exc:
         return _InvocationBindingEvaluation(
             AssuranceState.INVALID,
@@ -492,7 +518,7 @@ def verify_ai_bundle(
     *,
     options: AIVerificationOptions | None = None,
 ) -> AIVerificationResult:
-    """Verify a v1 AI evidence bundle and report distinct assurance states."""
+    """Verify a v1 or v2 AI evidence bundle and report assurance states."""
 
     selected = options or AIVerificationOptions()
 
@@ -548,11 +574,43 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
+    # AELITIUM-DISPATCH-JSON-1 is non-observable lookahead.  Every outcome
+    # except an exact final v2 selector takes the complete frozen v1/error
+    # route.  Scanner-derived nodes and values are discarded here and neither
+    # version parser receives anything but the original bytes.
+    try:
+        manifest_bytes: bytes | None = manifest_path.read_bytes()
+    except OSError:
+        manifest_bytes = None
+        scanned_identifier = None
+    else:
+        try:
+            scanned_identifier = scan_manifest_selector(
+                manifest_bytes,
+                registered_identifiers=AI_CANONICALIZATION_IDENTIFIERS,
+            )
+        except DispatchScanError:
+            # A failed lookahead still hands the same immutable original bytes
+            # to the legacy parser.  The scanner failure is not observable.
+            scanned_identifier = None
+    canonicalization = (
+        AI_CANONICALIZATION_V2
+        if scanned_identifier == AI_CANONICALIZATION_V2
+        else AI_CANONICALIZATION
+    )
+
     try:
         canon_bytes = canon_path.read_bytes()
-        canon_text = canon_bytes.decode("utf-8")
-        canonical = json.loads(canon_text)
+        if canonicalization == AI_CANONICALIZATION_V2:
+            canonical = parse_json_v2(canon_bytes)
+        else:
+            canon_text = canon_bytes.decode("utf-8")
+            canonical = json.loads(canon_text)
     except Exception as exc:
+        if canonicalization == AI_CANONICALIZATION_V2 and isinstance(
+            exc, RecursionError
+        ):
+            raise
         return _invalid(
             "CANONICAL_NOT_JSON",
             type(exc).__name__,
@@ -562,8 +620,19 @@ def verify_ai_bundle(
         )
 
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if canonicalization == AI_CANONICALIZATION_V2:
+            assert manifest_bytes is not None
+            manifest = parse_json_v2(manifest_bytes)
+        else:
+            if manifest_bytes is None:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            else:
+                manifest = json.loads(_decode_v1_manifest_bytes(manifest_bytes))
     except Exception as exc:
+        if canonicalization == AI_CANONICALIZATION_V2 and isinstance(
+            exc, RecursionError
+        ):
+            raise
         return _invalid(
             "MANIFEST_NOT_JSON",
             type(exc).__name__,
@@ -613,7 +682,7 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
-    if manifest["canonicalization"] != AI_CANONICALIZATION:
+    if manifest["canonicalization"] != canonicalization:
         return _invalid(
             "MANIFEST_BAD_CANONICALIZATION",
             manifest["canonicalization"],
@@ -650,7 +719,9 @@ def verify_ai_bundle(
         )
 
     try:
-        expected_canonical, actual_hash = canonicalize_ai_output(canonical)
+        expected_canonical, actual_hash = canonicalize_ai_output(
+            canonical, canonicalization
+        )
     except AICanonicalError as exc:
         if str(exc) == "AI_OUTPUT_INVALID_UNICODE":
             return _invalid(
@@ -664,6 +735,16 @@ def verify_ai_bundle(
             )
         return _invalid(
             "CANONICAL_SCHEMA_INVALID",
+            str(exc),
+            error_message=str(exc),
+            canonical=canonical,
+            manifest=manifest,
+            payload_integrity=AssuranceState.INVALID,
+            signature_validity=signature_before_evaluation,
+        )
+    except V2CanonicalizationError as exc:
+        return _invalid(
+            "CANONICAL_NOT_JSON",
             str(exc),
             error_message=str(exc),
             canonical=canonical,
@@ -706,7 +787,12 @@ def verify_ai_bundle(
 
             vk = json.loads(vk_path.read_text(encoding="utf-8"))
             verified_signature = verify_manifest_signature(
-                manifest_path.read_bytes(), vk
+                (
+                    manifest_bytes
+                    if manifest_bytes is not None
+                    else manifest_path.read_bytes()
+                ),
+                vk,
             )
             signature = "VALID"
             signature_validity = AssuranceState.VALID
@@ -723,9 +809,20 @@ def verify_ai_bundle(
         else:
             trusted_signer_reason = "TRUSTED_SIGNER_NOT_FOUND"
 
-    binding = _evaluate_binding_fields(canonical, manifest)
-    invocation = _evaluate_invocation_identity(canonical)
-    invocation_binding = _evaluate_invocation_binding(canonical, invocation)
+    binding = _evaluate_binding_fields(
+        canonical,
+        manifest,
+        canonicalization=canonicalization,
+    )
+    invocation = _evaluate_invocation_identity(
+        canonical,
+        canonicalization=canonicalization,
+    )
+    invocation_binding = _evaluate_invocation_binding(
+        canonical,
+        invocation,
+        canonicalization=canonicalization,
+    )
     freshness = _evaluate_freshness(canonical, selected)
 
     if signature_error:
