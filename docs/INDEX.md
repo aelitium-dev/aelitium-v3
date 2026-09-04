@@ -16,6 +16,17 @@
 - [External validation](EXTERNAL_VALIDATION.md)
 - [Interoperability landscape](INTEROP_LANDSCAPE.md)
 - [Research candidates](RESEARCH_CANDIDATES.md)
+- [Experimental SCITT AI-Agent Action Receipt 01 mapping](interop/SCITT_AI_AGENT_RECEIPT_01.md)
+
+## Verification, assurance, and comparison contracts
+
+- [Verification result v1](VERIFICATION_RESULT_V1.md)
+- [Assurance result v1](ASSURANCE_RESULT_V1.md)
+- [Claim boundaries v1](CLAIM_BOUNDARIES_V1.md)
+- [Compare result v1](COMPARE_RESULT_V1.md)
+- [Contract demo](CONTRACT_DEMO.md)
+- [Independent verifier requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md)
+- [Public conformance corpus](../conformance/README.md)
 
 ## Offline verification
 - docs/OFFLINE_VERIFIER.md

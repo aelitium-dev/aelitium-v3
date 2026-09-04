@@ -1,0 +1,20 @@
+{
+  "case_count": 44,
+  "corpus": "aelitium-contract-conformance-v1",
+  "research_gaps": "comparison/research_gaps.json",
+  "result_schemas": {
+    "assurance": "../engine/schemas/assurance_result_v1.json",
+    "comparison": "../engine/schemas/compare_result_v1.json",
+    "verification": "../engine/schemas/verification_result_v1.json"
+  },
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vector_files": [
+    "verification/vectors.json",
+    "assurance/vectors.json",
+    "trust/vectors.json",
+    "freshness/vectors.json",
+    "invocation/vectors.json",
+    "comparison/vectors.json",
+    "compatibility/vectors.json"
+  ]
+}

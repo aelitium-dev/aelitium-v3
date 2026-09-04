@@ -1,0 +1,128 @@
+{
+  "case_count": 4,
+  "category": "assurance",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "assurance.distinct_absent_states",
+      "description": "One result keeps valid Freshness, absent optional evidence, unestablished signer trust, and non-evaluated authorization distinct.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "ABSENT",
+          "freshness": "VALID",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "ABSENT",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "capture_completeness_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/unbound",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:00Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "assurance.binding_invalid_is_not_absent",
+      "description": "A present inconsistent v1 binding is INVALID rather than ABSENT.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "INVALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "BINDING_HASH_MISMATCH",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/binding_mismatch",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "assurance.early_failure_not_evaluated",
+      "description": "Non-canonical stored bytes fail before downstream dimensions are evaluated.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "NOT_EVALUATED",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "NOT_EVALUATED",
+          "invocation_identity_consistency": "NOT_EVALUATED",
+          "payload_integrity": "INVALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "historical_non_modification_not_established"
+        ],
+        "rc": 2,
+        "reason": "CANONICAL_BYTES_MISMATCH",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/canonical_bytes_mismatch",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "assurance.authorization_always_not_evaluated",
+      "description": "A mathematically valid signature does not activate authorization.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "VALID",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "VALID"
+        },
+        "expected_non_claims": [
+          "authorization_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/signed_valid",
+        "options": [
+          "--trust-store",
+          "fixtures/trust/legitimate.json",
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:00Z"
+        ]
+      },
+      "operation": "verify"
+    }
+  ]
+}

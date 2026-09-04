@@ -3,6 +3,9 @@
 Status: DRAFT — non-exhaustive inventory of the released 0.4.0 surface
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
+Sections 1–13 inventory the published v0.4.0 release. Section 14 is explicitly
+unreleased, additive branch work and does not redefine the released behavior.
+
 ---
 
 ## 1. Capture — LiteLLM auto-instrumentation
@@ -274,3 +277,32 @@ Rule: If not explicitly implemented or verifiable in the current code surface, i
 - Does not eliminate trust in the capture environment
 - Does not provide tamper-proof guarantees
 - Does not ensure completeness of all LLM interactions
+
+---
+
+## 14. Versioned result contracts and conformance corpus — UNRELEASED
+
+- Feature: machine-readable verification, assurance, claim-boundary, and
+  hardened comparison result contracts
+- Interface: additive CLI JSON, packaged schemas, frozen public corpus
+- Source: `engine/result_contracts.py`, `engine/schemas/*result_v1.json`,
+  `conformance/`
+- Status: implemented on the current unreleased branch
+
+- Guarantees on this branch:
+  - `verify` and `verify-bundle --contract-json` emit
+    `aelitium-verification-result-v1` for valid and invalid operations
+  - Every result embeds exactly eight independently typed
+    `aelitium-assurance-result-v1` entries with dimension-specific state sets
+  - `aelitium-claim-boundary-v1` codes make current non-claims machine-readable
+  - Existing `aelitium-compare-v1` JSON adds per-side verification, explicit
+    comparability and response relationships, and bounded non-claims
+  - The deterministic corpus exercises 44 verification, assurance, trust,
+    Freshness, invocation, comparison, and compatibility cases
+
+- Non-guarantees:
+  - Does not alter or strengthen any v0.4.0 assurance state
+  - Does not add an aggregate score or authorization evaluator
+  - Does not make static scan coverage a bundle-validity property
+  - Does not implement an external receipt importer or second verifier
+  - Does not change existing text output, legacy JSON behavior, or exit codes

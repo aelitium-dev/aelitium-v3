@@ -10,12 +10,20 @@ from pathlib import Path
 if __package__:
     from .ai_canonical import AICanonicalError, canonicalize_ai_output
     from .ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
+    from .result_contracts import (
+        build_comparison_contract_fields,
+        build_verification_result,
+    )
 else:
     import sys
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
     from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
     from engine.ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
+    from engine.result_contracts import (
+        build_comparison_contract_fields,
+        build_verification_result,
+    )
 
 
 COMPARISON_CONTRACT = "aelitium-compare-v1"
@@ -123,10 +131,19 @@ def cmd_canonicalize(args: argparse.Namespace) -> int:
 def cmd_verify(args: argparse.Namespace) -> int:
     outdir = Path(args.out)
 
+    options = _verification_options(args)
     result = verify_ai_bundle(
         outdir,
-        options=_verification_options(args),
+        options=options,
     )
+    if getattr(args, "contract_json", False):
+        print(
+            json.dumps(
+                build_verification_result(result, options=options),
+                sort_keys=True,
+            )
+        )
+        return 0 if result.valid else 2
     if not result.valid:
         return _verification_fail(result)
 
@@ -231,7 +248,16 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
     """
     outdir = Path(args.bundle)
 
-    result = verify_ai_bundle(outdir, options=_verification_options(args))
+    options = _verification_options(args)
+    result = verify_ai_bundle(outdir, options=options)
+    if getattr(args, "contract_json", False):
+        print(
+            json.dumps(
+                build_verification_result(result, options=options),
+                sort_keys=True,
+            )
+        )
+        return 0 if result.valid else 2
     if not result.valid:
         return _verification_fail(result)
 
@@ -422,25 +448,30 @@ def cmd_compare(args: argparse.Namespace) -> int:
         if detail:
             lines.append(f"DETAIL={detail}")
         lines.append(f"INTERPRETATION={interpretation}")
-        _out(
-            args,
-            lines,
-            {
-                "status": "INVALID_BUNDLE",
-                "rc": 2,
-                "comparison_contract": COMPARISON_CONTRACT,
-                "comparison_mode": mode,
-                "comparison_basis": COMPARISON_BASIS_NONE,
-                "required_comparison_basis": None,
-                "comparison_reason": reason,
-                "invocation_identity_hash": "UNAVAILABLE",
-                "invocation_identity_hash_a": None,
-                "invocation_identity_hash_b": None,
-                **states,
-                "detail": detail,
-                "interpretation": interpretation,
-            },
+        json_result = {
+            "status": "INVALID_BUNDLE",
+            "rc": 2,
+            "comparison_contract": COMPARISON_CONTRACT,
+            "comparison_mode": mode,
+            "comparison_basis": COMPARISON_BASIS_NONE,
+            "required_comparison_basis": None,
+            "comparison_reason": reason,
+            "invocation_identity_hash": "UNAVAILABLE",
+            "invocation_identity_hash_a": None,
+            "invocation_identity_hash_b": None,
+            **states,
+            "detail": detail,
+            "interpretation": interpretation,
+        }
+        json_result.update(
+            build_comparison_contract_fields(
+                result_a=result_a,
+                result_b=result_b,
+                status="INVALID_BUNDLE",
+                response_relationship=None,
+            )
         )
+        _out(args, lines, json_result)
         return 2
 
     path_a = Path(args.bundle_a)
@@ -644,6 +675,16 @@ def cmd_compare(args: argparse.Namespace) -> int:
     if detail is not None:
         json_result["detail"] = detail
         json_result["hint"] = hint
+    json_result.update(
+        build_comparison_contract_fields(
+            result_a=result_a,
+            result_b=result_b,
+            status=status,
+            response_relationship=(
+                resp if status in {"UNCHANGED", "CHANGED"} else None
+            ),
+        )
+    )
     _out(args, lines, json_result)
     return rc
 
@@ -826,10 +867,19 @@ def main() -> int:
 
     ve = sub.add_parser("verify", help="Verify a pack output dir (canonical + manifest)")
     ve.add_argument("--out", required=True)
-    ve.add_argument(
+    verify_output = ve.add_mutually_exclusive_group()
+    verify_output.add_argument(
         "--json",
         action="store_true",
         help="Output valid results as JSON; invalid results retain compatibility text",
+    )
+    verify_output.add_argument(
+        "--contract-json",
+        action="store_true",
+        help=(
+            "Output aelitium-verification-result-v1 JSON for valid or invalid "
+            "results"
+        ),
     )
     ve.add_argument("--require-signature", action="store_true",
                     help="Reject bundles without signature material")
@@ -869,10 +919,19 @@ def main() -> int:
         help="Verify all eight AI bundle assurance dimensions; optionally evaluate Freshness",
     )
     vb.add_argument("bundle", help="Path to evidence bundle directory")
-    vb.add_argument(
+    verify_bundle_output = vb.add_mutually_exclusive_group()
+    verify_bundle_output.add_argument(
         "--json",
         action="store_true",
         help="Output valid results as JSON; invalid results retain compatibility text",
+    )
+    verify_bundle_output.add_argument(
+        "--contract-json",
+        action="store_true",
+        help=(
+            "Output aelitium-verification-result-v1 JSON for valid or invalid "
+            "results"
+        ),
     )
     vb.add_argument("--require-signature", action="store_true",
                     help="Reject bundles without signature material")
