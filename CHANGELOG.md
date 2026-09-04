@@ -40,12 +40,21 @@ version.
   meaning.
 - Research requirements for a later clean-room verifier; no second verifier is
   implemented in this branch.
+- Cross-language clarification and a frozen 30-case byte corpus for the existing
+  `json_sorted_keys_no_whitespace_utf8` identifier, covering binary64
+  formatting, Unicode, duplicate payload names, exact legacy non-finite tokens,
+  whitespace, and terminal-LF behavior. Extreme metadata integers above the
+  documented 640-digit restricted subset remain explicitly open; no second
+  verifier is implemented.
 
 ### Compatibility
 
 - Published v0.4.0 evidence semantics, normal output, legacy `--json` behavior,
   comparison modes and bases, and exit codes are unchanged. All new runtime
   representation is opt-in or additive JSON.
+- Existing v0.4.0 canonical bytes and numeric acceptance are unchanged. The
+  only runtime hardening converts previously unhashable unpaired-surrogate
+  payload input into the existing `CANONICAL_NOT_JSON` failure stage.
 
 ---
 

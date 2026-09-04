@@ -5,7 +5,7 @@ from typing import Any, Tuple
 from jsonschema import Draft7Validator
 
 from .ai_contract import AI_OUTPUT_SCHEMA_FILENAME, AI_OUTPUT_SCHEMA_VERSION
-from .canonical import canonical_json, sha256_hash
+from .canonical import CanonicalizationError, canonical_json, sha256_hash
 
 
 class AICanonicalError(ValueError):
@@ -43,6 +43,9 @@ def canonicalize_ai_output(obj: Any) -> Tuple[str, str]:
     validate_ai_output(obj)
 
     # Canonical JSON: sorted keys, UTF-8, no whitespace
-    canonical = canonical_json(obj)
+    try:
+        canonical = canonical_json(obj)
+    except CanonicalizationError as exc:
+        raise AICanonicalError("AI_OUTPUT_INVALID_UNICODE") from exc
     digest = sha256_hash(canonical)
     return canonical, digest

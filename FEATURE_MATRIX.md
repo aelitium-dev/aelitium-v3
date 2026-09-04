@@ -299,10 +299,15 @@ unreleased, additive branch work and does not redefine the released behavior.
     comparability and response relationships, and bounded non-claims
   - The deterministic corpus exercises 44 verification, assurance, trust,
     Freshness, invocation, comparison, and compatibility cases
+  - A separate 30-case canonicalization corpus freezes UTF-8, Unicode ordering
+    and escaping, finite binary64 formatting, preserved non-finite spellings,
+    duplicate payload-name rejection, and the exact terminal-LF envelope
 
 - Non-guarantees:
   - Does not alter or strengthen any v0.4.0 assurance state
   - Does not add an aggregate score or authorization evaluator
   - Does not make static scan coverage a bundle-validity property
   - Does not implement an external receipt importer or second verifier
+  - Does not claim complete cross-language closure for integer magnitudes above
+    the explicit 640-digit restricted subset
   - Does not change existing text output, legacy JSON behavior, or exit codes

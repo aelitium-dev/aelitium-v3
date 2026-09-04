@@ -1,0 +1,13 @@
+{
+  "canonicalization_identifier": "json_sorted_keys_no_whitespace_utf8",
+  "case_count": 30,
+  "corpus": "aelitium-canonicalization-conformance-v1",
+  "open_domain": [
+    "integer_magnitude_more_than_640_decimal_digits"
+  ],
+  "runner": "../run_canonicalization.py",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vector_files": [
+    "vectors.json"
+  ]
+}

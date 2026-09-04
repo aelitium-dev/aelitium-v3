@@ -123,9 +123,19 @@ contract demo writes separate verification, assurance, `CHANGED`, and
 
 ```bash
 python3 conformance/run.py
+python3 conformance/run_canonicalization.py
 python3 examples/contract_demo/run_demo.py \
   --output-dir /tmp/aelitium-contract-demo
 ```
+
+The supplemental canonicalization runner checks 30 frozen source-byte vectors
+for the existing `json_sorted_keys_no_whitespace_utf8` identifier. It does not
+rename or replace that identifier. The cross-language-safe restricted subset
+requires Unicode-scalar strings throughout a bundle and excludes preserved
+non-finite legacy tokens and integer magnitudes above 640 digits. The latter
+range remains explicitly `OPEN`; legacy acceptance of an escaped surrogate in
+an ignored manifest extension is documented outside the subset, and no
+complete clean-room verifier is claimed.
 
 See [Verification result v1](docs/VERIFICATION_RESULT_V1.md),
 [assurance result v1](docs/ASSURANCE_RESULT_V1.md),
@@ -518,6 +528,8 @@ See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
 - [Compare result v1](docs/COMPARE_RESULT_V1.md) — hardened additive JSON representation of `aelitium-compare-v1`
 - [Contract demo](docs/CONTRACT_DEMO.md) — deterministic verification, assurance, `CHANGED`, and `NOT_COMPARABLE` walkthrough
 - [Independent verifier requirements](docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md) — research gate for a later clean-room implementation
+- [Canonicalization specification](docs/CANONICALIZATION_SPEC.md) — implementation-aligned byte rules, restricted subset, and explicit open integer boundary
+- [Cross-language canonicalization corpus](conformance/canonicalization/README.md) — 30 frozen positive and negative byte vectors
 - [SCITT AI-Agent Action Receipt 01 mapping](docs/interop/SCITT_AI_AGENT_RECEIPT_01.md) — experimental exact-version analysis and implementation blocker
 - [External validation guide](docs/EXTERNAL_VALIDATION.md) — install v0.4.0 and exercise frozen evidence offline in about 10 minutes
 - [Interoperability landscape](docs/INTEROP_LANDSCAPE.md) — non-normative positioning across telemetry, receipts, protocols, frameworks, and policy
