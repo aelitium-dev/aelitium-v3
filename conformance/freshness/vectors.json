@@ -1,0 +1,226 @@
+{
+  "case_count": 7,
+  "category": "freshness",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "freshness.no_policy",
+      "description": "Without a Freshness policy, even a malformed declared evidence time remains NOT_EVALUATED.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/malformed_timestamp",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.complete_valid_policy",
+      "description": "The declared timestamp is valid at the inclusive age boundary.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "VALID",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established",
+          "historical_occurrence_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_a",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:00Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.stale_declared_timestamp",
+      "description": "One second past the maximum declared-time age is INVALID.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "INVALID",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 2,
+        "reason": "FRESHNESS_STALE",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_a",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:01Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.future_declared_timestamp",
+      "description": "A declared timestamp after the explicit reference time is INVALID.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "INVALID",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 2,
+        "reason": "FRESHNESS_TIMESTAMP_IN_FUTURE",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_a",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T11:59:59Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.malformed_declared_timestamp",
+      "description": "A schema-valid but non-time timestamp is INVALID only when policy selects it.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "INVALID",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 2,
+        "reason": "FRESHNESS_TIMESTAMP_MALFORMED",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/malformed_timestamp",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:00Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.incomplete_policy_pair",
+      "description": "One policy field alone is UNESTABLISHED and stops before bundle evaluation.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "NOT_EVALUATED",
+          "freshness": "UNESTABLISHED",
+          "invocation_binding_consistency": "NOT_EVALUATED",
+          "invocation_identity_consistency": "NOT_EVALUATED",
+          "payload_integrity": "NOT_EVALUATED",
+          "signature_validity": "NOT_EVALUATED",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 2,
+        "reason": "FRESHNESS_POLICY_INVALID",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_a",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "freshness.malformed_reference_time",
+      "description": "A malformed verifier-supplied reference time is a policy failure.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "NOT_EVALUATED",
+          "freshness": "UNESTABLISHED",
+          "invocation_binding_consistency": "NOT_EVALUATED",
+          "invocation_identity_consistency": "NOT_EVALUATED",
+          "payload_integrity": "NOT_EVALUATED",
+          "signature_validity": "NOT_EVALUATED",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_historical_time_not_established"
+        ],
+        "rc": 2,
+        "reason": "FRESHNESS_POLICY_INVALID",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_a",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "not-a-time"
+        ]
+      },
+      "operation": "verify"
+    }
+  ]
+}

@@ -101,6 +101,38 @@ offer `--json`. Successful `verify` and `verify-bundle` calls emit JSON when
 requested; invalid results currently retain key/value compatibility output. The
 standalone verifier emits JSON for invalid verification results.
 
+## Unreleased contract-conformance surface
+
+The current `[Unreleased]` branch work adds an explicit opt-in result contract
+without changing the published v0.4.0 text or legacy JSON surfaces:
+
+```bash
+aelitium verify-bundle ./bundle --contract-json
+```
+
+This emits `aelitium-verification-result-v1` for valid and invalid operations,
+including an embedded `aelitium-assurance-result-v1`, explicit input references,
+and `aelitium-claim-boundary-v1` non-claim codes. Existing `compare --json`
+retains its `aelitium-compare-v1` identity and old keys while adding per-side
+verification summaries, explicit comparability and response relationships, and
+claim boundaries.
+
+The public deterministic corpus contains 44 adversarial vectors, and the
+contract demo writes separate verification, assurance, `CHANGED`, and
+`NOT_COMPARABLE` results without an API call:
+
+```bash
+python3 conformance/run.py
+python3 examples/contract_demo/run_demo.py \
+  --output-dir /tmp/aelitium-contract-demo
+```
+
+See [Verification result v1](docs/VERIFICATION_RESULT_V1.md),
+[assurance result v1](docs/ASSURANCE_RESULT_V1.md),
+[claim boundaries v1](docs/CLAIM_BOUNDARIES_V1.md), and
+[compare result v1](docs/COMPARE_RESULT_V1.md). These additions remain
+unreleased until a separately approved release process occurs.
+
 ---
 
 ## How it works
@@ -480,6 +512,13 @@ See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
 
 ## Documentation
 
+- [Verification result v1](docs/VERIFICATION_RESULT_V1.md) — implementation-aligned machine-readable bundle-verification operation
+- [Assurance result v1](docs/ASSURANCE_RESULT_V1.md) — exact eight dimensions, reachable states, bases, and invariants
+- [Claim boundaries v1](docs/CLAIM_BOUNDARIES_V1.md) — closed machine-readable non-claim vocabulary
+- [Compare result v1](docs/COMPARE_RESULT_V1.md) — hardened additive JSON representation of `aelitium-compare-v1`
+- [Contract demo](docs/CONTRACT_DEMO.md) — deterministic verification, assurance, `CHANGED`, and `NOT_COMPARABLE` walkthrough
+- [Independent verifier requirements](docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md) — research gate for a later clean-room implementation
+- [SCITT AI-Agent Action Receipt 01 mapping](docs/interop/SCITT_AI_AGENT_RECEIPT_01.md) — experimental exact-version analysis and implementation blocker
 - [External validation guide](docs/EXTERNAL_VALIDATION.md) — install v0.4.0 and exercise frozen evidence offline in about 10 minutes
 - [Interoperability landscape](docs/INTEROP_LANDSCAPE.md) — non-normative positioning across telemetry, receipts, protocols, frameworks, and policy
 - [Research candidates](docs/RESEARCH_CANDIDATES.md) — non-roadmap questions for possible future investigation

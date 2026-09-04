@@ -181,6 +181,60 @@ forbid_literal "docs/ONE_PAGER.md" "Tamper-resistant logs for high-risk AI"
 forbid_literal "docs/AI_INTEGRITY_DEMO.md" "| Regulatory compliance |"
 forbid_literal "engine/compliance.py" "return EU AI Act Article 12 format"
 
+require_literal "docs/VERIFICATION_RESULT_V1.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "docs/VERIFICATION_RESULT_V1.md" "aelitium-verification-result-v1"
+require_literal "docs/ASSURANCE_RESULT_V1.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "docs/ASSURANCE_RESULT_V1.md" "aelitium-assurance-result-v1"
+require_literal "docs/CLAIM_BOUNDARIES_V1.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "docs/CLAIM_BOUNDARIES_V1.md" "aelitium-claim-boundary-v1"
+require_literal "docs/COMPARE_RESULT_V1.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "docs/COMPARE_RESULT_V1.md" "aelitium-compare-v1"
+require_literal "docs/CONTRACT_DEMO.md" "**Status:** NON-NORMATIVE"
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" "**Status:** RESEARCH"
+require_literal "docs/interop/SCITT_AI_AGENT_RECEIPT_01.md" "**Status:** EXPERIMENTAL"
+require_literal "docs/interop/SCITT_AI_AGENT_RECEIPT_01.md" "**Implementation status:** BLOCKED"
+require_literal "docs/interop/SCITT_AI_AGENT_RECEIPT_01.md" "draft-noa-scitt-ai-agent-receipt-01"
+require_literal "conformance/README.md" "**Status:** IMPLEMENTATION-ALIGNED"
+require_literal "conformance/manifest.json" '"case_count": 44'
+
+for dimension in "${assurance_dimensions[@]}"; do
+  require_literal "docs/ASSURANCE_RESULT_V1.md" "$dimension"
+  require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" "$dimension"
+done
+
+claim_boundary_codes=(
+  "authorization_not_established"
+  "capture_completeness_not_established"
+  "complete_invocation_identity_not_established"
+  "historical_non_modification_not_established"
+  "historical_occurrence_not_established"
+  "legal_compliance_not_established"
+  "model_drift_not_established"
+  "provider_execution_not_established"
+  "provider_fault_not_established"
+  "quality_degradation_not_established"
+  "regression_not_established"
+  "response_causation_not_established"
+  "semantic_equivalence_not_established"
+  "semantic_truth_not_established"
+  "trusted_historical_time_not_established"
+  "trusted_signer_identity_not_established_by_signature"
+)
+
+for code in "${claim_boundary_codes[@]}"; do
+  require_literal "docs/CLAIM_BOUNDARIES_V1.md" "$code"
+  require_literal "engine/result_contracts.py" "$code"
+done
+
+for basis in \
+  "INVOCATION_IDENTITY_V1" \
+  "REQUEST_HASH_V1_FALLBACK" \
+  "REQUEST_HASH_V1_LEGACY" \
+  "NONE"
+do
+  require_literal "docs/COMPARE_RESULT_V1.md" "$basis"
+done
+
 if [ "$fail" -ne 0 ]; then
   echo "[FAIL] public-contract reconciliation checks failed"
   exit 1
@@ -252,6 +306,10 @@ while IFS= read -r file; do
 done < <(
   {
     [ -f README.md ] && printf '%s\n' README.md
+    [ -f conformance/README.md ] && printf '%s\n' conformance/README.md
+    [ -f conformance/manifest.json ] && printf '%s\n' conformance/manifest.json
+    find conformance -mindepth 2 -maxdepth 2 -type f -name '*.json' \
+      2>/dev/null
     find docs -type f -name '*.md' \
       ! -name 'MESSAGING_GUARDRAILS.md' \
       ! -name 'RELEASE_AUDIT_CHECKLIST.md' \
@@ -259,6 +317,8 @@ done < <(
       ! -name 'EVIDENCE_MODEL.md' \
       ! -name 'ENGINE_CONTRACT.md' \
       ! -name 'OFFLINE_VERIFIER.md' \
+      2>/dev/null
+    find docs/interop -type f -name '*.mapping.json' \
       2>/dev/null
   } | sort -u
 )
@@ -276,6 +336,10 @@ for i in "${!patterns[@]}"; do
     match_file="${match%%:*}"
     match_remainder="${match#*:}"
     line_number="${match_remainder%%:*}"
+    if [[ "$match" == *'"--require-trusted-signer"'* ]]; then
+      # A literal CLI option in a machine-readable vector is not a trust claim.
+      continue
+    fi
     context_start=$((line_number > 8 ? line_number - 8 : 1))
     context_end=$((line_number + 1))
     context="$(sed -n "${context_start},${context_end}p" "$match_file" | tr '\n' ' ')"

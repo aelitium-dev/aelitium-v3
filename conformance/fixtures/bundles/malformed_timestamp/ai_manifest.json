@@ -1,0 +1,1 @@
+{"ai_hash_sha256": "2fd240285405bd04ae2a577d3da5342e01c02dacaa5a4c805148da63c487322e", "binding_hash": "da48cb2681cb023b73b53ec83368b76727b06b00dad6fad6a1b64ebf642a0dc5", "canonicalization": "json_sorted_keys_no_whitespace_utf8", "input_schema": "ai_output_v1", "schema": "ai_pack_manifest_v1", "ts_utc": "2026-01-15T12:00:01Z"}

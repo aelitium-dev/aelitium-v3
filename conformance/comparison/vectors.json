@@ -1,0 +1,552 @@
+{
+  "case_count": 12,
+  "category": "comparison",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "comparison.invocation_unchanged",
+      "description": "Matching invocation and response hashes are UNCHANGED.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 0,
+        "reason": "RESPONSE_HASH_SAME",
+        "required_comparison_basis": null,
+        "response_relationship": "SAME",
+        "status": "UNCHANGED"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/full_a"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.invocation_changed",
+      "description": "Matching invocation hashes and different response hashes are CHANGED.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "RESPONSE_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": "DIFFERENT",
+        "status": "CHANGED"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/full_b_changed_response"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.same_request_hash_different_sampling",
+      "description": "Same request_hash but different represented temperature is NOT_COMPARABLE.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "INVOCATION_IDENTITY_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/temperature_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.model_identifier_changed",
+      "description": "A selected invocation model change is NOT_COMPARABLE.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "INVOCATION_IDENTITY_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/model_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.system_instruction_changed",
+      "description": "A system message change is a selected invocation identity change.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "INVOCATION_IDENTITY_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/system_instruction_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.adapter_surface_changed",
+      "description": "A declared adapter surface change is NOT_COMPARABLE.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "INVOCATION_IDENTITY_V1",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "INVOCATION_IDENTITY_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [],
+        "right": "fixtures/bundles/adapter_surface_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.fallback_unchanged",
+      "description": "Legacy evidence visibly falls back and can be UNCHANGED.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "REQUEST_HASH_V1_FALLBACK",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 0,
+        "reason": "RESPONSE_HASH_SAME",
+        "required_comparison_basis": null,
+        "response_relationship": "SAME",
+        "status": "UNCHANGED"
+      },
+      "input": {
+        "left": "fixtures/bundles/legacy_a",
+        "options": [],
+        "right": "fixtures/bundles/legacy_a"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.fallback_changed",
+      "description": "Legacy evidence visibly falls back and can be CHANGED.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "REQUEST_HASH_V1_FALLBACK",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "RESPONSE_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": "DIFFERENT",
+        "status": "CHANGED"
+      },
+      "input": {
+        "left": "fixtures/bundles/legacy_a",
+        "options": [],
+        "right": "fixtures/bundles/legacy_b_changed_response"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.fallback_request_difference",
+      "description": "Different selected request hashes are NOT_COMPARABLE under fallback.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "REQUEST_HASH_V1_FALLBACK",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "REQUEST_HASH_DIFFERENT",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/legacy_a",
+        "options": [],
+        "right": "fixtures/bundles/legacy_request_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.strict_missing_invocation",
+      "description": "Strict invocation mode refuses legacy fallback.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "NONE",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 1,
+        "reason": "INVOCATION_EVIDENCE_UNAVAILABLE",
+        "required_comparison_basis": "INVOCATION_IDENTITY_V1",
+        "response_relationship": null,
+        "status": "NOT_COMPARABLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/legacy_a",
+        "options": [
+          "--require-invocation-evidence"
+        ],
+        "right": "fixtures/bundles/legacy_a"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.explicit_legacy_ignores_sampling_difference",
+      "description": "Legacy mode can be UNCHANGED despite different invocation identities.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "REQUEST_HASH_V1_LEGACY",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 0,
+        "reason": "RESPONSE_HASH_SAME",
+        "required_comparison_basis": null,
+        "response_relationship": "SAME",
+        "status": "UNCHANGED"
+      },
+      "input": {
+        "left": "fixtures/bundles/full_a",
+        "options": [
+          "--legacy-request-hash-v1"
+        ],
+        "right": "fixtures/bundles/temperature_changed"
+      },
+      "operation": "compare"
+    },
+    {
+      "case_id": "comparison.invalid_bundle_precedes_basis",
+      "description": "A failed bundle is INVALID_BUNDLE and no comparison basis is selected.",
+      "expected": {
+        "assurance_states": {
+          "left": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "NOT_EVALUATED",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "NOT_EVALUATED",
+            "invocation_identity_consistency": "NOT_EVALUATED",
+            "payload_integrity": "INVALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          },
+          "right": {
+            "authorization": "NOT_EVALUATED",
+            "binding_field_consistency": "VALID",
+            "freshness": "NOT_EVALUATED",
+            "invocation_binding_consistency": "VALID",
+            "invocation_identity_consistency": "VALID",
+            "payload_integrity": "VALID",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED"
+          }
+        },
+        "comparison_basis": "NONE",
+        "expected_non_claims": [
+          "model_drift_not_established",
+          "semantic_equivalence_not_established",
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "BUNDLE_VERIFICATION_FAILED",
+        "required_comparison_basis": null,
+        "response_relationship": null,
+        "status": "INVALID_BUNDLE"
+      },
+      "input": {
+        "left": "fixtures/bundles/payload_tamper",
+        "options": [],
+        "right": "fixtures/bundles/full_a"
+      },
+      "operation": "compare"
+    }
+  ]
+}

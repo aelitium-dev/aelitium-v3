@@ -19,6 +19,34 @@ version.
 
 ## [Unreleased]
 
+### Added
+
+- Additive `--contract-json` output for `verify` and `verify-bundle`, emitting
+  `aelitium-verification-result-v1` with embedded
+  `aelitium-assurance-result-v1`, explicit trust/policy input references, and
+  `aelitium-claim-boundary-v1` codes for both valid and invalid operations.
+- Strict packaged schemas and serialization invariants preserve all eight
+  dimension-specific reachable state sets and reject impossible combinations.
+- Additive `aelitium-compare-v1` JSON fields expose per-side verification and
+  assurance summaries, evidence references, comparability, response
+  relationship, required basis, and claim boundaries while retaining existing
+  keys and decisions.
+- A frozen 44-case adversarial conformance corpus, deterministic runner, and
+  no-network end-to-end contract demo.
+- An exact-version experimental mapping for
+  `draft-noa-scitt-ai-agent-receipt-01`. Import implementation is explicitly
+  blocked because its source-specific signature and canonicalization bases
+  cannot populate native AELITIUM assurance states without changing their
+  meaning.
+- Research requirements for a later clean-room verifier; no second verifier is
+  implemented in this branch.
+
+### Compatibility
+
+- Published v0.4.0 evidence semantics, normal output, legacy `--json` behavior,
+  comparison modes and bases, and exit codes are unchanged. All new runtime
+  representation is opt-in or additive JSON.
+
 ---
 
 ## [0.4.0] — 2026-09-03
