@@ -179,7 +179,7 @@ aelitium-verifier verify-bundle BUNDLE \
   [--require-signature] \
   [--require-binding] \
   [--trust-store PATH] \
-  [--require-trusted-signer] \
+  [--require-trust-membership] \
   [--freshness-max-age-seconds DECIMAL] \
   [--freshness-reference-time-utc YYYY-MM-DDTHH:MM:SSZ]
 ```
@@ -485,7 +485,8 @@ If present after payload integrity succeeds, the intended contract is:
 
 Every parse, structure, encoding, length, identifier, scope, algorithm, or
 cryptographic failure collapses to public `SIGNATURE_INVALID`. If material is
-absent and signature or trusted signer is required, the public reason is
+absent and either signature is required or the trust-membership requirement
+is enabled, the public reason is
 `SIGNATURE_REQUIRED` after payload integrity succeeds.
 
 The bundled public key establishes mathematical validity only. The keyring is
@@ -523,7 +524,7 @@ store. Membership is evaluated only for a mathematically valid bundled
 signature. With no trust store, with an unsigned/invalid signature, or with an
 unknown signing key, `trusted_signer_identity=UNESTABLISHED`. A valid signature
 whose fingerprint appears in the explicit store yields `VALID`. Unknown
-membership invalidates the bundle only when trusted signer identity was
+membership invalidates the bundle only when `trusted_signer_identity` was
 required, using `TRUSTED_SIGNER_NOT_FOUND`.
 
 Input precedence is: requiring trust without a store gives
@@ -547,7 +548,7 @@ No ninth dimension, aggregate score, or policy conclusion is permitted.
 | 2 `binding_field_consistency` | Manifest `binding_hash` and canonical metadata `request_hash`, `response_hash`, `binding_hash`; recomputed selected-version binding | all four absent -> `ABSENT`; partial/malformed/mismatch -> `INVALID`; complete match -> `VALID`; early payload failure -> `NOT_EVALUATED` | evidence: the four JSON locations; no trust/policy refs | response causation, provider execution, historical occurrence not established |
 | 3 `invocation_identity_consistency` | `metadata.invocation_identity`, its exact grammar, normalized request, selected-version recomputation | member absent -> `ABSENT`; malformed or digest mismatch -> `INVALID`; exact valid object/match -> `VALID`; early payload failure -> `NOT_EVALUATED` | evidence: `bundle:ai_canonical.json#/metadata/invocation_identity`; no trust/policy refs | provider execution, complete invocation identity, response causation, historical occurrence not established |
 | 4 `invocation_binding_consistency` | `metadata.invocation_binding`; own recomputation; valid identity; bundle response hash; cross-field linkage | absent -> `ABSENT`; malformed, mismatch, missing/invalid dependency, or cross-field mismatch -> `INVALID`; full linkage -> `VALID`; early payload failure -> `NOT_EVALUATED` | evidence: invocation binding, identity hash, response hash locations; no trust/policy refs | response causation, provider execution, historical occurrence not established |
-| 5 `signature_validity` | Optional keyring and exact raw manifest snapshot | absent keyring -> `ABSENT`; present failed material/math -> `INVALID`; verified -> `VALID`; present but payload not established -> `NOT_EVALUATED` | evidence: `bundle:ai_manifest.json`, `bundle:verification_keys.json`; no trust/policy refs | trusted signer identity by signature, authorization, historical occurrence not established |
+| 5 `signature_validity` | Optional keyring and exact raw manifest snapshot | absent keyring -> `ABSENT`; present failed material/math -> `INVALID`; verified -> `VALID`; present but payload not established -> `NOT_EVALUATED` | evidence: `bundle:ai_manifest.json`, `bundle:verification_keys.json`; no trust/policy refs | signature validity does not establish `trusted_signer_identity`, authorization, or historical occurrence |
 | 6 `trusted_signer_identity` | Valid signature key fingerprint and optional explicit trust store | exact membership -> `VALID`; every other condition -> `UNESTABLISHED`; never `ABSENT`, `INVALID`, or `NOT_EVALUATED` | evidence: `bundle:verification_keys.json`; trust ref only when supplied: `verification-input:trust-store`; no policy ref | authorization, provider execution, historical occurrence, trusted historical time not established |
 | 7 `freshness` | Canonical payload `ts_utc` plus complete explicit maximum-age/reference-time pair | no policy -> `NOT_EVALUATED`; incomplete/invalid policy -> `UNESTABLISHED`; evaluated malformed/stale/future timestamp -> `INVALID`; inclusive window -> `VALID` | evidence: `bundle:ai_canonical.json#/ts_utc`; policy ref when either input supplied: `verification-input:freshness-policy`; no trust refs | trusted historical time, historical occurrence, historical non-modification, provider execution, response causation not established |
 | 8 `authorization` | no evaluator and no input | always `NOT_EVALUATED` | no evidence, trust, or policy refs | authorization not established |
@@ -566,8 +567,8 @@ The exact stable bases are, in order:
 After payload integrity is valid, signature/trust, original binding,
 invocation identity, invocation binding, and selected Freshness are all
 evaluated so their states survive even when an earlier top-level reason wins.
-Cross-dimension invariants include: trusted signer `VALID` requires signature
-`VALID` and an explicit trust input; invocation binding `VALID` requires
+Cross-dimension invariants include: `trusted_signer_identity=VALID` requires
+`signature_validity=VALID` and an explicit trust input; invocation binding `VALID` requires
 identity `VALID`; downstream checks cannot be evaluated before payload
 integrity; and successful invocation pairs are only `ABSENT/ABSENT`,
 `VALID/ABSENT`, or `VALID/VALID`.
@@ -593,7 +594,8 @@ Every verification outcome carries contract
 
 The dimension-specific subsets are those in section 14. A non-claim means the
 basis did not establish the proposition. It never asserts the proposition's
-opposite. In particular, signature validity is not trusted signer identity;
+opposite. In particular, signature validity does not establish
+`trusted_signer_identity`;
 freshness is not trusted time; invocation consistency is not execution;
 binding is not causation; and payload integrity is not historical
 non-modification without an independently trusted anchor.
