@@ -22,12 +22,13 @@ names, state vocabularies, claim boundaries, and high-level failure precedence
 are also substantially specified. Go 1.27 provides a strong standard-library
 JCS strategy, so no external JCS package is required.
 
-The blocker is specification closure around the surrounding protocol. The
-current source set labels the independent-verifier requirements `RESEARCH`,
-labels most result contracts `IMPLEMENTATION-ALIGNED`, places the complete
-dispatch grammar in an internal design rather than the declared authoritative
-public set, and explicitly defers part of the invocation grammar to Python
-implementation code. There are also no complete source grammars for
+At the audit baseline, blockers included specification closure around the
+surrounding protocol. The source set labeled the independent-verifier
+requirements `RESEARCH`, labeled most result contracts
+`IMPLEMENTATION-ALIGNED`, placed the complete dispatch grammar in an internal
+design rather than the declared authoritative public set, and explicitly
+deferred part of the invocation grammar to Python implementation code. There
+were also no complete source grammars for
 `ai_manifest.json`, `verification_keys.json`, or the trust store; no
 language-neutral definition of several corpus operations; no public
 operational resource-error contract; and no portable outcome for the v1
@@ -46,6 +47,15 @@ Accordingly:
 
 This conclusion does not reinterpret released v1 behavior and does not propose
 using Python as an oracle.
+
+### Phase 1 closure update
+
+[`../VERIFIER_PROTOCOL_V1.md`](../VERIFIER_PROTOCOL_V1.md) subsequently closed
+G-01, G-03, and G-13 by publishing the normative hierarchy, complete dispatch
+contract, and exact external-standards registry. This update records closure
+status without rewriting the audit baseline or its final verdict. G-02 and
+G-04 through G-12 remain open or deferred, so the design remains not ready for
+complete clean-room implementation.
 
 ## 2. Independence threat model
 
@@ -115,16 +125,19 @@ The declared public inputs are:
 - the schemas in `engine/schemas/`; and
 - the frozen `conformance/` data.
 
-`docs/internal/CANONICALIZATION_V2_PORTABLE_DESIGN.md` contains the only full
-normative spelling of `AELITIUM-DISPATCH-JSON-1`, but it is absent from the
-authoritative-public-input list and itself calls for public promotion of its
-normative sections. It may inform this audit, but it is not an acceptable
-unstated dependency for the clean-room implementer. The quarantined
+At the audit baseline,
+`docs/internal/CANONICALIZATION_V2_PORTABLE_DESIGN.md` contained the only full
+normative spelling of `AELITIUM-DISPATCH-JSON-1`, was absent from the
+authoritative-public-input list, and called for public promotion of its
+normative sections. It informed this audit but was not an acceptable unstated
+dependency for the clean-room implementer. The quarantined
 `docs/EVIDENCE_BUNDLE_SPEC.md` and the legacy generic verifier documents are
 not normative inputs for this verifier.
 
-The current status labels do not yet establish the conflict rule required
-above. This is specification gap G-01.
+At this audit baseline, the status labels did not establish the conflict rule
+required above. That finding was G-01. Phase 1 subsequently closed it in the
+public [`../VERIFIER_PROTOCOL_V1.md`](../VERIFIER_PROTOCOL_V1.md); the baseline
+description is retained here as audit history.
 
 ## 4. Proposed repository architecture
 
@@ -799,24 +812,25 @@ links as a substitute for vendored license files.
 
 ## 21. Specification gaps
 
-These gaps prevent an implementer from choosing exact behavior without an
-unstated oracle.
+These findings prevented an implementer from choosing exact behavior without
+an unstated oracle at the audit baseline. The status column records authorized
+closure work without renumbering or erasing the original findings.
 
-| ID | Gap and impact | Smallest correction required |
-|---|---|---|
-| G-01 | Normative authority is unsettled: core documents are `RESEARCH` or `IMPLEMENTATION-ALIGNED`, some call Python authoritative, and there is no conflict rule. | Publish a stable verifier-contract snapshot and identifier registry; declare the hierarchy in section 3 and remove implementation-as-authority language. |
-| G-02 | Complete v1 has no portable decision above 640 integer digits, and the public result cannot declare a compatibility profile or an out-of-domain refusal. | Standardize an explicit verifier capability/legacy digit profile and a non-semantic operational refusal, or introduce a separately versioned portable-v1 rule. Do not redefine the released identifier. |
-| G-03 | The full dispatch grammar and algorithm live in an internal design absent from the authoritative public list. | Promote the complete `AELITIUM-DISPATCH-JSON-1` grammar, escape comparison, routing, byte handoff, and resource distinction into a stable public normative specification. |
-| G-04 | There is no `ai_manifest.json` schema/source grammar. Exact types, unknown-field policy boundaries, timestamp-disabled behavior, and timestamp character/anchor rules are incomplete. | Publish a manifest schema plus ordered procedural checks for each identifier, including exact timestamp code points and validation-disabled behavior. |
-| G-05 | `verification_keys.json` has no schema or full JSON/Base64 acceptance grammar. Unknown/duplicate fields and lexical edge cases are undecided. | Publish a closed or explicitly open keyring schema, selected JSON source profile, duplicate rule, exact RFC 4648 encoding rule, and exhaustive malformed-material vectors. |
-| G-06 | The trust store is described as strict but lacks a source grammar/schema for duplicates, Unicode, BOM, non-finites, empty signers, and exact Base64. | Publish `aelitium-trust-v1` JSON Schema plus lexical/profile rules and vectors. |
-| G-07 | `INVOCATION_ASSURANCE.md` explicitly says it does not expand the grammar beyond what is implemented in `engine/invocation.py`. Parameter value domains and the complete ordered identity/binding reason mapping are not independently normative. | Publish schemas and an ordered validation/reason table for both invocation objects, including recursive value rules, empty-parameter normalization, and cross-field precedence. |
-| G-08 | The result reason field is open and no single exhaustive public reason registry maps every validation branch and early failure to all eight states. | Publish a closed reason registry and a complete reason/state transition table; retain `detail` as non-normative. |
-| G-09 | Resource exhaustion and filesystem/I/O failures must not become semantic invalidity, but no operational envelope, exit code, supported size/depth, symlink, or snapshot contract exists. | Publish operational error semantics outside the verification-result vocabulary and minimum supported limits; define regular-file and immutable-snapshot rules. |
-| G-10 | Corpus operation semantics are not self-contained. Python runners synthesize base canonical payloads/manifests, set CPython limits, and select fields not completely frozen in the vector format. The 44 cases check only selected result fields. | Publish a language-neutral corpus format/harness contract and freeze every synthesized byte input and full expected stable output. Annotate the four CPython-profile cases without changing them. |
-| G-11 | Freshness says “calendar-valid” but does not fix year zero, Gregorian convention, leap seconds, maximum-age numeric range, or cross-language parser behavior. | Publish an exact timestamp ABNF/calendar domain and numeric input domain, with boundary vectors including year 0000/0001/9999 and second 60. |
-| G-12 | Comparison prose does not fully fix presence/text of compatibility fields or timestamp diagnostic fallback; exact-output versus semantic-output parity is unclear. | Before comparison work, publish a complete construction table or explicitly scope conformance to schema/stable semantic fields and freeze full expected objects. |
-| G-13 | RFC incorporation does not state an errata snapshot or protect the v2 identifier from later ECMAScript output changes. | Pin RFC 8259/7493/8785 references and reviewed errata; state that the identifier follows the incorporated RFC 8785 algorithm, not future silent language changes. |
+| ID | Status after Phase 1 | Gap and impact at audit baseline | Required correction or closure |
+|---|---|---|---|
+| G-01 | **CLOSED** | Normative authority was unsettled: core documents were `RESEARCH` or `IMPLEMENTATION-ALIGNED`, some called Python authoritative, and there was no conflict rule. | Closed by the hierarchy, conflict rule, implementation exclusion, and update process in `VERIFIER_PROTOCOL_V1.md`. |
+| G-02 | **OPEN** | Complete v1 has no portable decision above 640 integer digits, and the public result cannot declare a compatibility profile or an out-of-domain refusal. | Standardize an explicit verifier capability/legacy digit profile and a non-semantic operational refusal, or introduce a separately versioned portable-v1 rule. Do not redefine the released identifier. |
+| G-03 | **CLOSED** | The full dispatch grammar and algorithm lived in an internal design absent from the authoritative public list. | Closed by the public version registry and complete `AELITIUM-DISPATCH-JSON-1` contract in `VERIFIER_PROTOCOL_V1.md`. |
+| G-04 | **OPEN** | There is no `ai_manifest.json` schema/source grammar. Exact types, unknown-field policy boundaries, timestamp-disabled behavior, and timestamp character/anchor rules are incomplete. | Publish a manifest schema plus ordered procedural checks for each identifier, including exact timestamp code points and validation-disabled behavior. |
+| G-05 | **OPEN** | `verification_keys.json` has no schema or full JSON/Base64 acceptance grammar. Unknown/duplicate fields and lexical edge cases are undecided. | Publish a closed or explicitly open keyring schema, selected JSON source profile, duplicate rule, exact RFC 4648 encoding rule, and exhaustive malformed-material vectors. |
+| G-06 | **OPEN** | The trust store is described as strict but lacks a source grammar/schema for duplicates, Unicode, BOM, non-finites, empty signers, and exact Base64. | Publish `aelitium-trust-v1` JSON Schema plus lexical/profile rules and vectors. |
+| G-07 | **OPEN** | `INVOCATION_ASSURANCE.md` explicitly says it does not expand the grammar beyond what is implemented in `engine/invocation.py`. Parameter value domains and the complete ordered identity/binding reason mapping are not independently normative. | Publish schemas and an ordered validation/reason table for both invocation objects, including recursive value rules, empty-parameter normalization, and cross-field precedence. |
+| G-08 | **OPEN** | The result reason field is open and no single exhaustive public reason registry maps every validation branch and early failure to all eight states. | Publish a closed reason registry and a complete reason/state transition table; retain `detail` as non-normative. |
+| G-09 | **OPEN** | Resource exhaustion and filesystem/I/O failures must not become semantic invalidity, but no operational envelope, exit code, supported size/depth, symlink, or snapshot contract exists. | Publish operational error semantics outside the verification-result vocabulary and minimum supported limits; define regular-file and immutable-snapshot rules. |
+| G-10 | **OPEN** | Corpus operation semantics are not self-contained. Python runners synthesize base canonical payloads/manifests, set CPython limits, and select fields not completely frozen in the vector format. The 44 cases check only selected result fields. | Publish a language-neutral corpus format/harness contract and freeze every synthesized byte input and full expected stable output. Annotate the four CPython-profile cases without changing them. |
+| G-11 | **OPEN** | Freshness says “calendar-valid” but does not fix year zero, Gregorian convention, leap seconds, maximum-age numeric range, or cross-language parser behavior. | Publish an exact timestamp ABNF/calendar domain and numeric input domain, with boundary vectors including year 0000/0001/9999 and second 60. |
+| G-12 | **DEFERRED** | Comparison prose does not fully fix presence/text of compatibility fields or timestamp diagnostic fallback; exact-output versus semantic-output parity is unclear. | Before comparison work, publish a complete construction table or explicitly scope conformance to schema/stable semantic fields and freeze full expected objects. |
+| G-13 | **CLOSED** | RFC incorporation did not state an errata snapshot or protect the v2 identifier from later ECMAScript output changes. | Closed by the exact standards/subset registry, errata decisions, and non-supersession rule in `VERIFIER_PROTOCOL_V1.md`. |
 
 ### IMPLEMENTATION CROSS-CHECK
 

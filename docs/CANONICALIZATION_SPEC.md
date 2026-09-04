@@ -24,6 +24,10 @@ differ from rules used by some other canonicalizers.
 
 The cross-language closure status and restricted subset are stated explicitly
 below. Values outside that subset do not acquire an interoperability claim.
+The normative source hierarchy, conflict rule, canonicalization-version
+registry, complete public dispatch algorithm, and exact external-standard
+incorporation are fixed by
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md).
 
 ## Scope
 
@@ -400,6 +404,12 @@ negotiation, or default-selection rule.
 
 ### Pre-dispatch routing
 
+The complete normative `AELITIUM-DISPATCH-JSON-1` grammar, selector-comparison
+rules, routing algorithm, byte-preservation requirements, and
+syntax-versus-operational-failure distinction are published in section 5 of
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md). The summary below does
+not replace that public integration contract.
+
 After option checks and required-file checks, the verifier scans the original
 `ai_manifest.json` bytes using `AELITIUM-DISPATCH-JSON-1`. This scanner is a
 structural lexical router, not a value parser. Its grammar is RFC 8259 JSON
@@ -413,12 +423,12 @@ plus the exact legacy tokens `NaN`, `Infinity`, and `-Infinity`. It:
   without normalization; and
 - uses the final top-level `canonicalization` occurrence.
 
-The Python scanner traverses arrays and objects with an explicit stack. A
-Python recursion limit is therefore not treated as a failed lookahead and
-cannot redirect a v2 selector to legacy error resolution. The fresh strict-v2
-parse and recursive profile walk are iterative as well. Operational allocation
-failure is not converted into JSON/profile invalidity. The v1 parser remains
-CPython's released `json.loads` path and retains its existing resource behavior.
+Scanner traversal, the fresh strict-v2 parse, and profile traversal are
+iterative. A host recursion limit is not a failed lookahead and cannot redirect
+a v2 selector to legacy error resolution. Operational failure is distinct from
+syntax failure and is not converted into JSON/profile invalidity. The exact
+external operational-error contract remains open as G-09. The released v1
+parser behavior remains unchanged.
 
 If that final selector is exactly `aelitium_jcs_profile_v2`, verification
 reparses the immutable original bytes from byte zero with the strict v2 parser.
@@ -472,6 +482,11 @@ U+0000..U+001F controls use lowercase `\u00xx`; solidus, U+2028, U+2029,
 non-ASCII, and non-BMP scalars remain literal. Binary64 values use the RFC
 8785 ECMAScript shortest representation, including lowercase unpadded
 exponents and unsigned zero.
+
+The exact RFC 8785 and ECMAScript editions, incorporated subsections, and
+errata treatment are fixed by section 6 of
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md). Later standards or
+errata do not silently change this identifier.
 
 The canonical byte sequence `C` is strict UTF-8 with no BOM and no terminal
 newline. Stored v2 `ai_canonical.json` may be exactly `C` or `C || 0A`. Only

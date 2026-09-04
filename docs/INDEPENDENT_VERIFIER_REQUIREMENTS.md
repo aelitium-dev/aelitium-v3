@@ -4,6 +4,10 @@
 **Target:** a future clean-room implementation of the released v1 and
 unreleased portable-v2 AELITIUM bundle verification and comparison contracts
 
+**Normative role:** Level 1 acceptance requirements under
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md); `RESEARCH` records the
+remaining readiness gaps and does not make implementation behavior normative
+
 No second verifier is implemented on this branch. The existing Python
 standalone wrapper imports the same Python verification kernel and therefore is
 not an independent implementation.
@@ -34,8 +38,12 @@ mapping.
 
 ## Authoritative public inputs
 
-The candidate must be written against these repository artifacts:
+The normative hierarchy, conflict rule, implementation exclusion, public
+dispatch contract, and external-standards registry are defined by
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md). The candidate must be
+written against that hierarchy and these repository artifacts:
 
+- [`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md)
 - [`engine/schemas/ai_output_v1.json`](../engine/schemas/ai_output_v1.json)
 - [`engine/schemas/verification_result_v1.json`](../engine/schemas/verification_result_v1.json)
 - [`engine/schemas/assurance_result_v1.json`](../engine/schemas/assurance_result_v1.json)
@@ -51,9 +59,10 @@ The candidate must be written against these repository artifacts:
 - [`conformance/manifest.json`](../conformance/manifest.json) and every frozen
   artifact it references
 
-Python source remains useful for auditing this requirements document while the
-contract is being stabilized, but it cannot be a runtime dependency or the only
-definition available to the candidate implementer.
+Python source is not a normative input. A separately labeled implementation
+cross-check may detect a specification defect while the contract is being
+stabilized, but observed behavior cannot resolve an undocumented choice and
+must not be copied into an independent verifier.
 
 ## Bundle inputs
 
@@ -198,16 +207,18 @@ object's own selected fields.
 
 The current branch additionally implements the exact identifier
 `aelitium_jcs_profile_v2`. A clean-room verifier must implement the complete
-`AELITIUM-DISPATCH-JSON-1` lexical router before either manifest parser. The
-router scans original bytes, performs no number conversion, profile validation,
-duplicate rejection, or normalization, uses only the final top-level selector,
-and never supplies parsed values to a version verifier.
+public `AELITIUM-DISPATCH-JSON-1` contract in section 5 of
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md) before either manifest
+parser. The router scans original bytes, performs no number conversion, profile
+validation, duplicate rejection, or normalization, uses only the final
+top-level selector, and never supplies parsed values to a version verifier.
 
 Structural traversal must not depend on the host call stack. Exhausting a host
 recursion limit is not a malformed-selector outcome and must not redirect v2 to
-the v1/error-resolution path. The Python implementation uses iterative stacks
-for selector traversal, its fresh strict-v2 parse, and profile validation while
-leaving the released v1 parser unchanged.
+the v1/error-resolution path. Selector traversal, the fresh strict-v2 parse,
+and profile validation are iterative; the released v1 parser behavior remains
+unchanged. Operational exhaustion follows the separate rule in the public
+protocol and remains open as G-09.
 
 An exact final v1 selector re-enters the complete CPython-aligned path. An
 exact final v2 selector reparses from byte zero under strict UTF-8 RFC 8259,
@@ -222,6 +233,10 @@ finite binary64 numbers of magnitude at most `2^53 - 1`, and a mathematical
 pre-narrowing check for integer-form tokens in that same inclusive range.
 Canonical bytes `C` contain no BOM or newline; storage permits only `C` or
 `C || LF`; every hash consumes `C` alone.
+
+The exact external editions, incorporated subsets, and errata policy are in
+section 6 of [`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md). No later
+standard or erratum changes an existing identifier automatically.
 
 The enclosing identifier governs the payload, request, response, original
 binding, invocation identity, and invocation binding constructions. Semantic

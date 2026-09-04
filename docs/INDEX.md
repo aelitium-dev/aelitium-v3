@@ -20,6 +20,7 @@
 
 ## Verification, assurance, and comparison contracts
 
+- [Verifier protocol v1](VERIFIER_PROTOCOL_V1.md)
 - [Verification result v1](VERIFICATION_RESULT_V1.md)
 - [Assurance result v1](ASSURANCE_RESULT_V1.md)
 - [Claim boundaries v1](CLAIM_BOUNDARIES_V1.md)
