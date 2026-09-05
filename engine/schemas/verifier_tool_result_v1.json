@@ -1,0 +1,637 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium-verifier-tool-result-v1",
+  "title": "AELITIUM verifier tool result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "operation",
+    "outcome",
+    "rc",
+    "input_mode",
+    "capability",
+    "limits",
+    "verification_result",
+    "operational_result"
+  ],
+  "properties": {
+    "contract": {"const": "aelitium-verifier-tool-result-v1"},
+    "operation": {"const": "VERIFY_BUNDLE"},
+    "outcome": {"enum": ["SEMANTIC_RESULT", "OPERATIONAL_OUTCOME"]},
+    "rc": {"enum": [0, 2, 3]},
+    "input_mode": {"enum": ["DIRECT_FILESYSTEM", "IMMUTABLE_BYTES"]},
+    "capability": {"$ref": "#/definitions/capability_state"},
+    "limits": {"$ref": "#/definitions/limit_state"},
+    "verification_result": {
+      "oneOf": [
+        {"$ref": "aelitium-verification-result-v1"},
+        {"type": "null"}
+      ]
+    },
+    "operational_result": {
+      "oneOf": [
+        {"$ref": "#/definitions/operational_result"},
+        {"type": "null"}
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "outcome": {"const": "SEMANTIC_RESULT"},
+        "rc": {"const": 0},
+        "capability": {
+          "allOf": [
+            {"$ref": "#/definitions/capability_state"},
+            {"properties": {"effective": {"$ref": "#/definitions/capability_request"}}}
+          ]
+        },
+        "verification_result": {
+          "allOf": [
+            {"$ref": "aelitium-verification-result-v1"},
+            {"properties": {"status": {"const": "VALID"}, "rc": {"const": 0}}}
+          ]
+        },
+        "operational_result": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "outcome": {"const": "SEMANTIC_RESULT"},
+        "rc": {"const": 2},
+        "capability": {
+          "allOf": [
+            {"$ref": "#/definitions/capability_state"},
+            {"properties": {"effective": {"$ref": "#/definitions/capability_request"}}}
+          ]
+        },
+        "verification_result": {
+          "allOf": [
+            {"$ref": "aelitium-verification-result-v1"},
+            {"properties": {"status": {"const": "INVALID"}, "rc": {"const": 2}}}
+          ]
+        },
+        "operational_result": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "outcome": {"const": "OPERATIONAL_OUTCOME"},
+        "rc": {"const": 3},
+        "verification_result": {"type": "null"},
+        "operational_result": {"$ref": "#/definitions/operational_result"}
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operational_result": {
+            "type": "object",
+            "properties": {
+              "operational_code": {"const": "CAPABILITY_PROFILE_UNAVAILABLE"}
+            },
+            "required": ["operational_code"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "capability": {
+            "properties": {"effective": {"type": "null"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {"const": "OPERATIONAL_OUTCOME"},
+          "operational_result": {
+            "type": "object",
+            "properties": {
+              "operational_code": {
+                "not": {"const": "CAPABILITY_PROFILE_UNAVAILABLE"}
+              }
+            },
+            "required": ["operational_code"]
+          }
+        },
+        "required": ["outcome", "operational_result"]
+      },
+      "then": {
+        "properties": {
+          "capability": {
+            "properties": {"effective": {"$ref": "#/definitions/capability_request"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operational_result": {
+            "type": "object",
+            "properties": {
+              "operational_code": {
+                "enum": [
+                  "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+                  "RESOURCE_LIMIT_EXCEEDED"
+                ]
+              }
+            },
+            "required": ["operational_code"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "operational_result": {
+            "properties": {"limit": {"$ref": "#/definitions/limit_fact"}}
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "integer_conversion_640": {
+      "const": {
+        "mode": "BOUNDED",
+        "maximum_decimal_digits": 640
+      }
+    },
+    "integer_conversion_named": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "maximum_decimal_digits"],
+          "properties": {
+            "mode": {"const": "BOUNDED"},
+            "maximum_decimal_digits": {
+              "type": "integer",
+              "minimum": 640,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        {
+          "const": {
+            "mode": "UNLIMITED",
+            "maximum_decimal_digits": null
+          }
+        }
+      ]
+    },
+    "timestamp_profile_13": {
+      "const": {
+        "profile_id": "AELITIUM_UCD_ND_13_0_0_1",
+        "range_file_sha256": "bf287074b61dbb4a03a10645580b5ae0d1e106d75aa6c26881a7a277712c4f8b",
+        "unicode_version": "13.0.0"
+      }
+    },
+    "timestamp_profile_14": {
+      "const": {
+        "profile_id": "AELITIUM_UCD_ND_14_0_0_1",
+        "range_file_sha256": "5a75c753790a222c430dbfc95adaa2c3ec6701862d1728eae92d9ed0e2df59c8",
+        "unicode_version": "14.0.0"
+      }
+    },
+    "timestamp_profile_15": {
+      "const": {
+        "profile_id": "AELITIUM_UCD_ND_15_0_0_1",
+        "range_file_sha256": "0f10e369beb834ccee109f3ccc8d75f6ff8067871baf7109a106f1dac7430222",
+        "unicode_version": "15.0.0"
+      }
+    },
+    "v1_restricted_portable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_RESTRICTED_PORTABLE"},
+        "integer_conversion": {"$ref": "#/definitions/integer_conversion_640"},
+        "timestamp_digit_profile": {"const": "ASCII"},
+        "timestamp_final_lf": {"const": "ACCEPT_ONE"}
+      }
+    },
+    "v1_frozen_legacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_FROZEN_LEGACY_COMPATIBILITY"},
+        "integer_conversion": {"$ref": "#/definitions/integer_conversion_640"},
+        "timestamp_digit_profile": {"const": "ASCII"},
+        "timestamp_final_lf": {"const": "ACCEPT_ONE"}
+      }
+    },
+    "v1_named_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_NAMED_RUNTIME_COMPATIBILITY"},
+        "integer_conversion": {"$ref": "#/definitions/integer_conversion_named"},
+        "timestamp_digit_profile": {
+          "oneOf": [
+            {"$ref": "#/definitions/timestamp_profile_13"},
+            {"$ref": "#/definitions/timestamp_profile_14"},
+            {"$ref": "#/definitions/timestamp_profile_15"}
+          ]
+        },
+        "timestamp_final_lf": {"const": "ACCEPT_ONE"}
+      }
+    },
+    "v1_legacy_unsupported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "properties": {
+        "capability": {"const": "V1_LEGACY_UNSUPPORTED"}
+      }
+    },
+    "v1_capability": {
+      "oneOf": [
+        {"$ref": "#/definitions/v1_restricted_portable"},
+        {"$ref": "#/definitions/v1_frozen_legacy"},
+        {"$ref": "#/definitions/v1_named_runtime"},
+        {"$ref": "#/definitions/v1_legacy_unsupported"}
+      ]
+    },
+    "v2_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "properties": {
+        "capability": {"const": "V2_PORTABLE"}
+      }
+    },
+    "capability_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dispatch", "v1", "v2"],
+      "properties": {
+        "dispatch": {"const": "AELITIUM-DISPATCH-JSON-1"},
+        "v1": {"$ref": "#/definitions/v1_capability"},
+        "v2": {"$ref": "#/definitions/v2_capability"}
+      }
+    },
+    "capability_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "effective"],
+      "properties": {
+        "requested": {"$ref": "#/definitions/capability_request"},
+        "effective": {
+          "oneOf": [
+            {"$ref": "#/definitions/capability_request"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "limit_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_file_bytes",
+        "max_total_snapshot_bytes",
+        "max_structural_depth",
+        "max_value_occurrences"
+      ],
+      "properties": {
+        "max_file_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_total_snapshot_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_structural_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_value_occurrences": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "minimum_limit_values": {
+      "type": "object",
+      "properties": {
+        "max_file_bytes": {"minimum": 65536},
+        "max_total_snapshot_bytes": {"minimum": 262144},
+        "max_structural_depth": {"minimum": 1024},
+        "max_value_occurrences": {"minimum": 65536}
+      }
+    },
+    "limit_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claimed_envelope", "advertised", "effective"],
+      "properties": {
+        "claimed_envelope": {
+          "enum": ["AELITIUM_CLEANROOM_MINIMUM_1", null]
+        },
+        "advertised": {"$ref": "#/definitions/limit_values"},
+        "effective": {"$ref": "#/definitions/limit_values"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "claimed_envelope": {"const": "AELITIUM_CLEANROOM_MINIMUM_1"}
+            }
+          },
+          "then": {
+            "properties": {
+              "advertised": {
+                "allOf": [
+                  {"$ref": "#/definitions/limit_values"},
+                  {"$ref": "#/definitions/minimum_limit_values"}
+                ]
+              },
+              "effective": {
+                "allOf": [
+                  {"$ref": "#/definitions/limit_values"},
+                  {"$ref": "#/definitions/minimum_limit_values"}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "limit_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "unit", "maximum", "observed_at_least"],
+      "properties": {
+        "name": {
+          "enum": [
+            "FILE_BYTES",
+            "TOTAL_SNAPSHOT_BYTES",
+            "STRUCTURAL_DEPTH",
+            "VALUE_OCCURRENCES",
+            "INTEGER_DECIMAL_DIGITS",
+            "TIMESTAMP_DIGIT_PROFILE"
+          ]
+        },
+        "unit": {
+          "enum": ["BYTES", "LEVELS", "OCCURRENCES", "DIGITS", "PROFILE"]
+        },
+        "maximum": {
+          "type": ["integer", "string", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "observed_at_least": {
+          "type": ["integer", "string", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"name": {"enum": ["FILE_BYTES", "TOTAL_SNAPSHOT_BYTES"]}}},
+          "then": {
+            "properties": {
+              "unit": {"const": "BYTES"},
+              "maximum": {"type": ["integer", "null"], "minimum": 0},
+              "observed_at_least": {"type": ["integer", "null"], "minimum": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"name": {"const": "STRUCTURAL_DEPTH"}}},
+          "then": {
+            "properties": {
+              "unit": {"const": "LEVELS"},
+              "maximum": {"type": ["integer", "null"], "minimum": 0},
+              "observed_at_least": {"type": ["integer", "null"], "minimum": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"name": {"const": "VALUE_OCCURRENCES"}}},
+          "then": {
+            "properties": {
+              "unit": {"const": "OCCURRENCES"},
+              "maximum": {"type": ["integer", "null"], "minimum": 0},
+              "observed_at_least": {"type": ["integer", "null"], "minimum": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"name": {"const": "INTEGER_DECIMAL_DIGITS"}}},
+          "then": {
+            "properties": {
+              "unit": {"const": "DIGITS"},
+              "maximum": {"type": ["integer", "null"], "minimum": 0},
+              "observed_at_least": {"type": ["integer", "null"], "minimum": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"name": {"const": "TIMESTAMP_DIGIT_PROFILE"}}},
+          "then": {
+            "properties": {
+              "unit": {"const": "PROFILE"},
+              "maximum": {"type": ["string", "null"]},
+              "observed_at_least": {"type": ["string", "null"]}
+            }
+          }
+        }
+      ]
+    },
+    "operational_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operational_code", "phase", "input_ref", "limit", "detail"],
+      "properties": {
+        "operational_code": {
+          "enum": [
+            "CAPABILITY_PROFILE_UNAVAILABLE",
+            "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+            "RESOURCE_LIMIT_EXCEEDED",
+            "RESOURCE_EXHAUSTED",
+            "INPUT_IO_ERROR",
+            "INPUT_NOT_REGULAR_FILE",
+            "INPUT_CHANGED_DURING_SNAPSHOT",
+            "INTERNAL_OPERATION_ERROR",
+            "OUTPUT_IO_ERROR"
+          ]
+        },
+        "phase": {
+          "enum": [
+            "CAPABILITY_SELECTION",
+            "TRUST_INPUT",
+            "BUNDLE_SNAPSHOT",
+            "DISPATCH",
+            "CANONICAL_PARSE",
+            "MANIFEST_PARSE",
+            "SIGNATURE_MATERIAL",
+            "SEMANTIC_EVALUATION",
+            "OUTPUT"
+          ]
+        },
+        "input_ref": {
+          "enum": [
+            "BUNDLE_DIRECTORY",
+            "AI_CANONICAL_JSON",
+            "AI_MANIFEST_JSON",
+            "VERIFICATION_KEYS_JSON",
+            "TRUST_STORE",
+            "EXPLICIT_INPUT",
+            null
+          ]
+        },
+        "limit": {
+          "oneOf": [
+            {"$ref": "#/definitions/limit_fact"},
+            {"type": "null"}
+          ]
+        },
+        "detail": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"operational_code": {"const": "CAPABILITY_PROFILE_UNAVAILABLE"}}},
+          "then": {
+            "properties": {
+              "limit": {"type": "null"}
+            },
+            "oneOf": [
+              {
+                "properties": {
+                  "phase": {"const": "CAPABILITY_SELECTION"},
+                  "input_ref": {"type": "null"}
+                }
+              },
+              {
+                "properties": {
+                  "phase": {"const": "DISPATCH"},
+                  "input_ref": {"const": "AI_MANIFEST_JSON"}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {"properties": {"operational_code": {"const": "INPUT_OUTSIDE_DECLARED_CAPABILITY"}}},
+          "then": {
+            "properties": {
+              "input_ref": {"not": {"type": "null"}},
+              "limit": {
+                "allOf": [
+                  {"$ref": "#/definitions/limit_fact"},
+                  {
+                    "properties": {
+                      "name": {
+                        "enum": [
+                          "INTEGER_DECIMAL_DIGITS",
+                          "TIMESTAMP_DIGIT_PROFILE"
+                        ]
+                      },
+                      "maximum": {"type": ["integer", "string"]},
+                      "observed_at_least": {"type": ["integer", "string"]}
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"operational_code": {"const": "RESOURCE_LIMIT_EXCEEDED"}}},
+          "then": {
+            "properties": {
+              "input_ref": {"not": {"type": "null"}},
+              "limit": {
+                "allOf": [
+                  {"$ref": "#/definitions/limit_fact"},
+                  {
+                    "properties": {
+                      "name": {
+                        "enum": [
+                          "FILE_BYTES",
+                          "TOTAL_SNAPSHOT_BYTES",
+                          "STRUCTURAL_DEPTH",
+                          "VALUE_OCCURRENCES"
+                        ]
+                      },
+                      "maximum": {"type": "integer", "minimum": 0},
+                      "observed_at_least": {"type": "integer", "minimum": 0}
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operational_code": {
+                "enum": [
+                  "INPUT_IO_ERROR",
+                  "INPUT_NOT_REGULAR_FILE",
+                  "INPUT_CHANGED_DURING_SNAPSHOT"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "phase": {"enum": ["TRUST_INPUT", "BUNDLE_SNAPSHOT"]},
+              "input_ref": {"not": {"type": "null"}},
+              "limit": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"operational_code": {"const": "INTERNAL_OPERATION_ERROR"}}},
+          "then": {"properties": {"limit": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"operational_code": {"const": "OUTPUT_IO_ERROR"}}},
+          "then": {
+            "properties": {
+              "phase": {"const": "OUTPUT"},
+              "input_ref": {"type": "null"},
+              "limit": {"type": "null"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

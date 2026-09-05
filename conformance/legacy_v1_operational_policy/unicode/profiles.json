@@ -1,0 +1,44 @@
+{
+  "canonical_range_format": "AELITIUM-UNICODE-ND-RANGES-1",
+  "contract": "aelitium-unicode-nd-profiles-v1",
+  "license": "Unicode License v3",
+  "profiles": [
+    {
+      "archive_sha256": "2f76973b4d36ae45584f5a45ec65b47138932d777dd23a5669c89535ef3da951",
+      "code_point_count": 650,
+      "profile_id": "AELITIUM_UCD_ND_13_0_0_1",
+      "range_count": 61,
+      "range_file": "nd-13.0.0.txt",
+      "range_file_sha256": "bf287074b61dbb4a03a10645580b5ae0d1e106d75aa6c26881a7a277712c4f8b",
+      "source_file": "extracted/DerivedGeneralCategory.txt",
+      "source_file_sha256": "4502f0969e4e6558c4b4c6ca4c23dad70b863d61dd3d5eed1a62a6c3c99fd570",
+      "source_url": "https://www.unicode.org/Public/13.0.0/ucd/UCD.zip",
+      "unicode_version": "13.0.0"
+    },
+    {
+      "archive_sha256": "033a5276b5d7af8844589f8e3482f3977a8385e71d107d375055465178c23600",
+      "code_point_count": 660,
+      "profile_id": "AELITIUM_UCD_ND_14_0_0_1",
+      "range_count": 62,
+      "range_file": "nd-14.0.0.txt",
+      "range_file_sha256": "5a75c753790a222c430dbfc95adaa2c3ec6701862d1728eae92d9ed0e2df59c8",
+      "source_file": "extracted/DerivedGeneralCategory.txt",
+      "source_file_sha256": "cde679c8461976ed40d7edf61ae98cbb947540831f06f5bc7da7decbf91a1420",
+      "source_url": "https://www.unicode.org/Public/14.0.0/ucd/UCD.zip",
+      "unicode_version": "14.0.0"
+    },
+    {
+      "archive_sha256": "5fbde400f3e687d25cc9b0a8d30d7619e76cb2f4c3e85ba9df8ec1312cb6718c",
+      "code_point_count": 680,
+      "profile_id": "AELITIUM_UCD_ND_15_0_0_1",
+      "range_count": 64,
+      "range_file": "nd-15.0.0.txt",
+      "range_file_sha256": "0f10e369beb834ccee109f3ccc8d75f6ff8067871baf7109a106f1dac7430222",
+      "source_file": "extracted/DerivedGeneralCategory.txt",
+      "source_file_sha256": "fe29a45c0882500e591140aaa5c4f5067e6a5d746806148af34400c48b9c06f9",
+      "source_url": "https://www.unicode.org/Public/15.0.0/ucd/UCD.zip",
+      "unicode_version": "15.0.0"
+    }
+  ],
+  "status": "NORMATIVE-UNRELEASED"
+}

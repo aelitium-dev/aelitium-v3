@@ -201,7 +201,7 @@ require_literal "docs/CANONICALIZATION_SPEC.md" \
   '**Current manifest identifier:** `json_sorted_keys_no_whitespace_utf8`'
 require_literal "docs/CANONICALIZATION_SPEC.md" "It is not RFC 8785/JCS"
 require_literal "docs/CANONICALIZATION_SPEC.md" \
-  'Integers above 640 magnitude digits | **OPEN**'
+  'Integers above 640 magnitude digits | **CLOSED capability boundary**'
 require_literal "docs/CANONICALIZATION_SPEC.md" \
   'Unpaired surrogates in ignored manifest extensions | **CLOSED legacy behavior**'
 require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
@@ -238,6 +238,30 @@ require_literal "conformance/canonicalization_v2/manifest.json" \
 require_literal "conformance/canonicalization_v2/manifest.json" \
   '"canonicalization_identifier": "aelitium_jcs_profile_v2"'
 require_literal "pyproject.toml" '"rfc8785==0.1.4"'
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "**Status:** NORMATIVE-UNRELEASED"
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "aelitium-legacy-v1-compatibility-operational-policy-v1"
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "V1_FROZEN_LEGACY_COMPATIBILITY"
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "V1_NAMED_RUNTIME_COMPATIBILITY"
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "AELITIUM_CLEANROOM_MINIMUM_1"
+require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
+  "operational inability during verify or a compare prerequisite"
+require_literal "engine/schemas/verifier_tool_result_v1.json" \
+  '"$id": "aelitium-verifier-tool-result-v1"'
+require_literal "conformance/legacy_v1_operational_policy/manifest.json" \
+  '"case_count": 94'
+require_literal "conformance/legacy_v1_operational_policy/unicode/profiles.json" \
+  '"contract": "aelitium-unicode-nd-profiles-v1"'
+require_literal "docs/VERIFIER_PROTOCOL_V1.md" '| G-02 | **CLOSED** |'
+require_literal "docs/VERIFIER_PROTOCOL_V1.md" '| G-09 | **CLOSED** |'
+require_literal "docs/VERIFIER_PROTOCOL_V1.md" \
+  '| G-04 | **OPEN — UNBLOCKED_BY_POLICY** |'
+forbid_literal "docs/CANONICALIZATION_SPEC.md" \
+  'external operational-error contract remains open as G-09'
 
 for dimension in "${assurance_dimensions[@]}"; do
   require_literal "docs/ASSURANCE_RESULT_V1.md" "$dimension"

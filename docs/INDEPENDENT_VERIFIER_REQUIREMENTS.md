@@ -56,8 +56,12 @@ written against that hierarchy and these repository artifacts:
 - [`ASSURANCE_RESULT_V1.md`](ASSURANCE_RESULT_V1.md)
 - [`CLAIM_BOUNDARIES_V1.md`](CLAIM_BOUNDARIES_V1.md)
 - [`COMPARE_RESULT_V1.md`](COMPARE_RESULT_V1.md)
+- [`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
+- [`engine/schemas/verifier_tool_result_v1.json`](../engine/schemas/verifier_tool_result_v1.json)
 - [`conformance/manifest.json`](../conformance/manifest.json) and every frozen
   artifact it references
+- [`conformance/legacy_v1_operational_policy/manifest.json`](../conformance/legacy_v1_operational_policy/manifest.json)
+  and its frozen byte recipes, results, and Unicode profiles
 
 Python source is not a normative input. A separately labeled implementation
 cross-check may detect a specification defect while the contract is being
@@ -66,7 +70,11 @@ must not be copied into an independent verifier.
 
 ## Bundle inputs
 
-The verification input is a local directory. The current artifact names are:
+The direct-filesystem verification input is a local directory acquired under
+the no-follow regular-file snapshot contract in
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+An exactly equivalent caller-provided immutable role map is also permitted.
+The current artifact names are:
 
 | File | Presence | Role |
 |---|---|---|
@@ -217,8 +225,8 @@ Structural traversal must not depend on the host call stack. Exhausting a host
 recursion limit is not a malformed-selector outcome and must not redirect v2 to
 the v1/error-resolution path. Selector traversal, the fresh strict-v2 parse,
 and profile validation are iterative; the released v1 parser behavior remains
-unchanged. Operational exhaustion follows the separate rule in the public
-protocol and remains open as G-09.
+unchanged. Operational exhaustion follows the separate public policy and
+returns `aelitium-verifier-tool-result-v1` with no semantic result.
 
 An exact final v1 selector re-enters the complete CPython-aligned path. An
 exact final v2 selector reparses from byte zero under strict UTF-8 RFC 8259,
@@ -267,7 +275,7 @@ No independent implementation exists. The current readiness gate is:
 | Unpaired surrogates in ignored manifest extensions | **CLOSED legacy behavior** | Preserve acceptance of the escaped form when the extension is not used by a manifest check. The manifest is not canonicalized; exclude this case from the restricted subset. |
 | Canonical whitespace, arrays, literals, and terminal newline | **CLOSED** | Compact recursive encoding, preserved array order, exact lowercase literals, and stored bytes equal to `C` or `C || 0A`, hashing only `C`. |
 | Integer magnitudes of at most 640 decimal digits | **RESTRICTED SUBSET** | Parse and emit exact signed base-10 integers without binary64 conversion in canonical metadata, manifest extensions, explicit inputs, and result output. |
-| Integer magnitudes above 640 decimal digits | **OPEN** | Released v0.4.0 delegates source conversion to a configurable CPython decimal-conversion guard, while direct API values can already be Python integers, so the complete accepted and serializable domain cannot be determined portably from the identifier alone. |
+| Integer magnitudes above 640 decimal digits | **CLOSED capability boundary** | Do not declare them universally invalid. A portable verifier returns `INPUT_OUTSIDE_DECLARED_CAPABILITY`; a named-runtime declaration fixes bounded `N` or explicit unlimited conversion and qualifies any legacy source result. |
 
 The dedicated corpus is
 [`conformance/canonicalization/manifest.json`](../conformance/canonicalization/manifest.json)
@@ -293,12 +301,12 @@ The subset excludes `NaN`, `Infinity`, `-Infinity`, and integer magnitudes over
 the three non-finite tokens remain accepted legacy behavior, and some v0.4.0
 runtimes accept larger integers.
 
-A candidate limited to this domain must report **RESTRICTED SUBSET** and must
-refuse out-of-subset evidence without claiming it is invalid under every
-v0.4.0 runtime. A candidate cannot claim the complete current surface while the
-extreme-integer row remains **OPEN**. Closing it requires a separately versioned
-rule or evidence that a restriction changes no accepted v0.4.0 artifact; this
-task provides neither.
+A candidate limited to this domain must report `V1_RESTRICTED_PORTABLE` and
+must return the separate operational outcome for out-of-subset evidence without
+claiming it is invalid under every v0.4.0 runtime. A candidate implementing the
+deterministic legacy rules uses `V1_FROZEN_LEGACY_COMPATIBILITY`; a candidate
+emulating a wider historical runtime uses the exact named declaration. None may
+claim one unqualified complete v1 surface.
 
 ## Signature and external signing-key membership
 
@@ -415,11 +423,11 @@ In particular:
 
 ## Result serialization
 
-A byte-comparable CLI mode should emit UTF-8 JSON with keys sorted
-lexicographically, compact separators, and one terminal LF. Semantic conformance
-requires schema-valid equivalent values; byte conformance additionally requires
-the exact serialization. Local paths must not appear in artifact, trust, or
-policy references.
+A byte-comparable semantic-result CLI mode should emit UTF-8 JSON with keys
+sorted lexicographically, compact separators, and one terminal LF. Operational
+and profile-qualified results use `aelitium-verifier-tool-result-v1`, whose
+RFC 8785 plus LF serialization is exact. Local paths must not appear in
+artifact, trust, policy, input-role, or operational references.
 
 ## Conformance and acceptance gate
 
@@ -441,16 +449,18 @@ A candidate is not accepted as independent until all of these pass:
    inputs;
 9. all 114 portable-v2 vectors, including dispatch under CPython integer digit
    limits 640, 4300, and disabled; and
-10. a provenance review demonstrating that the decision engine neither imports
-   nor shells out to AELITIUM Python.
+10. all cases in the separate legacy-v1 operational-policy corpus, including
+    exact operational wrappers and frozen Unicode profile audits; and
+11. a provenance review demonstrating that the decision engine neither imports
+    nor shells out to AELITIUM Python.
 
 The present Python conformance runner is an implementation-aligned oracle and
 corpus exerciser. It is not evidence that a second implementation exists.
 
-As of this document revision, the portable-v2 Python implementation and frozen
-corpus are present, but no independent implementation exists. The
-complete-surface readiness verdict remains
-**NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because the accepted domain for integer
-magnitudes above 640 decimal digits remains dependent on the configured Python
-runtime. The restricted subset is specified and testable, but it is not the
-complete v0.4.0 surface.
+As of this document revision, the portable-v2 Python implementation, the
+capability/operational policy, and their frozen corpora are present, but no
+independent implementation exists. The complete-surface readiness verdict
+remains **NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because G-04 through G-08 and
+G-10 remain open (with G-04/G-05/G-06 now unblocked by policy), and complete
+comparison construction remains deferred as G-12. G-02/G-09 closure does not
+authorize filling those gaps from Python.

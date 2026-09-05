@@ -1,0 +1,46 @@
+{
+  "case_count": 94,
+  "categories": {
+    "DETERMINISTIC_LEGACY": 12,
+    "FILESYSTEM_SNAPSHOT": 24,
+    "INTEGER_CAPABILITY": 23,
+    "OPERATIONAL_LIMIT": 12,
+    "OPERATIONAL_RESOURCE": 4,
+    "OPERATIONAL_TRANSPORT": 3,
+    "TIMESTAMP_COMPATIBILITY": 16
+  },
+  "contract": "aelitium-legacy-v1-operational-policy-conformance-v1",
+  "existing_corpora_unchanged": {
+    "canonicalization_v1_cases": 30,
+    "canonicalization_v2_cases": 114,
+    "result_contract_cases": 44
+  },
+  "existing_corpus_measurements": {
+    "maximum_operation_snapshot_bytes": 2036,
+    "maximum_operation_snapshot_bytes_ref": "assurance/vectors.json:assurance.authorization_always_not_evaluated:fixtures/bundles/signed_valid+fixtures/trust/legitimate.json",
+    "maximum_source_bytes": 10248,
+    "maximum_source_bytes_ref": "canonicalization_v2/vectors.json:v2.dispatch.integer_10000_disabled",
+    "maximum_structural_depth": 521,
+    "maximum_structural_depth_ref": "canonicalization_v2/vectors.json:v2.dispatch.deep_array_before_v2",
+    "maximum_value_occurrences": 527,
+    "maximum_value_occurrences_ref": "canonicalization_v2/vectors.json:v2.dispatch.deep_array_before_v2",
+    "measured_operation_snapshot_count": 56,
+    "measured_source_count": 194,
+    "scope": [
+      "canonicalization/vectors.json source_bytes_hex",
+      "canonicalization_v2/vectors.json source_bytes_hex",
+      "fixtures/**/*.json exact bytes",
+      "result-contract vector bundle/trust operation snapshots"
+    ]
+  },
+  "operation_contract": "AELITIUM-LEGACY-V1-POLICY-OPERATION-1",
+  "operational_result_schema": "../../engine/schemas/verifier_tool_result_v1.json",
+  "policy": "../../docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md",
+  "recipe_contract": "AELITIUM-BYTES-RECIPE-1",
+  "runner": "../run_legacy_v1_operational_policy.py",
+  "status": "NORMATIVE-UNRELEASED",
+  "unicode_profiles": "unicode/profiles.json",
+  "vector_files": [
+    "cases.json"
+  ]
+}

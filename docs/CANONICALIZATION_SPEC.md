@@ -27,7 +27,10 @@ below. Values outside that subset do not acquire an interoperability claim.
 The normative source hierarchy, conflict rule, canonicalization-version
 registry, complete public dispatch algorithm, and exact external-standard
 incorporation are fixed by
-[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md).
+[`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md). The capability-qualified
+portable-v1 boundary and non-semantic handling of host-dependent legacy input
+are fixed by
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
 
 ## Scope
 
@@ -207,14 +210,17 @@ accepts unknown manifest extension members, and the verification-result schema
 does not bound `policy_inputs[].maximum_age_seconds`. CPython 3.10+ integers are
 arbitrary precision, but patched runtimes apply a configurable decimal
 conversion guard: its default is 4,300 digits, its minimum nonzero setting is
-640 digits, and it can be disabled. Because released v0.4.0 delegates source
-conversion to that runtime, the full extreme-integer acceptance boundary is
-**OPEN** and must not be guessed by an independent implementation.
+640 digits, and it can be disabled. Released v0.4.0 delegates source conversion
+to that runtime; therefore v1 has no single unqualified portable decision above
+640 digits.
 
 The cross-language-safe restricted subset includes integer magnitudes of at
 most 640 decimal digits in every parsed input and serialized result location.
 This is a subset declaration, not a new verifier rejection rule. Existing
-implementations may accept larger values.
+implementations may accept larger values. An independent verifier must either
+return the separate operational outcome outside its declared portable
+capability or evaluate under an exact disclosed named-runtime profile; the
+public policy linked above defines both paths.
 
 ### Finite binary64 values
 
@@ -368,7 +374,7 @@ documented in `INDEPENDENT_VERIFIER_REQUIREMENTS.md`.
 | Finite binary64 parsing and rendering | **CLOSED** | IEEE conversion plus the shortest-round-trip and notation rules above. |
 | Non-finite values | **CLOSED legacy behavior** | Three exact tokens are preserved but excluded from the restricted subset. |
 | Integers of at most 640 magnitude digits | **RESTRICTED SUBSET** | Exact base-10 arbitrary-precision behavior. |
-| Integers above 640 magnitude digits | **OPEN** | CPython conversion guard is configurable. |
+| Integers above 640 magnitude digits | **CLOSED capability boundary** | Not universally invalid: portable profiles refuse operationally; an exact named-runtime profile reproduces its declared bounded or unlimited conversion rule. |
 
 The frozen corpus is `conformance/canonicalization/vectors.json`. It contains
 source bytes, acceptance decisions, canonical bytes, digests, and rejection
@@ -426,9 +432,10 @@ plus the exact legacy tokens `NaN`, `Infinity`, and `-Infinity`. It:
 Scanner traversal, the fresh strict-v2 parse, and profile traversal are
 iterative. A host recursion limit is not a failed lookahead and cannot redirect
 a v2 selector to legacy error resolution. Operational failure is distinct from
-syntax failure and is not converted into JSON/profile invalidity. The exact
-external operational-error contract remains open as G-09. The released v1
-parser behavior remains unchanged.
+syntax failure and is not converted into JSON/profile invalidity. Its exact
+outer result, rc, limit, resource, and immutable-input contract is published in
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+The released v1 parser behavior remains unchanged.
 
 If that final selector is exactly `aelitium_jcs_profile_v2`, verification
 reparses the immutable original bytes from byte zero with the strict v2 parser.
