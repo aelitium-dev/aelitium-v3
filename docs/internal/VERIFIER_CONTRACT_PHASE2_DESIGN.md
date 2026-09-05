@@ -48,6 +48,21 @@ provide a capability or operational-refusal contract usable at these source
 positions. If stricter behavior is preferred, it requires new versioned
 format identifiers rather than silently tightening existing ones.
 
+### Subsequent policy-adoption update
+
+The later Level 1 contract
+[`../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
+adopted the compatibility-preserving choice this audit required. It closes
+G-02/G-09 and fixes portable versus named integer handling, ASCII versus frozen
+Unicode `Nd` timestamp profiles, the final-LF rule, deterministic legacy
+duplicates/surrogates/Base64 behavior, and operational input acquisition.
+
+Accordingly, G-04, G-05, and G-06 are now **OPEN — UNBLOCKED_BY_POLICY**. This
+does not close them: Phase 2 must still publish their schemas, exact source and
+field grammars, validation order, Base64/key/trust details, and frozen Phase 2
+vectors. The table above and final verdict remain the historical design-audit
+result at its stated baseline; they are not rewritten retroactively.
+
 ## 2. Method and authority
 
 The source hierarchy and conflict rules in
@@ -64,6 +79,10 @@ The following Level 1 sources were used before implementation inspection:
 - the frozen data rooted at `conformance/manifest.json`,
   `conformance/canonicalization/manifest.json`, and
   `conformance/canonicalization_v2/manifest.json`.
+
+The subsequent adoption adds the Level 1 compatibility/operational policy,
+`aelitium-verifier-tool-result-v1`, and the separate 94-case policy corpus to
+the current closure inputs.
 
 The current schema inventory contains contracts for canonical payloads and
 public result structures, but no schema for any of the three source artifacts
@@ -104,8 +123,9 @@ The observable order remains:
 8. binding, invocation, trust-membership, and Freshness result precedence as
    already published.
 
-This phase does not define filesystem snapshots, limits, or operational error
-serialization. Those remain G-09.
+At this audit baseline, this phase did not define filesystem snapshots, limits,
+or operational error serialization; those were G-09. The subsequent policy
+adoption now supplies that cross-cutting contract for Phase 2.
 
 ## 4. G-04 — `ai_manifest.json`
 
@@ -672,8 +692,9 @@ The top-level ordering relevant to this phase is:
 12. invocation and Freshness evidence failures.
 
 This is a scoped precedence map, not closure of G-08's exhaustive reason and
-assurance-state registry. Operational/resource failures remain G-09 and must
-not be manufactured as semantic JSON or schema reasons.
+assurance-state registry. The subsequently closed G-09 policy requires
+operational/resource failures to remain outside semantic JSON or schema
+reasons.
 
 ## 8. Schema design summary
 
@@ -929,5 +950,9 @@ be disguised as `MANIFEST_NOT_JSON`, `SIGNATURE_INVALID`, or
 The proposed four schemas and three conformance families are otherwise
 sufficient to implement the closure without using Python as an unstated
 oracle once those decisions are made.
+
+Current post-adoption status: G-04, G-05, and G-06 remain open but are
+`UNBLOCKED_BY_POLICY`; the preliminary decisions above have been made, while
+the Phase 2 publication work itself remains outstanding.
 
 VERIFIER_CONTRACT_PHASE2_DESIGN_NOT_READY

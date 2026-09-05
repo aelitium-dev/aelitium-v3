@@ -21,6 +21,8 @@
 ## Verification, assurance, and comparison contracts
 
 - [Verifier protocol v1](VERIFIER_PROTOCOL_V1.md)
+- [Legacy v1 compatibility and operational policy v1](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
+- [Verifier tool-result v1 schema](../engine/schemas/verifier_tool_result_v1.json)
 - [Verification result v1](VERIFICATION_RESULT_V1.md)
 - [Assurance result v1](ASSURANCE_RESULT_V1.md)
 - [Claim boundaries v1](CLAIM_BOUNDARIES_V1.md)
@@ -30,6 +32,7 @@
 - [Public conformance corpus](../conformance/README.md)
 - [Released-v1 cross-language canonicalization corpus](../conformance/canonicalization/README.md)
 - [Unreleased portable-v2 canonicalization corpus](../conformance/canonicalization_v2/README.md)
+- [Legacy-v1 capability and operational-policy corpus](../conformance/legacy_v1_operational_policy/README.md)
 - [Canonicalization specification](CANONICALIZATION_SPEC.md)
 - [Cross-language canonicalization audit](internal/CROSS_LANGUAGE_CANONICALIZATION_AUDIT.md)
 - [Approved portable-v2 design](internal/CANONICALIZATION_V2_PORTABLE_DESIGN.md)

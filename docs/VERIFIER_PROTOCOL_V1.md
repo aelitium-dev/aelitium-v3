@@ -3,14 +3,14 @@
 **Status:** IMPLEMENTATION-ALIGNED-UNRELEASED
 
 **Scope:** normative source hierarchy, canonicalization-version registry,
-pre-dispatch routing, and external-standards registry for AELITIUM bundle
-verification
+pre-dispatch routing, external-standards registry, and integration of the
+legacy-capability/operational policy for AELITIUM bundle verification
 
 This document is a public protocol contract for the current unreleased
 verifier surface. It closes specification gaps G-01, G-03, and G-13 from the
-independent Go-verifier readiness audit. It does not close the other gaps in
-that audit, change released v0.4.0 behavior, or assert that an independent
-verifier exists.
+independent Go-verifier readiness audit and incorporates the separate public
+policy that closes G-02 and G-09. It does not change released v0.4.0 behavior
+or assert that an independent verifier exists.
 
 ## 1. Purpose and interpretation
 
@@ -55,6 +55,7 @@ schemas:
 - [`ASSURANCE_RESULT_V1.md`](ASSURANCE_RESULT_V1.md);
 - [`CLAIM_BOUNDARIES_V1.md`](CLAIM_BOUNDARIES_V1.md);
 - [`COMPARE_RESULT_V1.md`](COMPARE_RESULT_V1.md);
+- [`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md);
 - the acceptance requirements in
   [`INDEPENDENT_VERIFIER_REQUIREMENTS.md`](INDEPENDENT_VERIFIER_REQUIREMENTS.md);
   and
@@ -62,7 +63,9 @@ schemas:
   [`ai_output_v1.json`](../engine/schemas/ai_output_v1.json),
   [`verification_result_v1.json`](../engine/schemas/verification_result_v1.json),
   [`assurance_result_v1.json`](../engine/schemas/assurance_result_v1.json), and
-  [`compare_result_v1.json`](../engine/schemas/compare_result_v1.json).
+  [`compare_result_v1.json`](../engine/schemas/compare_result_v1.json); and
+- the operational wrapper schema
+  [`verifier_tool_result_v1.json`](../engine/schemas/verifier_tool_result_v1.json).
 
 A schema is normative only for the contract that explicitly names it. The
 absence of a schema does not delegate a decision to an implementation. A prose
@@ -93,7 +96,10 @@ Level 3 consists of the frozen data referenced by:
 - [`conformance/canonicalization/manifest.json`](../conformance/canonicalization/manifest.json),
   currently 30 released-v1 canonicalization cases; and
 - [`conformance/canonicalization_v2/manifest.json`](../conformance/canonicalization_v2/manifest.json),
-  currently 114 unreleased portable-v2 cases.
+  currently 114 unreleased portable-v2 cases; and
+- [`conformance/legacy_v1_operational_policy/manifest.json`](../conformance/legacy_v1_operational_policy/manifest.json),
+  currently 94 unreleased legacy-capability, operational, and immutable-
+  snapshot cases, including its frozen Unicode `Nd` profile data.
 
 Frozen source bytes, expected bytes, digests, decisions, reasons, states, and
 routes are normative examples and acceptance evidence within their declared
@@ -341,11 +347,12 @@ v1, must not change a previously observed selector, and must not become
 `MANIFEST_NOT_JSON`, `MANIFEST_BAD_CANONICALIZATION`, or another AELITIUM
 semantic result.
 
-This document intentionally does not define the external representation,
-minimum supported limits, exit status, or recovery behavior for an operational
-failure. That contract remains specification gap G-09. Until G-09 is closed,
-an implementation must keep such failures on a separately typed operational
-path and must not manufacture a protocol result.
+The external representation, minimum supported limits, exit status, recovery
+boundary, and immutable-input requirements are defined by
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+That separate Level 1 contract closes G-09. In all cases an implementation must
+keep operational failure on its separately typed path and must not manufacture
+a semantic protocol result.
 
 ## 6. External-standards registry
 
@@ -374,14 +381,17 @@ presentation of a linked website, identifies each incorporated publication.
 | Ed25519 | [RFC 8032, *Edwards-Curve Digital Signature Algorithm (EdDSA)*, January 2017](https://www.rfc-editor.org/rfc/rfc8032.html) | Pure Ed25519 verification of the exact raw manifest message with a 32-octet public key and 64-octet signature | Subset: the Ed25519 instance and verification rules in section 5.1; not Ed25519ctx, Ed25519ph, or Ed448 | No | None |
 | JSON Schema Draft 7 Core | [draft-handrews-json-schema-01, *JSON Schema: A Media Type for Describing JSON Documents*, 19 March 2018](https://json-schema.org/draft-07/draft-handrews-json-schema-01) | Core processing for applicable schemas whose `$schema` is `http://json-schema.org/draft-07/schema#` | Subset exercised by the named Level 1 schemas | No | None |
 | JSON Schema Draft 7 Validation | [draft-handrews-json-schema-validation-01, *JSON Schema Validation: A Vocabulary for Structural Validation of JSON*, 19 March 2018](https://json-schema.org/draft-07/draft-handrews-json-schema-validation-01) | Validation keywords used by those same named schemas | Subset exercised by the named Level 1 schemas | No | None |
+| Unicode Character Database | Unicode Character Database versions [13.0.0](https://www.unicode.org/versions/Unicode13.0.0/), [14.0.0](https://www.unicode.org/versions/Unicode14.0.0/), and [15.0.0](https://www.unicode.org/versions/Unicode15.0.0/), exact `UCD.zip` archives and `extracted/DerivedGeneralCategory.txt` members identified by SHA-256 in `aelitium-unicode-nd-profiles-v1` | Provenance for the three frozen General Category `Nd` membership tables used only by named legacy timestamp compatibility profiles; the frozen AELITIUM range files and digests govern membership | Subset: code points marked exactly `Nd` in each cited data set | No | None |
 
 The AELITIUM value contracts directly define a Unicode scalar value as a code
 point in U+0000..U+D7FF or U+E000..U+10FFFF and directly enumerate the v2
-noncharacter exclusions. They perform no normalization. Consequently, no
-version-varying Unicode character database, assigned-character table,
-normalization data set, locale data, or grapheme algorithm is incorporated.
-RFC 3629 supplies the required UTF-8 encoding reference; RFC 8785 supplies the
-UTF-16 ordering operation used only by portable-v2 JCS serialization.
+noncharacter exclusions. They perform no normalization. No version-varying
+Unicode database governs v1/v2 value validity, normalization, assigned-
+character status, locale, graphemes, or v2 ordering. The only incorporated UCD
+use is the exact frozen `Nd` membership data for explicitly selected named
+legacy timestamp profiles. RFC 3629 supplies the required UTF-8 encoding
+reference; RFC 8785 supplies the UTF-16 ordering operation used only by
+portable-v2 JCS serialization.
 
 The Draft 2020-12 declaration in `engine/schemas/input_v1.json` concerns a
 producer input schema outside this verifier protocol's named schema set. It is
@@ -427,27 +437,27 @@ process in section 3.
 
 ## 7. Independent-verifier gap status
 
-This Phase 1 specification closes only the three authorized readiness gaps.
-The remaining findings retain their prior identifiers and continue to block a
-complete clean-room implementation.
+The remaining findings retain their identifiers. Closing G-02 and G-09 is a
+specification-closure result; it does not claim a runtime implementation or a
+complete clean-room verifier.
 
-| Gap | Status after Phase 1 | Basis |
+| Gap | Current status | Basis |
 |---|---|---|
 | G-01 | **CLOSED** | Sections 2 and 3 publish the hierarchy, conflict rule, implementation exclusion, and update process. |
-| G-02 | **OPEN** | The complete v1 integer domain remains dependent on configurable CPython behavior. |
+| G-02 | **CLOSED** | `aelitium-legacy-v1-compatibility-operational-policy-v1` defines the portable 640-digit domain, exact named-runtime profiles, profile disclosure, and non-semantic refusal outside capability without redefining v1. |
 | G-03 | **CLOSED** | Sections 4 and 5 publicly define the registry and complete dispatch contract. |
-| G-04 | **OPEN** | A complete manifest grammar/schema remains unpublished. |
-| G-05 | **OPEN** | The verification-key artifact grammar and exact Base64 acceptance remain unspecified. |
-| G-06 | **OPEN** | The explicit trust-input grammar/schema remains incomplete. |
+| G-04 | **OPEN — UNBLOCKED_BY_POLICY** | The cross-cutting compatibility/operational decision is closed; a complete manifest grammar/schema, ordered checks, and Phase 2 vectors remain unpublished. |
+| G-05 | **OPEN — UNBLOCKED_BY_POLICY** | The cross-cutting compatibility/operational decision is closed; the verification-key grammar, Base64 profile, precedence, and Phase 2 vectors remain unpublished. |
+| G-06 | **OPEN — UNBLOCKED_BY_POLICY** | The cross-cutting compatibility/operational decision is closed; the trust-input grammar, membership rules, precedence, and Phase 2 vectors remain unpublished. |
 | G-07 | **OPEN** | Invocation grammar and ordered reason mapping remain incomplete. |
 | G-08 | **OPEN** | An exhaustive reason and assurance-state transition registry remains unpublished. |
-| G-09 | **OPEN** | The operational/resource and filesystem error contract remains unspecified; section 5.7 only prevents semantic misclassification. |
-| G-10 | **OPEN** | Corpus operations and complete expected outputs are not yet language-neutral and self-contained. |
+| G-09 | **CLOSED** | The public policy and `aelitium-verifier-tool-result-v1` schema define operational separation, rc 3, closed codes, minimum/advertised limits, no-follow regular-file acquisition, and immutable snapshots. |
+| G-10 | **OPEN** | The new policy corpus is language-neutral and self-contained, but the remaining older corpus operations and complete expected outputs still require closure. |
 | G-11 | **OPEN** | Timestamp calendar and Freshness edge semantics remain incomplete. |
 | G-12 | **DEFERRED** | Complete comparison-output construction remains a later closure phase. |
 | G-13 | **CLOSED** | Section 6 pins exact standards, subsets, editions, errata handling, and non-supersession. |
 
-Closing these three gaps does not change the historical
+These closures do not change the historical
 `INDEPENDENT_VERIFIER_DESIGN_NOT_READY` verdict. No independent verifier is
 implemented or claimed by this document.
 
@@ -461,7 +471,8 @@ This protocol publication:
   or claim-boundary meaning;
 - does not make v1 universally portable;
 - does not create cross-version comparison;
-- does not close G-02, G-04 through G-12;
+- closes G-02 and G-09 as specification gaps while leaving G-04 through G-08,
+  G-10, and G-11 open and G-12 deferred;
 - does not implement or release an independent verifier; and
 - does not establish provider execution, response causation, semantic truth,
   capture completeness, historical occurrence, historical non-modification,

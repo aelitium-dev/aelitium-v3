@@ -12,7 +12,9 @@ closes the documented Unicode, binary64, non-finite-token, duplicate-name,
 whitespace, and terminal-LF behavior of the existing canonicalization
 identifier. It also marks the host-dependent extreme-integer range as `OPEN`.
 Those 30 cases supplement rather than renumber or alter the 44 result-contract
-cases.
+cases. The later public compatibility/operational policy closes how an
+independent verifier handles that open corpus domain without changing this
+historical manifest or redefining v1.
 
 A second, separate 114-case corpus under
 [`canonicalization_v2/`](canonicalization_v2/) exercises the unreleased
@@ -21,6 +23,13 @@ input profile, storage and hash scope, manifest dispatch, v1 isolation, and
 cross-version comparison refusal. It supplements and does not modify either
 existing corpus. It is implementation-aligned evidence for this Python branch,
 not a claim that an independent verifier exists.
+
+A third separate 94-case family under
+[`legacy_v1_operational_policy/`](legacy_v1_operational_policy/) freezes the
+portable 640-digit boundary, exact named-runtime profiles, Unicode `Nd` tables,
+operational wrappers, resource floors, and immutable-snapshot behavior. It is
+normative unreleased contract data and does not claim that the current Python
+runtime implements the operational transport.
 
 ## Layout
 
@@ -60,6 +69,8 @@ python3 conformance/run_canonicalization.py
 python3 conformance/run_canonicalization.py --json
 python3 conformance/run_canonicalization_v2.py
 python3 conformance/run_canonicalization_v2.py --json
+python3 conformance/run_legacy_v1_operational_policy.py
+python3 conformance/run_legacy_v1_operational_policy.py --json
 ```
 
 The runner uses frozen files and explicit fixed Freshness reference times. It
@@ -78,6 +89,8 @@ python3 conformance/build_fixtures.py --check
 python3 conformance/build_vectors.py --check
 python3 conformance/build_canonicalization_vectors.py --check
 python3 conformance/build_canonicalization_v2_vectors.py --check
+python3 conformance/build_legacy_v1_operational_policy.py
+python3 scripts/audit_unicode_nd_profiles.py
 ```
 
 They reconstruct expected bytes in memory and compare them with the committed

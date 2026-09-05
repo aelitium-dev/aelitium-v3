@@ -48,14 +48,19 @@ Accordingly:
 This conclusion does not reinterpret released v1 behavior and does not propose
 using Python as an oracle.
 
-### Phase 1 closure update
+### Subsequent contract-closure updates
 
 [`../VERIFIER_PROTOCOL_V1.md`](../VERIFIER_PROTOCOL_V1.md) subsequently closed
 G-01, G-03, and G-13 by publishing the normative hierarchy, complete dispatch
-contract, and exact external-standards registry. This update records closure
-status without rewriting the audit baseline or its final verdict. G-02 and
-G-04 through G-12 remain open or deferred, so the design remains not ready for
-complete clean-room implementation.
+contract, and exact external-standards registry.
+
+[`../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
+subsequently closed G-02 and G-09 with capability-qualified v1 support, frozen
+Unicode profiles, a separate operational transport, minimum limits, and
+immutable input acquisition. G-04/G-05/G-06 remain open but are now
+`UNBLOCKED_BY_POLICY`. These updates record current closure status without
+rewriting the audit baseline or its final verdict. G-07, G-08, and G-10 remain
+open, so the design remains not ready for complete clean-room implementation.
 
 ## 2. Independence threat model
 
@@ -209,12 +214,11 @@ lexicographically sorted ASCII field names, and exactly one terminal LF.
 non-normative; the Go verifier may use null consistently rather than imitate
 Python exception text.
 
-Usage errors, unsupported legacy domains, I/O failures that lack an authorized
-verification mapping, allocation failure, and configured resource ceilings
-must not be forged into an AELITIUM semantic result. A provisional CLI would
-write a separate tool-operational diagnostic to stderr and use a non-0/non-2
-exit. Exact operational codes and envelope are blocked on G-09 and must be
-approved before implementation.
+Usage errors, unsupported legacy domains, I/O failures, allocation failure, and
+configured resource ceilings must not be forged into an AELITIUM semantic
+result. The public operational policy now fixes
+`aelitium-verifier-tool-result-v1`, operational rc 3, usage rc 64, stable stderr
+diagnostics for legacy result modes, and the complete code/limit vocabulary.
 
 Compatibility capabilities should be explicit, not hidden:
 
@@ -223,13 +227,14 @@ Compatibility capabilities should be explicit, not hidden:
 | `V2_PORTABLE` | Complete `aelitium_jcs_profile_v2` support |
 | `V1_RESTRICTED_PORTABLE` | Only the restricted subset already defined by the v1 specification |
 | `V1_FROZEN_LEGACY_COMPATIBILITY` | The documented closed v1 behavior, including exact non-finite tokens and ignored-manifest surrogate behavior, but not a universal decision above 640 integer digits |
-| `V1_CPYTHON_DIGIT_PROFILE(n)` | An explicitly declared conformance/emulation profile for 640, 4300, or disabled limits; not a new AELITIUM semantic |
-| `V1_LEGACY_UNSUPPORTED` | Tool-level refusal because the input lies outside the declared v1 capability; never reported as bundle invalidity |
+| `V1_NAMED_RUNTIME_COMPATIBILITY` | An exact bounded/unlimited integer conversion setting plus one digest-pinned Unicode `Nd` profile; not a universal v1 semantic |
+| `V1_LEGACY_UNSUPPORTED` | No legacy evaluator; refusal after legacy dispatch is operational and never bundle invalidity |
 
-The closed verification-result schema currently has no place to declare these
-capabilities. They therefore cannot become production flags until G-02 defines
-how the selected compatibility profile is made visible without changing v1
-meaning.
+The unchanged verification-result schema intentionally has no capability
+fields. The outer `aelitium-verifier-tool-result-v1` schema now carries the
+fully parameterized requested/effective capability declaration without changing
+v1 meaning. The current
+Python CLI has not implemented that normative transport.
 
 `compare` is deliberately deferred as described in section 17. A conformance
 subcommand may run frozen data, but it must not expose a general producer or
@@ -261,10 +266,11 @@ The intended read model is:
    Ed25519 verification; and
 7. never reuse scanner-derived values in version verification.
 
-The current contract does not define symlink handling, non-regular files,
-short reads, permission failures, path replacement during verification, size
-limits, or extra files. These are operational gaps, not permission to map such
-conditions to `CANONICAL_NOT_JSON` or `MANIFEST_NOT_JSON`.
+The public operational policy now defines symlink/non-regular handling, short
+reads, I/O failure, observable path mutation, ignored extra files, minimum and
+advertised limits, and equivalent immutable-byte input. Those rules are
+normative design inputs for the future verifier, not claims about the current
+Python filesystem path.
 
 ## 7. Canonicalization v1 strategy
 
@@ -315,9 +321,10 @@ bytes. It must be derived from the prose algorithm and frozen vectors, not
 from Python source.
 
 Preflight integer magnitude lexically. At or below the declared capability,
-parse with `math/big.Int`. Above it, return a tool-level legacy-domain refusal
-unless an explicitly selected CPython digit profile defines the outcome. Such
-a refusal is not `CANONICAL_NOT_JSON`, `MANIFEST_NOT_JSON`, or any other public
+parse with `math/big.Int`. Above it, return
+`INPUT_OUTSIDE_DECLARED_CAPABILITY` unless an explicitly selected
+`V1_NAMED_RUNTIME_COMPATIBILITY` profile defines the qualified legacy outcome.
+Such a refusal is not `CANONICAL_NOT_JSON`, `MANIFEST_NOT_JSON`, or any other public
 bundle judgment.
 
 ## 8. Canonicalization v2 strategy
@@ -355,8 +362,8 @@ make every applicable RFC 8785 and AELITIUM vector a dependency-upgrade gate.
 
 The standard canonicalizer has a finite nesting ceiling. A preceding iterative
 depth scan must classify reaching that ceiling as operational, not semantic.
-G-09 must define the supported limit and external behavior before the package
-is used in production.
+The subsequently adopted G-09 policy now defines the supported minimum,
+advertised limits, and external operational behavior required before use.
 
 ## 9. `AELITIUM-DISPATCH-JSON-1` implementation design
 
@@ -717,10 +724,12 @@ digests before execution.
 |---|---|---|
 | Result contract, 44 cases | 32 verification/assurance/trust/Freshness/invocation/compatibility operations and 12 comparisons | Phase 1 must pass the 32 verifier operations; the complete candidate must pass 44/44 after comparison. All referenced fixtures are within behavior that can be reproduced after the specification gaps are closed. |
 | V1 canonicalization, 30 cases | 15 `CROSS_LANGUAGE_SAFE`, 3 accepted `LEGACY_PRESERVED_OUTSIDE_SUBSET`, 12 rejected | All 30 exact decisions/bytes/digests can be reproduced. Passing them does not claim universal behavior for integers above 640 digits. |
-| Portable v2, 114 cases | 59 canonicalize, 5 hash material, 10 storage verify, 38 dispatch verify, 1 comparison, 1 v1 artifact | 110 have language-independent expectations. Four v1-route cases depend on an explicitly declared CPython digit-limit profile and are compatibility-emulation cases, not portable v1 decisions. The final candidate still exercises all 114 with that declaration. |
+| Portable v2, 114 cases | 59 canonicalize, 5 hash material, 10 storage verify, 38 dispatch verify, 1 comparison, 1 v1 artifact | Five v1-route cases use explicit bounded/unlimited legacy profiles and one further case proves final-v2 isolation. The final candidate exercises all 114 under the public capability declarations. |
+| Legacy capability/operational policy, 94 cases | Integer/timestamp profiles, deterministic legacy rules, full operational wrappers, limit boundaries, resource adapters, and immutable snapshots | Consume all committed byte recipes, exact hashes/results, and frozen Unicode tables; this corpus does not replace the still-open G-10 closure for every older corpus operation/full output. |
 
-The four profile-dependent v2-corpus cases are:
+The five named-profile v1-route cases in the v2 corpus are:
 
+- `v2.dispatch.integer_640_at_640`;
 - `v2.dispatch.integer_641_at_640`;
 - `v2.dispatch.integer_4300_at_4300`;
 - `v2.dispatch.integer_4301_at_4300`; and
@@ -816,18 +825,18 @@ These findings prevented an implementer from choosing exact behavior without
 an unstated oracle at the audit baseline. The status column records authorized
 closure work without renumbering or erasing the original findings.
 
-| ID | Status after Phase 1 | Gap and impact at audit baseline | Required correction or closure |
+| ID | Current status | Gap and impact at audit baseline | Required correction or closure |
 |---|---|---|---|
 | G-01 | **CLOSED** | Normative authority was unsettled: core documents were `RESEARCH` or `IMPLEMENTATION-ALIGNED`, some called Python authoritative, and there was no conflict rule. | Closed by the hierarchy, conflict rule, implementation exclusion, and update process in `VERIFIER_PROTOCOL_V1.md`. |
-| G-02 | **OPEN** | Complete v1 has no portable decision above 640 integer digits, and the public result cannot declare a compatibility profile or an out-of-domain refusal. | Standardize an explicit verifier capability/legacy digit profile and a non-semantic operational refusal, or introduce a separately versioned portable-v1 rule. Do not redefine the released identifier. |
+| G-02 | **CLOSED** | Complete v1 has no one portable decision above 640 integer digits. | Closed by the portable boundary, named-runtime profiles, explicit qualification, and operational refusal in `LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`. The released identifier is unchanged. |
 | G-03 | **CLOSED** | The full dispatch grammar and algorithm lived in an internal design absent from the authoritative public list. | Closed by the public version registry and complete `AELITIUM-DISPATCH-JSON-1` contract in `VERIFIER_PROTOCOL_V1.md`. |
-| G-04 | **OPEN** | There is no `ai_manifest.json` schema/source grammar. Exact types, unknown-field policy boundaries, timestamp-disabled behavior, and timestamp character/anchor rules are incomplete. | Publish a manifest schema plus ordered procedural checks for each identifier, including exact timestamp code points and validation-disabled behavior. |
-| G-05 | **OPEN** | `verification_keys.json` has no schema or full JSON/Base64 acceptance grammar. Unknown/duplicate fields and lexical edge cases are undecided. | Publish a closed or explicitly open keyring schema, selected JSON source profile, duplicate rule, exact RFC 4648 encoding rule, and exhaustive malformed-material vectors. |
-| G-06 | **OPEN** | The trust store is described as strict but lacks a source grammar/schema for duplicates, Unicode, BOM, non-finites, empty signers, and exact Base64. | Publish `aelitium-trust-v1` JSON Schema plus lexical/profile rules and vectors. |
+| G-04 | **OPEN — UNBLOCKED_BY_POLICY** | There is no `ai_manifest.json` schema/source grammar. Exact types, unknown-field policy boundaries, timestamp-disabled behavior, and field validation order remain incomplete. | Publish the Phase 2 manifest schema/prose/vectors using the now-closed integer, timestamp-profile, and operational boundaries. |
+| G-05 | **OPEN — UNBLOCKED_BY_POLICY** | `verification_keys.json` has no schema or full JSON/Base64 acceptance grammar. | Publish the Phase 2 keyring schema/source profile/precedence/vectors using the now-closed deterministic pad-bit and operational boundaries. |
+| G-06 | **OPEN — UNBLOCKED_BY_POLICY** | The trust store still lacks its complete source grammar/schema and ordered membership rules. | Publish the Phase 2 trust schema/prose/vectors using the now-closed compatibility and acquisition boundaries. |
 | G-07 | **OPEN** | `INVOCATION_ASSURANCE.md` explicitly says it does not expand the grammar beyond what is implemented in `engine/invocation.py`. Parameter value domains and the complete ordered identity/binding reason mapping are not independently normative. | Publish schemas and an ordered validation/reason table for both invocation objects, including recursive value rules, empty-parameter normalization, and cross-field precedence. |
 | G-08 | **OPEN** | The result reason field is open and no single exhaustive public reason registry maps every validation branch and early failure to all eight states. | Publish a closed reason registry and a complete reason/state transition table; retain `detail` as non-normative. |
-| G-09 | **OPEN** | Resource exhaustion and filesystem/I/O failures must not become semantic invalidity, but no operational envelope, exit code, supported size/depth, symlink, or snapshot contract exists. | Publish operational error semantics outside the verification-result vocabulary and minimum supported limits; define regular-file and immutable-snapshot rules. |
-| G-10 | **OPEN** | Corpus operation semantics are not self-contained. Python runners synthesize base canonical payloads/manifests, set CPython limits, and select fields not completely frozen in the vector format. The 44 cases check only selected result fields. | Publish a language-neutral corpus format/harness contract and freeze every synthesized byte input and full expected stable output. Annotate the four CPython-profile cases without changing them. |
+| G-09 | **CLOSED** | Resource, I/O, and snapshot failure must remain distinct from semantic invalidity. | Closed by `aelitium-verifier-tool-result-v1`, rc 3, the closed operational registry, `AELITIUM_CLEANROOM_MINIMUM_1`, and direct-filesystem/immutable-snapshot rules. |
+| G-10 | **OPEN** | The new 94-case policy corpus is self-contained, but older corpus operations still synthesize companion inputs and the 44 cases check only selected result fields. | Publish a language-neutral operation contract and full expected stable outputs for the remaining corpora. Preserve the five named-profile v1 routes and final-v2 isolation case without changing them. |
 | G-11 | **OPEN** | Freshness says “calendar-valid” but does not fix year zero, Gregorian convention, leap seconds, maximum-age numeric range, or cross-language parser behavior. | Publish an exact timestamp ABNF/calendar domain and numeric input domain, with boundary vectors including year 0000/0001/9999 and second 60. |
 | G-12 | **DEFERRED** | Comparison prose does not fully fix presence/text of compatibility fields or timestamp diagnostic fallback; exact-output versus semantic-output parity is unclear. | Before comparison work, publish a complete construction table or explicitly scope conformance to schema/stable semantic fields and freeze full expected objects. |
 | G-13 | **CLOSED** | RFC incorporation did not state an errata snapshot or protect the v2 identifier from later ECMAScript output changes. | Closed by the exact standards/subset registry, errata decisions, and non-supersession rule in `VERIFIER_PROTOCOL_V1.md`. |
@@ -955,10 +964,13 @@ A candidate is conforming only when all of the following are true:
   deep nesting and huge numbers, without host-recursion routing changes;
 - v2 passes every applicable RFC 8785 vector and all portable-v2 byte/profile
   cases with the pinned Go toolchain;
-- the 30-case v1 corpus passes exactly, while the >640-digit limitation remains
-  explicitly declared and never mislabeled as semantic invalidity;
-- the four CPython-profile cases run only under an explicit compatibility
+- the 30-case v1 corpus passes exactly, while the >640-digit boundary uses the
+  exact portable refusal or named-runtime declaration and never becomes an
+  unqualified invalidity claim;
+- the five v1-route digit-profile cases run only under an explicit compatibility
   declaration and do not become a universal Go-v1 claim;
+- all 94 legacy capability/operational-policy cases and every frozen Unicode
+  profile audit pass;
 - the complete candidate passes the existing 44/44 and 114/114 unchanged;
 - every emitted verification, assurance, and comparison object validates
   against its embedded pinned schema and satisfies cross-field invariants;
