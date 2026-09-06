@@ -1,8 +1,9 @@
 # AELITIUM — Messaging Guardrails
 
 This document is the public-claims guidance for the current AI evidence bundle v1
-surface. It summarizes implemented behavior; it is not a separate runtime,
-schema, or architecture authority.
+surface. It summarizes implemented behavior and explicitly identifies remaining
+alignment with adopted contracts; it is not a separate runtime, schema, or
+architecture authority.
 
 ---
 
@@ -117,10 +118,23 @@ failure:
 | Reason | Meaning |
 |---|---|
 | `TRUST_INPUT_NOT_PROVIDED` | `--require-trusted-signer` was requested but no `--trust-store` was supplied |
-| `TRUST_STORE_INVALID` | the explicitly supplied trust store could not be read, parsed, or validated |
+| `TRUST_STORE_INVALID` | immutable bytes for the explicitly supplied trust store were successfully acquired, but the applicable source/profile/semantic validation failed, subject to the adopted capability and resource boundaries |
 | `TRUSTED_SIGNER_NOT_FOUND` | a valid trust store and a valid signature exist, but the verified key is not in it |
 | `SIGNATURE_REQUIRED` | trusted signer identity was required but the bundle is unsigned |
 | `SIGNATURE_INVALID` | signature material exists but cryptographic verification failed |
+
+Under the adopted contract, unavailable or unreadable trust-input bytes produce
+an operational outcome, with no semantic verification reason or assurance
+result. Successfully acquired malformed/invalid bytes produce
+`TRUST_STORE_INVALID` where semantically applicable. Capability/resource
+failures and explicitly qualified named-runtime compatibility results retain
+their separate meanings under
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md#optional-vs-required-evaluation).
+
+Do not claim current Python implements this operational boundary: its direct
+trust-store I/O failures still map to `TRUST_STORE_INVALID`, a current
+implementation discrepancy requiring separate runtime alignment.
 
 `trusted_signer_identity = VALID` means only that the verified signature's
 public-key fingerprint is present in the trust store supplied to this
