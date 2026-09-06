@@ -104,13 +104,55 @@ which dimensions have been evaluated.
 
 1. If external signing-key membership is required but no trust store was
    supplied, return `TRUST_INPUT_NOT_PROVIDED`.
-2. If a supplied trust store cannot be read or strictly parsed, return
-   `TRUST_STORE_INVALID`; its lower-level trust-store reason may appear only in
+2. If a trust input was supplied, acquire its immutable bytes under
+   [`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+   Failure to establish those bytes produces the applicable operational outcome,
+   with no semantic verification reason, verification result, or assurance
+   result. It must not produce `TRUST_STORE_INVALID`.
+3. Once immutable trust-store bytes have been successfully acquired, failure of
+   the applicable source/profile/semantic trust-store validation returns
+   `TRUST_STORE_INVALID`, subject to the policy's capability and resource
+   boundaries below. Lower-level trust-store reasons may appear only in
    non-normative detail.
-3. With neither Freshness value, leave `freshness=NOT_EVALUATED`.
-4. With only one value, a negative/non-integer maximum age, or a malformed
+4. With neither Freshness value, leave `freshness=NOT_EVALUATED`.
+5. With only one value, a negative/non-integer maximum age, or a malformed
    reference time, return `FRESHNESS_POLICY_INVALID` with
    `freshness=UNESTABLISHED`.
+
+Trust acquisition retains the policy's existing early boundary. Semantic
+validation of successfully acquired trust bytes remains before Freshness
+semantic checks and bundle inspection, whether membership is optional or
+required. Capability-selection prerequisites and acquisition ordering remain
+governed by that policy.
+
+The existing operational mappings apply without new codes:
+
+| Trust-input condition | Operational outcome |
+|---|---|
+| Permission, metadata, open, read, or initial-state failure without a more specific type/stability outcome | `INPUT_IO_ERROR` |
+| Symlink or non-regular input rejected by the direct-filesystem contract | `INPUT_NOT_REGULAR_FILE` |
+| Observable presence, identity, length, metadata, or content change during acquisition | `INPUT_CHANGED_DURING_SNAPSHOT` |
+| Capability, limit, or resource failure | The applicable existing operational code |
+
+Successfully acquiring bytes does not waive capability or resource checks.
+`INPUT_OUTSIDE_DECLARED_CAPABILITY`, `RESOURCE_LIMIT_EXCEEDED`,
+`RESOURCE_EXHAUSTED`, and other operational outcomes must never become
+`TRUST_STORE_INVALID`. The explicit named-runtime source-parse result in policy
+section 5.3 remains permitted, with its exact profile qualification and outer
+transport; it is not a universal v1 invalidity claim.
+
+**CURRENT IMPLEMENTATION DISCREPANCY — non-normative:** at repository baseline
+`941fe2f1373825e880cf90e1ba360be81ca7c56a`, Python's trust loader converts direct
+I/O failures to `TrustStoreError`, and the verifier maps those errors to
+`TRUST_STORE_INVALID`. It does not implement the adopted operational boundary
+or immutable snapshot acquisition. Separate runtime alignment is still needed;
+Python behavior is not normative.
+
+This reconciliation aligns older public wording with the already-adopted
+operational contract. It changes no released v0.4.0 package bytes, evidence
+format, trust-membership or signature semantics, and adds no semantic reason or
+operational code. G-09's adopted policy is unchanged. This documentation change
+does not claim runtime alignment or close G-04, G-05, or G-06.
 
 ### 2. Establish payload integrity
 

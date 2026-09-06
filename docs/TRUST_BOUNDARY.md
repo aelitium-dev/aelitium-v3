@@ -205,13 +205,27 @@ supplied:
 | Failure reason | Meaning |
 |---|---|
 | `TRUST_INPUT_NOT_PROVIDED` | `--require-trusted-signer` was requested but no trust store was supplied |
-| `TRUST_STORE_INVALID` | the explicitly supplied trust store could not be read, parsed, or validated |
+| `TRUST_STORE_INVALID` | immutable bytes for the explicitly supplied trust store were successfully acquired, but the applicable source/profile/semantic validation failed, subject to the adopted capability and resource boundaries |
 | `TRUSTED_SIGNER_NOT_FOUND` | a valid trust store and a valid signature exist, but the verified key is not in it |
 | `SIGNATURE_REQUIRED` | `trusted_signer_identity` enforcement was required but the bundle is unsigned |
 | `SIGNATURE_INVALID` | signature material exists but cryptographic verification failed |
 
 These are distinct failure reasons and are never collapsed into one generic
 trust failure.
+
+Failure to acquire immutable trust-input bytes is operational under
+[`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
+It produces no semantic verification reason, verification result, or assurance
+result. Capability/resource failures remain operational even after acquisition;
+the policy's explicitly qualified named-runtime compatibility results remain
+unchanged. Acquired malformed or semantically invalid trust bytes still produce
+`TRUST_STORE_INVALID` before bundle inspection, whether membership is optional
+or required, when that semantic result is authorized by the applicable policy.
+
+Current Python still maps direct trust-store I/O failure to
+`TRUST_STORE_INVALID`; this is an implementation discrepancy, not the adopted
+contract. See the [verification requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md#1-validate-explicit-inputs)
+for the reconciliation's compatibility statement and remaining runtime work.
 
 ### Self-consistent rewrite: a boundary this mechanism does not cross
 
