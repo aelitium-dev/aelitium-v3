@@ -161,6 +161,9 @@ class _BindingEvaluation:
 
 
 _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+_V2_MANIFEST_TS_PATTERN = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"
+)
 
 
 def _decode_v1_manifest_bytes(source: bytes) -> str:
@@ -692,18 +695,26 @@ def verify_ai_bundle(
             signature_validity=signature_before_evaluation,
         )
 
-    if selected.validate_manifest_timestamp and not re.match(
-        AI_MANIFEST_TS_PATTERN,
-        manifest["ts_utc"] if isinstance(manifest["ts_utc"], str) else "",
-    ):
-        return _invalid(
-            "MANIFEST_BAD_TS_UTC",
-            manifest["ts_utc"],
-            canonical=canonical,
-            manifest=manifest,
-            payload_integrity=AssuranceState.INVALID,
-            signature_validity=signature_before_evaluation,
-        )
+    if selected.validate_manifest_timestamp:
+        manifest_timestamp = manifest["ts_utc"]
+        if canonicalization == AI_CANONICALIZATION_V2:
+            timestamp_valid = isinstance(
+                manifest_timestamp, str
+            ) and _V2_MANIFEST_TS_PATTERN.fullmatch(manifest_timestamp)
+        else:
+            timestamp_valid = re.match(
+                AI_MANIFEST_TS_PATTERN,
+                manifest_timestamp if isinstance(manifest_timestamp, str) else "",
+            )
+        if not timestamp_valid:
+            return _invalid(
+                "MANIFEST_BAD_TS_UTC",
+                manifest_timestamp,
+                canonical=canonical,
+                manifest=manifest,
+                payload_integrity=AssuranceState.INVALID,
+                signature_validity=signature_before_evaluation,
+            )
 
     manifest_hash = manifest["ai_hash_sha256"]
     if not isinstance(manifest_hash, str) or not _SHA256_HEX_PATTERN.fullmatch(
