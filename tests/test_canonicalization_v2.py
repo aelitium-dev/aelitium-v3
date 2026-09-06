@@ -20,7 +20,7 @@ from engine.ai_contract import (
     AI_CANONICALIZATION_V2,
 )
 from engine.ai_pack import ai_pack_from_obj, ai_pack_from_path
-from engine.ai_verify import AssuranceState, verify_ai_bundle
+from engine.ai_verify import AIVerificationOptions, AssuranceState, verify_ai_bundle
 from engine.canonical import sha256_hash
 from engine.canonical_v2 import (
     MAX_SAFE_NUMBER,
@@ -108,6 +108,33 @@ def _verify_manifest_bytes(source: bytes):
         (bundle / "ai_canonical.json").write_bytes(BASE_CANONICAL)
         (bundle / "ai_manifest.json").write_bytes(source)
         return verify_ai_bundle(bundle)
+
+
+def _verify_manifest_timestamp(
+    identifier: str,
+    value: object,
+    *,
+    validate: bool = True,
+    escape_first_year_digit: bool = False,
+):
+    packed = ai_pack_from_obj(_payload(), canonicalization=identifier)
+    manifest = {**packed.manifest, "ts_utc": value}
+    with tempfile.TemporaryDirectory() as directory:
+        bundle = Path(directory)
+        manifest_bytes = _write_pack(bundle, packed, manifest=manifest)
+        if escape_first_year_digit:
+            escaped = manifest_bytes.replace(
+                b'"ts_utc": "2026',
+                b'"ts_utc": "\\u0032026',
+            )
+            assert escaped != manifest_bytes
+            (bundle / "ai_manifest.json").write_bytes(escaped)
+        return verify_ai_bundle(
+            bundle,
+            options=AIVerificationOptions(
+                validate_manifest_timestamp=validate,
+            ),
+        )
 
 
 class TestPortableV2Corpus(unittest.TestCase):
@@ -401,6 +428,92 @@ class TestPortableV2ProgrammaticDomain(unittest.TestCase):
 
 
 class TestPortableV2BundleIntegration(unittest.TestCase):
+    def test_v2_manifest_timestamp_enabled_uses_exact_ascii_lexical_rule(self):
+        arabic_indic = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+        fullwidth = str.maketrans("0123456789", "０１２３４５６７８９")
+        accepted = (
+            "2026-01-15T12:00:01Z",
+            "9999-99-99T99:99:99Z",
+        )
+        rejected = (
+            "2026-01-15T12:00:01Z".translate(arabic_indic),
+            "2026-01-15T12:00:01Z".translate(fullwidth),
+            "2026-01-15T12:00:01Z\n",
+            "2026-01-15T12:00:01Z\n\n",
+            "2026/01/15T12:00:01Z",
+            "2026-01-15t12:00:01z",
+            " 2026-01-15T12:00:01Z",
+            "2026-01-15T12:00:01Z ",
+            "2026-01-15T12:00:01+00:00",
+            "2026-01-15T12:00:01.0Z",
+            {},
+        )
+
+        for value in accepted:
+            with self.subTest(value=value):
+                result = _verify_manifest_timestamp(AI_CANONICALIZATION_V2, value)
+                self.assertTrue(result.valid, result)
+                self.assertEqual(result.reason, "OK")
+
+        escaped = _verify_manifest_timestamp(
+            AI_CANONICALIZATION_V2,
+            "2026-01-15T12:00:01Z",
+            escape_first_year_digit=True,
+        )
+        self.assertTrue(escaped.valid, escaped)
+        self.assertEqual(escaped.reason, "OK")
+
+        for value in rejected:
+            with self.subTest(value=value):
+                result = _verify_manifest_timestamp(AI_CANONICALIZATION_V2, value)
+                self.assertFalse(result.valid)
+                self.assertEqual(result.reason, "MANIFEST_BAD_TS_UTC")
+
+    def test_v2_manifest_timestamp_disabled_remains_presence_only(self):
+        for value in (
+            "2026-01-15T12:00:01Z",
+            "not-a-timestamp",
+            "not-a-timestamp\n",
+            {},
+            None,
+        ):
+            with self.subTest(value=value):
+                result = _verify_manifest_timestamp(
+                    AI_CANONICALIZATION_V2,
+                    value,
+                    validate=False,
+                )
+                self.assertTrue(result.valid, result)
+                self.assertEqual(result.reason, "OK")
+
+    def test_v1_manifest_timestamp_behavior_is_unchanged(self):
+        arabic_indic = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+        enabled_cases = (
+            ("2026-01-15T12:00:01Z", True, "OK"),
+            (
+                "2026-01-15T12:00:01Z".translate(arabic_indic),
+                True,
+                "OK",
+            ),
+            ("2026-01-15T12:00:01Z\n", True, "OK"),
+            ("2026-01-15T12:00:01Z\n\n", False, "MANIFEST_BAD_TS_UTC"),
+        )
+        for value, valid, reason in enabled_cases:
+            with self.subTest(value=value):
+                result = _verify_manifest_timestamp(AI_CANONICALIZATION_V1, value)
+                self.assertEqual(result.valid, valid, result)
+                self.assertEqual(result.reason, reason)
+
+        for value in ("not-a-timestamp\n", {}, None):
+            with self.subTest(value=value):
+                result = _verify_manifest_timestamp(
+                    AI_CANONICALIZATION_V1,
+                    value,
+                    validate=False,
+                )
+                self.assertTrue(result.valid, result)
+                self.assertEqual(result.reason, "OK")
+
     def test_all_bundle_hash_constructions_use_selected_v2(self):
         request = {
             "messages": [{"role": "user", "content": "p"}],
