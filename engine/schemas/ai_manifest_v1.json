@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium://schemas/ai_manifest_v1.json",
+  "title": "AELITIUM AI Manifest v1 Route",
+  "description": "Parsed-value constraints for a legacy-v1 ai_manifest.json. Raw-source behavior and public reason ordering are procedural.",
+  "type": "object",
+  "required": [
+    "schema",
+    "ts_utc",
+    "input_schema",
+    "canonicalization",
+    "ai_hash_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ai_pack_manifest_v1"
+    },
+    "ts_utc": {
+      "$comment": "Intentionally unconstrained. validate_manifest_timestamp controls the procedural type and spelling check."
+    },
+    "input_schema": {
+      "const": "ai_output_v1"
+    },
+    "canonicalization": {
+      "const": "json_sorted_keys_no_whitespace_utf8"
+    },
+    "ai_hash_sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "binding_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "$comment": "Public validation of this optional value remains at the later binding-evaluation stage."
+    }
+  },
+  "additionalProperties": true
+}

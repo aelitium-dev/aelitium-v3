@@ -57,10 +57,12 @@ contract, and exact external-standards registry.
 [`../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](../LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
 subsequently closed G-02 and G-09 with capability-qualified v1 support, frozen
 Unicode profiles, a separate operational transport, minimum limits, and
-immutable input acquisition. G-04/G-05/G-06 remain open but are now
-`UNBLOCKED_BY_POLICY`. These updates record current closure status without
-rewriting the audit baseline or its final verdict. G-07, G-08, and G-10 remain
-open, so the design remains not ready for complete clean-room implementation.
+immutable input acquisition. Later Phase 2 normative adoption and current
+unreleased runtime alignment closed G-04, G-05, and G-06. G-07, G-08, G-10,
+and G-11 remain open, while G-12 remains deferred, so the design remains not
+ready for complete clean-room implementation. The audit-baseline table and
+verdict below remain historical; the live status registry is section 7 of
+[`../VERIFIER_PROTOCOL_V1.md`](../VERIFIER_PROTOCOL_V1.md).
 
 ## 2. Independence threat model
 
@@ -823,9 +825,10 @@ links as a substitute for vendored license files.
 
 These findings prevented an implementer from choosing exact behavior without
 an unstated oracle at the audit baseline. The status column records authorized
-closure work without renumbering or erasing the original findings.
+closure work as of this historical design revision without renumbering or
+erasing the original findings; it is not the current status registry.
 
-| ID | Current status | Gap and impact at audit baseline | Required correction or closure |
+| ID | Status at this design revision | Gap and impact at audit baseline | Required correction or closure |
 |---|---|---|---|
 | G-01 | **CLOSED** | Normative authority was unsettled: core documents were `RESEARCH` or `IMPLEMENTATION-ALIGNED`, some called Python authoritative, and there was no conflict rule. | Closed by the hierarchy, conflict rule, implementation exclusion, and update process in `VERIFIER_PROTOCOL_V1.md`. |
 | G-02 | **CLOSED** | Complete v1 has no one portable decision above 640 integer digits. | Closed by the portable boundary, named-runtime profiles, explicit qualification, and operational refusal in `LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`. The released identifier is unchanged. |

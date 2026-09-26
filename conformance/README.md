@@ -24,12 +24,21 @@ cross-version comparison refusal. It supplements and does not modify either
 existing corpus. It is implementation-aligned evidence for this Python branch,
 not a claim that an independent verifier exists.
 
-A third separate 94-case family under
+A third separate 99-case family under
 [`legacy_v1_operational_policy/`](legacy_v1_operational_policy/) freezes the
 portable 640-digit boundary, exact named-runtime profiles, Unicode `Nd` tables,
 operational wrappers, resource floors, and immutable-snapshot behavior. It is
-normative unreleased contract data and does not claim that the current Python
-runtime implements the operational transport.
+normative unreleased contract data. The current unreleased Python operation
+path implements this transport, while a passing corpus still does not prove an
+independent implementation.
+
+A fourth separate 281-case family under
+[`verifier_contract_phase2/`](verifier_contract_phase2/) freezes verifier-input
+source, schema, raw-message signature, strict Ed25519, trust-membership, and
+precedence expectations. Its manifest retains adoption-time G-05 status
+metadata as frozen history; current gap status is maintained in the Level 1
+protocol. This family supplements rather than rewrites the other corpora and
+does not claim a Go or other clean-room verifier.
 
 ## Layout
 
@@ -71,6 +80,7 @@ python3 conformance/run_canonicalization_v2.py
 python3 conformance/run_canonicalization_v2.py --json
 python3 conformance/run_legacy_v1_operational_policy.py
 python3 conformance/run_legacy_v1_operational_policy.py --json
+python3 conformance/run_verifier_contract_phase2.py
 ```
 
 The runner uses frozen files and explicit fixed Freshness reference times. It
@@ -90,6 +100,7 @@ python3 conformance/build_vectors.py --check
 python3 conformance/build_canonicalization_vectors.py --check
 python3 conformance/build_canonicalization_v2_vectors.py --check
 python3 conformance/build_legacy_v1_operational_policy.py
+python3 conformance/build_verifier_contract_phase2.py --check
 python3 scripts/audit_unicode_nd_profiles.py
 ```
 

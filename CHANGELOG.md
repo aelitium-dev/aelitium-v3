@@ -43,8 +43,12 @@ version.
 - Cross-language clarification and a frozen 30-case byte corpus for the existing
   `json_sorted_keys_no_whitespace_utf8` identifier, covering binary64
   formatting, Unicode, duplicate payload names, exact legacy non-finite tokens,
-  whitespace, and terminal-LF behavior. Extreme metadata integers above the
-  documented 640-digit restricted subset remain explicitly open; no second
+  whitespace, and terminal-LF behavior. The unreleased Phase 2 capability policy
+  closes the boundary above the 640-digit restricted subset: restricted-portable
+  and frozen-compatibility profiles refuse these magnitudes operationally;
+  exact named-runtime profiles follow their declared bounded or unlimited
+  integer-conversion rule, subject to file, snapshot, traversal, and runtime
+  resource limits. This does not change the published v0.4.0 package; no second
   verifier is implemented.
 - Add opt-in, unreleased `aelitium_jcs_profile_v2` support with
   `AELITIUM-DISPATCH-JSON-1`, strict recursive source/profile validation, exact

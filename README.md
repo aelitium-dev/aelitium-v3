@@ -117,6 +117,17 @@ retains its `aelitium-compare-v1` identity and old keys while adding per-side
 verification summaries, explicit comparability and response relationships, and
 claim boundaries.
 
+The current unreleased branch also provides an opt-in `--operation-json`
+verification path with requested/effective capability reporting, pre-I/O
+capability selection, immutable no-follow snapshots, explicit trust-input
+acquisition, and separate semantic and operational outcomes. Semantic `VALID`
+and `INVALID` results use rc 0 and rc 2; operational outcomes use rc 3; malformed
+operation requests use rc 64. Its deterministic RFC 8785 plus LF outer result
+is portable by construction, and its nine-phase registry includes
+`SEMANTIC_EVALUATION`. The strict signature capability
+`ED25519_PORTABLE_STRICT_1` has no fallback. These are working-tree features,
+not claims about the published v0.4.0 release or an independent verifier.
+
 The same unreleased branch also implements the separately identified portable
 canonicalization profile `aelitium_jcs_profile_v2`. It uses strict UTF-8 JSON,
 rejects duplicate names and invalid/noncharacter Unicode recursively, bounds
@@ -145,6 +156,8 @@ contract demo writes separate verification, assurance, `CHANGED`, and
 python3 conformance/run.py
 python3 conformance/run_canonicalization.py
 python3 conformance/run_canonicalization_v2.py
+python3 conformance/run_legacy_v1_operational_policy.py
+python3 conformance/run_verifier_contract_phase2.py
 python3 examples/contract_demo/run_demo.py \
   --output-dir /tmp/aelitium-contract-demo
 ```
@@ -153,16 +166,24 @@ The supplemental canonicalization runner checks 30 frozen source-byte vectors
 for the existing `json_sorted_keys_no_whitespace_utf8` identifier. It does not
 rename or replace that identifier. The cross-language-safe restricted subset
 requires Unicode-scalar strings throughout a bundle and excludes preserved
-non-finite legacy tokens and integer magnitudes above 640 digits. The latter
-range remains explicitly `OPEN`; legacy acceptance of an escaped surrogate in
-an ignored manifest extension is documented outside the subset, and no
-complete clean-room verifier is claimed.
+non-finite legacy tokens and integer magnitudes above 640 digits. The unreleased
+Phase 2 capability policy closes the latter boundary: the restricted-portable
+and frozen-compatibility profiles refuse magnitudes above 640 digits
+operationally, while an exact named-runtime profile follows its declared
+bounded or unlimited integer-conversion rule. File, snapshot, traversal, and
+runtime resource limits still apply. This does not change the published v0.4.0
+package. Legacy acceptance of an escaped surrogate in an ignored manifest
+extension is documented outside the subset, and no complete clean-room verifier
+is claimed.
 
 The separate portable-v2 runner checks 114 frozen cases spanning RFC 8785
 serialization, the AELITIUM value profile, exact storage and hash inputs,
 manifest dispatch, legacy CPython integer-limit isolation, unknown extensions,
-and v1/v2 comparison refusal. Its expected bytes are committed independently
-of the production canonicalizer. No Go, Rust, or other second verifier is
+and v1/v2 comparison refusal. The operational-policy and Phase 2 runners cover
+99 and 281 cases respectively, including strict signature behavior, trust
+precedence, and the nine-phase authored registry. Separate branch regressions
+cover executable v2 depth through 1024 and outer-result portability. Expected
+data are committed independently of the production decision path. No Go, Rust, or other second verifier is
 implemented or claimed.
 
 See [Verification result v1](docs/VERIFICATION_RESULT_V1.md),

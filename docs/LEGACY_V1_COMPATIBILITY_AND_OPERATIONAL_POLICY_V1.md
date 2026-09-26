@@ -111,6 +111,14 @@ no stable byte input exists.
 Capability identifiers describe verifier ability. They do not negotiate or
 change the evidence contract.
 
+Signature-verification acceptance is a separate capability dimension. This
+policy recognizes exactly `ED25519_PORTABLE_STRICT_1`, whose algorithm is
+defined by `VERIFIER_INPUT_CONTRACTS_V1.md`. It is not a v1/v2
+canonicalization capability, does not change `ed25519-v1` or `algorithm`,
+and must not be inferred from them. No generic legacy-backend signature profile
+is defined: the complete v0.4.0 edge-acceptance domain is not normatively
+recoverable from its unpinned `cryptography>=41` dependency and backend.
+
 | Identifier | Exact capability | Portability | Outside-capability behavior |
 |---|---|---|---|
 | `V2_PORTABLE` | Complete `aelitium_jcs_profile_v2` semantics within effective operational limits | Portable | Operational limit/exhaustion; v2 profile violations remain semantic |
@@ -142,7 +150,9 @@ limit. It must not be placed inside an evidence bundle.
 ### 4.1 Operation request
 
 The `capability.requested` member of `aelitium-verifier-tool-result-v1` contains
-exactly a dispatch identifier and one configured declaration for each route:
+exactly a dispatch identifier, one configured declaration for each route, and
+one orthogonal signature-verification declaration. The following is one
+supported current request:
 
 ```json
 {
@@ -158,6 +168,9 @@ exactly a dispatch identifier and one configured declaration for each route:
   },
   "v2": {
     "capability": "V2_PORTABLE"
+  },
+  "signature_verification": {
+    "profile": "ED25519_PORTABLE_STRICT_1"
   }
 }
 ```
@@ -165,12 +178,95 @@ exactly a dispatch identifier and one configured declaration for each route:
 `V1_RESTRICTED_PORTABLE` has the same fixed integer and timestamp fields.
 `V1_LEGACY_UNSUPPORTED` contains only its `capability` member.
 
-For every semantic result and every operational result other than
-`CAPABILITY_PROFILE_UNAVAILABLE`, `capability.effective` must be deeply equal to
+Requested and effective declarations have different meanings. `requested` is
+the exact parsed JSON value supplied by the caller after structural validation;
+it may contain a well-formed but unsupported identifier or profile value.
+Member order and source whitespace are not retained, but every parsed member
+value is retained without trimming, case folding, normalization, substitution
+of a supported value, replacement from a profile registry, or loss of
+mismatched metadata. Duplicate members are malformed before retention.
+`effective` is null where this policy authorizes failure before effective
+selection, or contains only a declaration the verifier actually supports and
+has selected. It never contains an unknown or unauthenticated capability and
+never records fallback.
+
+An implementation defect or resource failure during capability preparation
+can prevent selection even when the request is structurally valid. Its
+`INTERNAL_OPERATION_ERROR` or `RESOURCE_EXHAUSTED` result has
+`effective=null` at `CAPABILITY_SELECTION`. The same codes have
+`effective=null` at `OUTPUT` if a machine-output preflight fails before the
+operation selects a capability. This records the requested declaration without
+inventing an effective one; a failure after successful preparation retains the
+selected declaration. An established `CAPABILITY_PROFILE_UNAVAILABLE` result
+continues to use its own code, phase, and null effective declaration.
+
+The lexical grammar for every capability, dispatch, signature-profile, and
+named timestamp-profile identifier admitted to a requested declaration is:
+
+```text
+capability-identifier = ALPHA *( ALPHA / DIGIT / "_" / "-" )
+```
+
+`ALPHA` and `DIGIT` are ASCII. The corresponding JSON Schema pattern is
+`^[A-Za-z][A-Za-z0-9_-]*$`. Identifiers are case-sensitive and are never
+trimmed. Empty, whitespace-bearing, slash/path-like, control-bearing,
+surrogate-bearing, and non-ASCII strings are malformed identifiers, not
+unsupported capabilities. A named Unicode version has the ASCII grammar
+`^[0-9]+(?:\.[0-9]+){2}$`; a range digest is exactly 64 lowercase hexadecimal
+characters. Numeric request members must be JSON integers within the inclusive
+portable outer range 0 through `2^53 - 1`. Booleans are not integers.
+
+A malformed request has invalid JSON syntax, a duplicate member, missing or
+extra members, a wrong primitive type, an invalid lexical form, a negative or
+non-portable numeric value, or an unknown-v1 object with uninterpretable
+subordinate members. It is rejected before an operation result exists; a CLI
+reports `TOOL_USAGE_ERROR` and rc 64. A structurally complete portable request
+whose values are syntactically valid but unsupported, unavailable, or
+inconsistent with the supported registry is instead a valid request that
+returns `CAPABILITY_PROFILE_UNAVAILABLE` and rc 3.
+
+Requested v2 and signature declarations have the respective closed shapes
+`{"capability":"<capability-identifier>"}` and
+`{"profile":"<capability-identifier>"}`. An unknown requested v1 identifier
+has only its `capability` member; unknown subordinate members are malformed.
+Known v1 identifiers retain their complete recognized member shapes. Within
+those shapes, syntactically portable altered fixed values remain representable
+as rejected requests. A named integer maximum may be null or a non-negative
+portable integer at the requested-syntax boundary: `BOUNDED` below 640,
+`BOUNDED` with null, and `UNLIMITED` with an integer are complete but
+unsupported declarations. Section 4.2 defines the values that can become
+effective.
+
+There is no implicit signature profile. Every current request must state
+`signature_verification.profile`, and every semantic result must carry the
+same value in `capability.requested` and `capability.effective`. If the
+requested signature profile is unsupported, the operation returns
+`CAPABILITY_PROFILE_UNAVAILABLE` at `CAPABILITY_SELECTION`, with
+`capability.effective=null`, before bundle content is opened. No fallback is
+permitted. The original 94-case operational-policy corpus predates this
+additive dimension. Its historical operational examples, and the two later
+`SAFE_CLARIFICATION` categorical-capability examples, may omit it only because
+they never establish a signature semantic result; omission selects no profile
+and cannot be emitted as a current semantic result.
+
+For every semantic result and every postselection operational result other
+than `CAPABILITY_PROFILE_UNAVAILABLE`, `capability.effective` must be deeply equal to
 `capability.requested`. `CAPABILITY_PROFILE_UNAVAILABLE` requires
-`capability.effective=null`; the rejected request remains present. This
-equality is a prose invariant because JSON Schema Draft 7 cannot compare two
-arbitrary subtrees.
+`capability.effective=null`; the rejected request remains present. The
+preselection internal/resource cases defined above also require
+`capability.effective=null`. Deep equality is a prose invariant because JSON
+Schema Draft 7 cannot compare two arbitrary subtrees.
+
+Every semantic result requires both `requested` and `effective` to satisfy the
+current supported declaration schema, including exact
+`ED25519_PORTABLE_STRICT_1`; broad requested syntax never authorizes an
+unsupported value in a semantic result. An unavailable result at
+`CAPABILITY_SELECTION` accepts the structurally valid rejected request and
+requires null effective capability. An unavailable result at `DISPATCH` occurs
+only after preparation, so its requested declaration must already be supported;
+the broad requested syntax does not apply there. Other post-selection
+operational outcomes likewise require supported, deeply equal requested and
+effective declarations.
 
 An implementation that cannot load or authenticate a requested frozen profile
 returns `CAPABILITY_PROFILE_UNAVAILABLE` at `CAPABILITY_SELECTION` before
@@ -389,6 +485,9 @@ surrogate, or other value outside its published restricted domain as
 `INPUT_OUTSIDE_DECLARED_CAPABILITY`. A surrogate spelling that the applicable
 legacy contract already rejects is still a semantic source/value failure; only
 a legacy-permitted opaque value is outside the restricted capability.
+This is a categorical restricted-value-domain refusal rather than a measured
+ceiling or timestamp-repertoire refusal, so its required `limit` member is null
+under section 9.3.
 
 Rules in the table that do not expand the restricted value domain—decoded-name
 last-wins processing, Base64 pad-bit aliases, accepted open members, empty trust
@@ -416,8 +515,8 @@ It wraps one `VERIFY_BUNDLE` operation and contains exactly:
 - `input_mode`;
 - `capability` with `requested` and `effective` declarations;
 - `limits` with claimed, advertised, and effective values;
-- `verification_result`, which is the unchanged existing semantic result or
-  null; and
+- `verification_result`, which is the public projection of the existing
+  semantic result or null; and
 - `operational_result`, which is the operational object or null.
 
 `SEMANTIC_RESULT` requires rc 0 or 2, a correspondingly valid/invalid
@@ -442,13 +541,37 @@ section 3.2, then appends exactly one LF. All tool-result numbers are integers
 within the portable-v2 safe range, and all tool-result strings must satisfy the
 portable-v2 Unicode profile. The LF is a transport delimiter, not part of the
 JSON value. Repeated evaluation of the same immutable inputs, configuration,
-and injected operational event must emit identical bytes except for optional
-non-normative `detail`; conformance vectors set `detail` to null.
+and injected operational event must emit identical bytes. Conformance vectors
+set non-normative `detail` to null.
+
+Every returned outer result must already be inside that portable domain;
+serialization is total for every authorized `SEMANTIC_RESULT`. A semantic
+decision must not be replaced by `INTERNAL_OPERATION_ERROR`, `OUTPUT_IO_ERROR`,
+or another operational outcome solely because evidence-derived diagnostic
+metadata is not portable. Public `verification_result.detail` is diagnostic
+only, non-machine-comparable, and non-branchable. Its deterministic projection
+preserves a nonempty exact string only when it satisfies the portable-v2
+Unicode profile; every other value, including an unmatched surrogate or a
+noncharacter, projects to null. No replacement character, escaped surrogate,
+string conversion, or alternate byte encoding is authorized. The broader
+legacy input domain therefore does not authorize copying every accepted input
+value into the public result transport.
+
+For an outer `VERIFY_BUNDLE` invocation, a supplied Freshness maximum age must
+be a built-in/JSON integer from 0 through `2^53 - 1`, and a supplied reference
+time must be a portable, calendar-valid exact `YYYY-MM-DDTHH:MM:SSZ` string.
+The four booleans projected under `verification_inputs` must be exact booleans,
+not integer impostors. A violation is malformed invocation data rejected before
+capability selection, acquisition, or semantic evaluation: a programmatic
+operation returns no tool result, while the CLI returns rc 64 with no stdout.
+Accepted maximum ages remain exact JSON integers. This outer envelope does not
+narrow the standalone legacy/inner Freshness mathematical domain.
 
 An implementation may expose this as `--operation-json`. Existing inner
 `--contract-json`/JSON surfaces must not emit counterfeit semantic JSON on an
-operational outcome. Section 10 fixes their process/stderr behavior without
-claiming the current Python CLI already implements it.
+operational outcome. Section 10 fixes their process/stderr behavior. The current
+unreleased Python operation CLI implements that outer transport; the statement
+does not apply those semantics retroactively to the published v0.4.0 release.
 
 ## 9. Closed operational registry
 
@@ -514,12 +637,19 @@ It identifies a role and must never contain a local path.
 | `INTEGER_DECIMAL_DIGITS` | `DIGITS` | Integer magnitude digits, excluding a leading minus |
 | `TIMESTAMP_DIGIT_PROFILE` | `PROFILE` | Selected timestamp repertoire identifier |
 
-For `RESOURCE_LIMIT_EXCEEDED`, `limit` is required, `maximum` is the effective
-integer ceiling, and `observed_at_least` is the first established value greater
-than it. For `INPUT_OUTSIDE_DECLARED_CAPABILITY`, `limit` is required:
-integer refusal uses integer values; timestamp refusal uses the selected
-profile identifier as `maximum` and `U+` followed by four to six uppercase
-hexadecimal digits as `observed_at_least`.
+For `RESOURCE_LIMIT_EXCEEDED`, the `limit` member is required and its value is a
+non-null limit fact: `maximum` is the effective integer ceiling and
+`observed_at_least` is the first established value greater than it.
+
+For `INPUT_OUTSIDE_DECLARED_CAPABILITY`, the `limit` member is always required.
+An integer capability refusal requires a non-null `INTEGER_DECIMAL_DIGITS` /
+`DIGITS` fact with integer values. A timestamp-repertoire refusal requires a
+non-null `TIMESTAMP_DIGIT_PROFILE` / `PROFILE` fact with the selected profile
+identifier as `maximum` and `U+` followed by four to six uppercase hexadecimal
+digits as `observed_at_least`. A categorical `V1_RESTRICTED_PORTABLE`
+value-domain refusal requires `limit=null`; this includes a reached
+legacy-permitted non-finite constant or opaque surrogate value, but not a value
+the applicable legacy contract already rejects semantically.
 
 `RESOURCE_EXHAUSTED` may include a limit fact if meaningful; either value may
 be null when exhaustion was not a measured ceiling. Other codes require null
@@ -765,26 +895,27 @@ Normative adoption closes the two policy gaps:
 | Gap | Status | Basis |
 |---|---|---|
 | G-02 | **CLOSED** | Sections 3–7 publish the portable boundary, exact named profiles, frozen digit repertoires, and deterministic legacy rules. |
-| G-09 | **CLOSED** | Sections 2 and 8–13 publish operational transport, rc/code registry, limits, snapshot behavior, and frozen conformance. |
+| G-09 | **CLOSED** | Sections 2 and 8–13 publish operational transport, rc/code/phase registry, limits, snapshot behavior, and frozen conformance; the current unreleased runtime implements those boundaries. |
 
-This policy removes the cross-cutting compatibility blocker but does not close
-Verifier Contract Closure Phase 2:
+This policy removed the cross-cutting compatibility blocker but did not by
+itself close Verifier Contract Closure Phase 2. The separate public input
+contract, schemas, and Phase 2 corpus now provide the following current state:
 
-| Gap | Status | Work still required in Phase 2 |
+| Gap | Current status | Separate Phase 2 closure basis |
 |---|---|---|
-| G-04 — manifest | **OPEN — UNBLOCKED_BY_POLICY** | Versioned schemas, exact v1/v2 source and field grammar, unknown members, validation order, and Phase 2 vectors |
-| G-05 — verification keys | **OPEN — UNBLOCKED_BY_POLICY** | Exact schema/source profile, Base64/key domains, signature precedence, and Phase 2 vectors |
-| G-06 — trust store | **OPEN — UNBLOCKED_BY_POLICY** | Exact schema/source profile, membership/fingerprint rules, precedence, and Phase 2 vectors |
+| G-04 — manifest | **CLOSED** | `VERIFIER_INPUT_CONTRACTS_V1.md`, both manifest schemas, and Phase 2 source/schema/precedence vectors |
+| G-05 — verification keys | **CLOSED** | The portable profile and vectors are normative, and the current unreleased runtime implements requested/effective capability selection, pre-I/O unavailability, strict profile execution, and no fallback |
+| G-06 — trust store | **CLOSED** | The public explicit-trust contract, schema, and Phase 2 source/schema/trust/precedence vectors |
 
 G-01, G-03, and G-13 remain closed. G-07, G-08, G-10, and G-11 remain open.
 G-12 remains deferred while comparison is excluded from the initial clean-room
 scope.
 
-Creating `aelitium-verifier-go` remains **NOT_READY**. The minimum gate still
+Creating `aelitium-verifier-go` remains **NOT_READY**. The remaining gate still
 lacks G-07 (invocation grammar/order), G-08 (exhaustive reason/state registry),
-and G-10 (complete language-neutral end-to-end corpus operations/outputs).
-Complete bundle verification also requires G-04/G-05/G-06. This document does
-not authorize implementation or repository creation.
+G-10 (complete language-neutral end-to-end corpus operations/outputs), and G-11
+(Freshness semantics); G-12 remains deferred. This document does not authorize
+implementation or repository creation.
 
 ## 15. Explicit non-claims
 

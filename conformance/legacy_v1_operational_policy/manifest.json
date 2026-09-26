@@ -1,12 +1,12 @@
 {
-  "case_count": 94,
+  "case_count": 99,
   "categories": {
-    "DETERMINISTIC_LEGACY": 12,
+    "DETERMINISTIC_LEGACY": 14,
     "FILESYSTEM_SNAPSHOT": 24,
     "INTEGER_CAPABILITY": 23,
     "OPERATIONAL_LIMIT": 12,
     "OPERATIONAL_RESOURCE": 4,
-    "OPERATIONAL_TRANSPORT": 3,
+    "OPERATIONAL_TRANSPORT": 6,
     "TIMESTAMP_COMPATIBILITY": 16
   },
   "contract": "aelitium-legacy-v1-operational-policy-conformance-v1",

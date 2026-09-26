@@ -1,0 +1,1335 @@
+{
+  "binding_materials": {
+    "HASH_MISMATCH": {
+      "canonical_hash_input_hex": "7b22726571756573745f68617368223a2262326333646161383762666561613933633536656533306132313331306266666663316263623866343631303831303135373266643739353939363332643438222c22726573706f6e73655f68617368223a2261646166643264646331646362663337373264356435333661373931323763373432653762306335616563316633306531633937303730656236393065396564227d",
+      "expected_binding_hash": "22a0da1215026580b64c698d2d4b35288c9dae986fdf30994e6ef4a82bd9cdd1",
+      "fields_present": true,
+      "manifest_binding_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "payload_binding_hash": "22a0da1215026580b64c698d2d4b35288c9dae986fdf30994e6ef4a82bd9cdd1",
+      "request_hash": "b2c3daa87bfeaa93c56ee30a21310bfffc1bcb8f46108101572fd79599632d48",
+      "response_hash": "adafd2ddc1dcbf3772d5d536a79127c742e7b0c5aec1f30e1c97070eb690e9ed"
+    },
+    "NONE": {
+      "fields_present": false
+    },
+    "REQUIRED_ABSENT": {
+      "fields_present": false
+    },
+    "VALID": {
+      "canonical_hash_input_hex": "7b22726571756573745f68617368223a2262326333646161383762666561613933633536656533306132313331306266666663316263623866343631303831303135373266643739353939363332643438222c22726573706f6e73655f68617368223a2261646166643264646331646362663337373264356435333661373931323763373432653762306335616563316633306531633937303730656236393065396564227d",
+      "expected_binding_hash": "22a0da1215026580b64c698d2d4b35288c9dae986fdf30994e6ef4a82bd9cdd1",
+      "fields_present": true,
+      "manifest_binding_hash": "22a0da1215026580b64c698d2d4b35288c9dae986fdf30994e6ef4a82bd9cdd1",
+      "payload_binding_hash": "22a0da1215026580b64c698d2d4b35288c9dae986fdf30994e6ef4a82bd9cdd1",
+      "request_hash": "b2c3daa87bfeaa93c56ee30a21310bfffc1bcb8f46108101572fd79599632d48",
+      "response_hash": "adafd2ddc1dcbf3772d5d536a79127c742e7b0c5aec1f30e1c97070eb690e9ed"
+    }
+  },
+  "candidate_failure_contract": {
+    "condition": "closed language-neutral condition identifier whose evidence is validated by the runner",
+    "downstream_candidate": "may describe a failure that would apply only if every earlier check succeeded",
+    "not_evaluated_checks": "explicit list of checks blocked by an unmet prerequisite; an empty list preserves independent post-payload dimension evaluation",
+    "reason": "authorized public reason implied by condition",
+    "winner": "candidate with the lowest rank in precedence_relation"
+  },
+  "case_count": 23,
+  "check_vocabulary": [
+    "BINDING",
+    "BUNDLE_INSPECTION",
+    "CANONICAL_SOURCE",
+    "FRESHNESS",
+    "INVOCATION",
+    "KEYRING_SEMANTICS",
+    "MANIFEST_LATER_FIELDS",
+    "MANIFEST_TIMESTAMP",
+    "MANIFEST_VALIDATION",
+    "PAYLOAD_HASH",
+    "SIGNATURE_MATHEMATICS",
+    "TRUST_MEMBERSHIP"
+  ],
+  "contract": "aelitium-verifier-contract-phase2-precedence-vectors-v1",
+  "deliberate_exclusions": [
+    {
+      "case": "TRUSTED_SIGNER_NOT_FOUND_VS_CONCRETE_INVOCATION_OR_FRESHNESS_FAILURE",
+      "reason": "A concrete end-to-end downstream fixture would require completing open G-07 invocation or G-11 Freshness semantics. Level 1 prose already places TRUSTED_SIGNER_NOT_FOUND first; Phase 2 does not invent the missing cross-gap input contract.",
+      "status": "EXCLUDED_FROM_PHASE2_FIXTURES"
+    }
+  ],
+  "input_recipe_contract": {
+    "authorized_downstream_condition": "rank-only candidate already named by Level 1; it does not define G-07 invocation grammar or G-11 Freshness policy",
+    "binding_condition": "select the correspondingly named frozen entry in binding_materials",
+    "canonical_inline_hex": "lowercase hexadecimal encoding of exact canonical-input bytes",
+    "fixture_reference": "bare fixture name resolved through semantic_vectors.json fixture_hashes",
+    "manifest_overrides": "replace the named top-level decoded values in the referenced manifest fixture for candidate-condition evaluation; no signature is regenerated",
+    "source_case_reference": "case_id resolved to the exact source descriptor and expected source decision in source_vectors.json"
+  },
+  "precedence_relation": [
+    {
+      "rank": 10,
+      "reasons": [
+        "TRUST_INPUT_NOT_PROVIDED"
+      ],
+      "stage": "EXPLICIT_TRUST_INPUT_PRESENCE"
+    },
+    {
+      "rank": 20,
+      "reasons": [
+        "TRUST_STORE_INVALID"
+      ],
+      "stage": "ACQUIRED_TRUST_INPUT_VALIDATION"
+    },
+    {
+      "rank": 30,
+      "reasons": [
+        "CANONICAL_NOT_JSON"
+      ],
+      "stage": "CANONICAL_SOURCE"
+    },
+    {
+      "rank": 40,
+      "reasons": [
+        "MANIFEST_NOT_JSON"
+      ],
+      "stage": "MANIFEST_SOURCE"
+    },
+    {
+      "rank": 50,
+      "reasons": [
+        "MANIFEST_NOT_OBJECT"
+      ],
+      "stage": "MANIFEST_ROOT"
+    },
+    {
+      "rank": 60,
+      "reasons": [
+        "MANIFEST_BAD_SCHEMA"
+      ],
+      "stage": "MANIFEST_SCHEMA_IDENTIFIER"
+    },
+    {
+      "rank": 70,
+      "reasons": [
+        "MANIFEST_BAD_INPUT_SCHEMA"
+      ],
+      "stage": "MANIFEST_INPUT_SCHEMA_IDENTIFIER"
+    },
+    {
+      "rank": 80,
+      "reasons": [
+        "MANIFEST_BAD_CANONICALIZATION"
+      ],
+      "stage": "MANIFEST_CANONICALIZATION_IDENTIFIER"
+    },
+    {
+      "rank": 90,
+      "reasons": [
+        "MANIFEST_BAD_TS_UTC"
+      ],
+      "stage": "MANIFEST_TIMESTAMP_WHEN_ENABLED"
+    },
+    {
+      "rank": 100,
+      "reasons": [
+        "MANIFEST_BAD_AI_HASH_SHA256"
+      ],
+      "stage": "MANIFEST_DIGEST_SPELLING"
+    },
+    {
+      "rank": 110,
+      "reasons": [
+        "HASH_MISMATCH"
+      ],
+      "stage": "PAYLOAD_DIGEST_COMPARISON"
+    },
+    {
+      "rank": 120,
+      "reasons": [
+        "SIGNATURE_INVALID"
+      ],
+      "stage": "SIGNATURE_VALIDITY"
+    },
+    {
+      "rank": 130,
+      "reasons": [
+        "SIGNATURE_REQUIRED"
+      ],
+      "stage": "SIGNATURE_ENFORCEMENT"
+    },
+    {
+      "rank": 140,
+      "reasons": [
+        "BINDING_HASH_MISMATCH"
+      ],
+      "stage": "BINDING_VALIDITY"
+    },
+    {
+      "rank": 150,
+      "reasons": [
+        "BINDING_REQUIRED"
+      ],
+      "stage": "BINDING_ENFORCEMENT"
+    },
+    {
+      "rank": 160,
+      "reasons": [
+        "TRUSTED_SIGNER_NOT_FOUND"
+      ],
+      "stage": "TRUST_MEMBERSHIP_ENFORCEMENT"
+    },
+    {
+      "rank": 170,
+      "reasons": [
+        "INVOCATION_HASH_MISMATCH"
+      ],
+      "stage": "INVOCATION_IDENTITY"
+    },
+    {
+      "rank": 180,
+      "reasons": [
+        "FRESHNESS_TIMESTAMP_MALFORMED"
+      ],
+      "stage": "FRESHNESS"
+    }
+  ],
+  "scope": "PHASE2_PRECEDENCE_AND_CROSS_CONTRACT",
+  "vectors": [
+    {
+      "candidate_failures": [
+        {
+          "condition": "REQUIRED_TRUST_INPUT_ABSENT",
+          "reason": "TRUST_INPUT_NOT_PROVIDED"
+        },
+        {
+          "condition": "CANONICAL_SOURCE_NOT_JSON",
+          "reason": "CANONICAL_NOT_JSON"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.trust_input.required_absent_before_invalid_bundle",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "BUNDLE_INSPECTION",
+          "CANONICAL_SOURCE",
+          "MANIFEST_VALIDATION",
+          "PAYLOAD_HASH",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "TRUST_INPUT_NOT_PROVIDED"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": "7b",
+        "canonical_payload_fixture": null,
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "ACQUIRED_TRUST_STORE_INVALID",
+          "reason": "TRUST_STORE_INVALID"
+        },
+        {
+          "condition": "CANONICAL_SOURCE_NOT_JSON",
+          "reason": "CANONICAL_NOT_JSON"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.trust_input.malformed_acquired_before_invalid_bundle",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "BUNDLE_INSPECTION",
+          "CANONICAL_SOURCE",
+          "MANIFEST_VALIDATION",
+          "PAYLOAD_HASH",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": "7b",
+        "canonical_payload_fixture": null,
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": "semantic_trust_malformed.json",
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "CANONICAL_SOURCE_NOT_JSON",
+          "reason": "CANONICAL_NOT_JSON"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.payload.canonical_not_json_before_malformed_keyring",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "MANIFEST_VALIDATION",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "CANONICAL_NOT_JSON"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": "7b",
+        "canonical_payload_fixture": null,
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": "keyring.source.trailing_garbage"
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_SOURCE_NOT_JSON",
+          "reason": "MANIFEST_NOT_JSON"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.payload.manifest_not_json_before_malformed_keyring",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_NOT_JSON"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": null,
+        "manifest_overrides": {},
+        "manifest_source_case": "manifest.v1.source.trailing_garbage",
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": "keyring.source.trailing_garbage"
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_ROOT_NOT_OBJECT",
+          "reason": "MANIFEST_NOT_OBJECT"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.payload.manifest_not_object_before_malformed_keyring",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_NOT_OBJECT"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": null,
+        "manifest_overrides": {},
+        "manifest_source_case": "manifest.v1.source.non_object_root",
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": "keyring.source.trailing_garbage"
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_PAYLOAD_HASH_MISMATCH",
+          "reason": "HASH_MISMATCH"
+        },
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        }
+      ],
+      "case_id": "precedence.payload.hash_mismatch_before_malformed_keyring",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "HASH_MISMATCH"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "ai_hash_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MISMATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": "keyring.source.trailing_garbage"
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "SIGNATURE_ENFORCEMENT_REQUESTED",
+          "reason": "SIGNATURE_REQUIRED"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_signature_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": true,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "BINDING_HASH_MISMATCH_PRESENT",
+          "reason": "BINDING_HASH_MISMATCH"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_binding_mismatch",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "HASH_MISMATCH",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "REQUIRED_BINDING_ABSENT",
+          "reason": "BINDING_REQUIRED"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_binding_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "REQUIRED_ABSENT",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": true,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "REQUIRED_SIGNER_MEMBERSHIP_MISSING",
+          "reason": "TRUSTED_SIGNER_NOT_FOUND"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_required_membership",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": "semantic_trust_nonmatching.json",
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "AUTHORIZED_INVOCATION_HASH_MISMATCH",
+          "reason": "INVOCATION_HASH_MISMATCH"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_authorized_invocation_failure",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "AUTHORIZED_HASH_MISMATCH",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "PRESENT_SIGNATURE_INVALID",
+          "reason": "SIGNATURE_INVALID"
+        },
+        {
+          "condition": "AUTHORIZED_FRESHNESS_TIMESTAMP_MALFORMED",
+          "reason": "FRESHNESS_TIMESTAMP_MALFORMED"
+        }
+      ],
+      "case_id": "precedence.signature.invalid_before_authorized_freshness_failure",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "INVALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "AUTHORIZED_TIMESTAMP_MALFORMED",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": "semantic_keyring_modified_signature.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "SIGNATURE_ENFORCEMENT_REQUESTED",
+          "reason": "SIGNATURE_REQUIRED"
+        },
+        {
+          "condition": "BINDING_HASH_MISMATCH_PRESENT",
+          "reason": "BINDING_HASH_MISMATCH"
+        }
+      ],
+      "case_id": "precedence.signature.required_before_binding_mismatch",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_REQUIRED"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "HASH_MISMATCH",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": true,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "SIGNATURE_ENFORCEMENT_REQUESTED",
+          "reason": "SIGNATURE_REQUIRED"
+        },
+        {
+          "condition": "REQUIRED_SIGNER_MEMBERSHIP_MISSING",
+          "reason": "TRUSTED_SIGNER_NOT_FOUND"
+        }
+      ],
+      "case_id": "precedence.signature.required_for_membership_with_valid_store",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "TRUST_MEMBERSHIP"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "SIGNATURE_REQUIRED"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": "semantic_trust_empty.json",
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "REQUIRED_TRUST_INPUT_ABSENT",
+          "reason": "TRUST_INPUT_NOT_PROVIDED"
+        },
+        {
+          "condition": "SIGNATURE_ENFORCEMENT_REQUESTED",
+          "reason": "SIGNATURE_REQUIRED"
+        }
+      ],
+      "case_id": "precedence.signature.no_trust_input_before_unsigned_bundle",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "BUNDLE_INSPECTION",
+          "CANONICAL_SOURCE",
+          "MANIFEST_VALIDATION",
+          "PAYLOAD_HASH",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "NOT_EVALUATED",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "TRUST_INPUT_NOT_PROVIDED"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "BINDING_HASH_MISMATCH_PRESENT",
+          "reason": "BINDING_HASH_MISMATCH"
+        },
+        {
+          "condition": "REQUIRED_SIGNER_MEMBERSHIP_MISSING",
+          "reason": "TRUSTED_SIGNER_NOT_FOUND"
+        }
+      ],
+      "case_id": "precedence.binding.mismatch_before_required_membership",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [],
+        "signature_validity": "VALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "BINDING_HASH_MISMATCH"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "HASH_MISMATCH",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": "semantic_trust_nonmatching.json",
+        "verification_keys_fixture": "semantic_keyring_valid.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "REQUIRED_SIGNER_MEMBERSHIP_MISSING",
+          "reason": "TRUSTED_SIGNER_NOT_FOUND"
+        }
+      ],
+      "case_id": "precedence.binding.valid_then_required_membership_missing",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [],
+        "signature_validity": "VALID",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "TRUSTED_SIGNER_NOT_FOUND"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "VALID",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {},
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": "semantic_trust_nonmatching.json",
+        "verification_keys_fixture": "semantic_keyring_valid.json",
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": true,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_SCHEMA_BAD",
+          "reason": "MANIFEST_BAD_SCHEMA"
+        },
+        {
+          "condition": "MANIFEST_INPUT_SCHEMA_BAD",
+          "reason": "MANIFEST_BAD_INPUT_SCHEMA"
+        }
+      ],
+      "case_id": "precedence.manifest.bad_schema_before_bad_input_schema",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "MANIFEST_LATER_FIELDS",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_SCHEMA"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "input_schema": "bad",
+          "schema": "bad"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_INPUT_SCHEMA_BAD",
+          "reason": "MANIFEST_BAD_INPUT_SCHEMA"
+        },
+        {
+          "condition": "MANIFEST_CANONICALIZATION_BAD",
+          "reason": "MANIFEST_BAD_CANONICALIZATION"
+        }
+      ],
+      "case_id": "precedence.manifest.bad_input_schema_before_bad_canonicalization",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "MANIFEST_LATER_FIELDS",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_INPUT_SCHEMA"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "canonicalization": "bad",
+          "input_schema": "bad"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_CANONICALIZATION_BAD",
+          "reason": "MANIFEST_BAD_CANONICALIZATION"
+        },
+        {
+          "condition": "MANIFEST_TIMESTAMP_BAD_ENABLED",
+          "reason": "MANIFEST_BAD_TS_UTC"
+        }
+      ],
+      "case_id": "precedence.manifest.bad_canonicalization_before_bad_timestamp",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "MANIFEST_LATER_FIELDS",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "NOT_REACHED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_CANONICALIZATION"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "canonicalization": "bad",
+          "ts_utc": "not-a-timestamp"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_TIMESTAMP_BAD_ENABLED",
+          "reason": "MANIFEST_BAD_TS_UTC"
+        },
+        {
+          "condition": "MANIFEST_DIGEST_SPELLING_BAD",
+          "reason": "MANIFEST_BAD_AI_HASH_SHA256"
+        }
+      ],
+      "case_id": "precedence.manifest.bad_timestamp_before_bad_digest_spelling",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "MANIFEST_LATER_FIELDS",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "FAIL",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_TS_UTC"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "ai_hash_sha256": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+          "ts_utc": "not-a-timestamp"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_DIGEST_SPELLING_BAD",
+          "reason": "MANIFEST_BAD_AI_HASH_SHA256"
+        },
+        {
+          "condition": "MANIFEST_PAYLOAD_HASH_MISMATCH",
+          "reason": "HASH_MISMATCH"
+        }
+      ],
+      "case_id": "precedence.manifest.bad_digest_spelling_before_hash_mismatch",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [],
+        "not_evaluated_checks": [
+          "PAYLOAD_HASH",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "PASS",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "ai_hash_sha256": "46C14BBD7C469EB289656B4773C3AADA879438F7E273C2761283EC5AFA029E48"
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "MISMATCH",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "candidate_failures": [
+        {
+          "condition": "MANIFEST_DIGEST_SPELLING_BAD",
+          "reason": "MANIFEST_BAD_AI_HASH_SHA256"
+        }
+      ],
+      "case_id": "precedence.manifest.timestamp_disabled_allows_later_digest_failure",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "bypassed_checks": [
+          "MANIFEST_TIMESTAMP"
+        ],
+        "not_evaluated_checks": [
+          "PAYLOAD_HASH",
+          "KEYRING_SEMANTICS",
+          "SIGNATURE_MATHEMATICS",
+          "BINDING",
+          "TRUST_MEMBERSHIP",
+          "INVOCATION",
+          "FRESHNESS"
+        ],
+        "signature_validity": "ABSENT",
+        "timestamp_decision": "BYPASSED",
+        "trusted_signer_identity": "UNESTABLISHED",
+        "winning_top_level_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "PRECEDENCE",
+      "inputs": {
+        "binding_condition": "NONE",
+        "canonical_inline_hex": null,
+        "canonical_payload_fixture": "semantic_ai_canonical.json",
+        "freshness_condition": "NONE",
+        "invocation_condition": "NONE",
+        "manifest_fixture": "semantic_manifest_valid.json",
+        "manifest_overrides": {
+          "ai_hash_sha256": "bad",
+          "ts_utc": {
+            "malformed": true
+          }
+        },
+        "manifest_source_case": null,
+        "payload_hash_comparison": "NOT_REACHED",
+        "trust_store_fixture": null,
+        "verification_keys_fixture": null,
+        "verification_keys_source_case": null
+      },
+      "verifier_options": {
+        "require_binding": false,
+        "require_signature": false,
+        "require_trusted_signer": false,
+        "validate_manifest_timestamp": false
+      }
+    }
+  ]
+}

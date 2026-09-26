@@ -222,10 +222,12 @@ unchanged. Acquired malformed or semantically invalid trust bytes still produce
 `TRUST_STORE_INVALID` before bundle inspection, whether membership is optional
 or required, when that semantic result is authorized by the applicable policy.
 
-Current Python still maps direct trust-store I/O failure to
-`TRUST_STORE_INVALID`; this is an implementation discrepancy, not the adopted
-contract. See the [verification requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md#1-validate-explicit-inputs)
-for the reconciliation's compatibility statement and remaining runtime work.
+The current unreleased operation path implements this boundary: direct trust-
+store acquisition failure is operational, while successfully acquired
+malformed trust bytes produce `TRUST_STORE_INVALID` at the adopted semantic
+precedence. The released v0.4.0 interface is not redefined by that branch work.
+See the [verification requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md#1-validate-explicit-inputs)
+for the compatibility statement and historical implementation finding.
 
 ### Self-consistent rewrite: a boundary this mechanism does not cross
 

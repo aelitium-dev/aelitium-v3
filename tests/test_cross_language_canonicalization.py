@@ -357,10 +357,12 @@ class TestCompatibilityPreservingRestrictions(unittest.TestCase):
                 self.assertTrue(result.valid, result)
                 self.assertEqual(result.ai_hash_sha256, digest)
 
-    def test_pr33_result_contract_files_are_byte_unchanged(self):
+    def test_adopted_result_contract_files_are_byte_stable(self):
+        # Operation-failure construction is intentionally updated; the hash
+        # guards source bytes and is not evidence of normative behavior.
         expected = {
             "engine/result_contracts.py": (
-                "74fd01595b710dcaddbc3fb8bac0bb411f34de5c67f22930c790203e18f5c9e9"
+                "a1efb8af429afafdce60f7fa75b71156cc0f8dc0b93206e410c068fdabc1c355"
             ),
             "engine/schemas/verification_result_v1.json": (
                 "6e6f35bcd0e90e51cbf9d5fa25da7453f446c22ae86a2dce3eb75045bc1cddcc"

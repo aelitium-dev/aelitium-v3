@@ -1,4 +1,5 @@
 import base64
+import binascii
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
+if __package__ in (None, ""):
+    from ed25519_portable import verify_ed25519_portable_strict_1
+else:
+    from .ed25519_portable import verify_ed25519_portable_strict_1
+
 KEYRING_FORMAT = "ed25519-v1"
 SIGNATURE_ALGORITHM = "ed25519"
 SIGNATURE_SCOPE = "manifest.json"
@@ -20,24 +26,40 @@ class SigningConfigError(ValueError):
     pass
 
 
+class ManifestSignatureError(ValueError):
+    """Expected keyring-material or cryptographic signature rejection."""
+
+
 @dataclass(frozen=True)
 class VerifiedManifestSignature:
     """The exact key material that produced a successfully verified signature.
 
-    `public_key_bytes` is the raw public-key bytes that were actually passed
-    to `Ed25519PublicKey.from_public_bytes(...).verify(...)` and found valid
-    for the given manifest bytes -- never re-derived or re-parsed elsewhere.
+    `public_key_bytes` is the raw public-key material that the selected
+    verification path found valid for the given manifest bytes -- never
+    re-derived or re-parsed elsewhere.
     """
 
     key_id: str
     public_key_bytes: bytes
 
 
-def _decode_b64(value: str, reason: str) -> bytes:
+@dataclass(frozen=True)
+class _ManifestSignatureMaterial:
+    key_id: str
+    public_key_bytes: bytes
+    signature_bytes: bytes
+
+
+def _decode_b64(
+    value: str,
+    reason: str,
+    *,
+    error_type: type[ValueError] = SigningConfigError,
+) -> bytes:
     try:
         return base64.b64decode(value, validate=True)
-    except Exception as exc:
-        raise SigningConfigError(reason) from exc
+    except (binascii.Error, ValueError) as exc:
+        raise error_type(reason) from exc
 
 
 def _load_private_key_bytes() -> bytes:
@@ -97,53 +119,94 @@ def build_verification_material(manifest_bytes: bytes) -> dict:
     }
 
 
-def verify_manifest_signature(
-    manifest_bytes: bytes, vk_obj: dict
-) -> VerifiedManifestSignature:
+def _manifest_signature_material(vk_obj: dict) -> _ManifestSignatureMaterial:
+    if not isinstance(vk_obj, dict):
+        raise ManifestSignatureError("BAD_KEYRING")
     if vk_obj.get("keyring_format") != KEYRING_FORMAT:
-        raise ValueError("BAD_KEYRING_FORMAT")
+        raise ManifestSignatureError("BAD_KEYRING_FORMAT")
 
     keys = vk_obj.get("keys")
     signatures = vk_obj.get("signatures")
     if not isinstance(keys, list) or len(keys) != 1:
-        raise ValueError("BAD_KEYS")
+        raise ManifestSignatureError("BAD_KEYS")
     if not isinstance(signatures, list) or len(signatures) != 1:
-        raise ValueError("BAD_SIGNATURES")
+        raise ManifestSignatureError("BAD_SIGNATURES")
 
     key_entry = keys[0]
     sig_entry = signatures[0]
     if not isinstance(key_entry, dict) or not isinstance(sig_entry, dict):
-        raise ValueError("BAD_KEY_OR_SIGNATURE_ENTRY")
+        raise ManifestSignatureError("BAD_KEY_OR_SIGNATURE_ENTRY")
 
     key_id = key_entry.get("key_id")
     public_key_b64 = key_entry.get("public_key_b64")
     if not isinstance(key_id, str) or not key_id:
-        raise ValueError("BAD_KEY_ID")
+        raise ManifestSignatureError("BAD_KEY_ID")
     if not isinstance(public_key_b64, str) or not public_key_b64:
-        raise ValueError("BAD_PUBLIC_KEY")
+        raise ManifestSignatureError("BAD_PUBLIC_KEY")
 
     if sig_entry.get("key_id") != key_id:
-        raise ValueError("SIGNATURE_KEY_ID_MISMATCH")
+        raise ManifestSignatureError("SIGNATURE_KEY_ID_MISMATCH")
     if sig_entry.get("algorithm") != SIGNATURE_ALGORITHM:
-        raise ValueError("BAD_SIGNATURE_ALGORITHM")
+        raise ManifestSignatureError("BAD_SIGNATURE_ALGORITHM")
     if sig_entry.get("scope") != SIGNATURE_SCOPE:
-        raise ValueError("BAD_SIGNATURE_SCOPE")
+        raise ManifestSignatureError("BAD_SIGNATURE_SCOPE")
 
     sig_b64 = sig_entry.get("sig_b64")
     if not isinstance(sig_b64, str) or not sig_b64:
-        raise ValueError("BAD_SIGNATURE")
+        raise ManifestSignatureError("BAD_SIGNATURE")
 
-    public_key_bytes = _decode_b64(public_key_b64, "PUBLIC_KEY_B64_INVALID")
-    signature_bytes = _decode_b64(sig_b64, "SIGNATURE_B64_INVALID")
+    public_key_bytes = _decode_b64(
+        public_key_b64,
+        "PUBLIC_KEY_B64_INVALID",
+        error_type=ManifestSignatureError,
+    )
+    signature_bytes = _decode_b64(
+        sig_b64,
+        "SIGNATURE_B64_INVALID",
+        error_type=ManifestSignatureError,
+    )
     if len(public_key_bytes) != 32:
-        raise ValueError("PUBLIC_KEY_LENGTH_INVALID")
+        raise ManifestSignatureError("PUBLIC_KEY_LENGTH_INVALID")
     if len(signature_bytes) != 64:
-        raise ValueError("SIGNATURE_LENGTH_INVALID")
+        raise ManifestSignatureError("SIGNATURE_LENGTH_INVALID")
+
+    return _ManifestSignatureMaterial(
+        key_id=key_id,
+        public_key_bytes=public_key_bytes,
+        signature_bytes=signature_bytes,
+    )
+
+
+def verify_manifest_signature(
+    manifest_bytes: bytes, vk_obj: dict
+) -> VerifiedManifestSignature:
+    material = _manifest_signature_material(vk_obj)
 
     try:
-        public_key = Ed25519PublicKey.from_public_bytes(public_key_bytes)
-        public_key.verify(signature_bytes, manifest_bytes)
+        public_key = Ed25519PublicKey.from_public_bytes(material.public_key_bytes)
+        public_key.verify(material.signature_bytes, manifest_bytes)
     except (ValueError, InvalidSignature) as exc:
-        raise ValueError("SIGNATURE_INVALID") from exc
+        raise ManifestSignatureError("SIGNATURE_INVALID") from exc
 
-    return VerifiedManifestSignature(key_id=key_id, public_key_bytes=public_key_bytes)
+    return VerifiedManifestSignature(
+        key_id=material.key_id,
+        public_key_bytes=material.public_key_bytes,
+    )
+
+
+def verify_manifest_signature_portable_strict_1(
+    manifest_bytes: bytes, vk_obj: dict
+) -> VerifiedManifestSignature:
+    """Verify a keyring signature under ``ED25519_PORTABLE_STRICT_1``."""
+
+    material = _manifest_signature_material(vk_obj)
+    if not verify_ed25519_portable_strict_1(
+        material.public_key_bytes,
+        material.signature_bytes,
+        manifest_bytes,
+    ):
+        raise ManifestSignatureError("SIGNATURE_INVALID")
+    return VerifiedManifestSignature(
+        key_id=material.key_id,
+        public_key_bytes=material.public_key_bytes,
+    )

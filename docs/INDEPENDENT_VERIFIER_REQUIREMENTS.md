@@ -44,7 +44,12 @@ dispatch contract, and external-standards registry are defined by
 written against that hierarchy and these repository artifacts:
 
 - [`VERIFIER_PROTOCOL_V1.md`](VERIFIER_PROTOCOL_V1.md)
+- [`VERIFIER_INPUT_CONTRACTS_V1.md`](VERIFIER_INPUT_CONTRACTS_V1.md)
 - [`engine/schemas/ai_output_v1.json`](../engine/schemas/ai_output_v1.json)
+- [`engine/schemas/ai_manifest_v1.json`](../engine/schemas/ai_manifest_v1.json)
+- [`engine/schemas/ai_manifest_v2.json`](../engine/schemas/ai_manifest_v2.json)
+- [`engine/schemas/verification_keys_v1.json`](../engine/schemas/verification_keys_v1.json)
+- [`engine/schemas/trust_store_v1.json`](../engine/schemas/trust_store_v1.json)
 - [`engine/schemas/verification_result_v1.json`](../engine/schemas/verification_result_v1.json)
 - [`engine/schemas/assurance_result_v1.json`](../engine/schemas/assurance_result_v1.json)
 - [`engine/schemas/compare_result_v1.json`](../engine/schemas/compare_result_v1.json)
@@ -62,6 +67,9 @@ written against that hierarchy and these repository artifacts:
   artifact it references
 - [`conformance/legacy_v1_operational_policy/manifest.json`](../conformance/legacy_v1_operational_policy/manifest.json)
   and its frozen byte recipes, results, and Unicode profiles
+- [`conformance/verifier_contract_phase2/manifest.json`](../conformance/verifier_contract_phase2/manifest.json)
+  and its frozen source, schema, signature, trust, strict Ed25519, and
+  precedence cases
 
 Python source is not a normative input. A separately labeled implementation
 cross-check may detect a specification defect while the contract is being
@@ -94,6 +102,14 @@ Explicit verifier inputs are:
 
 There is no ambient trust input, current clock, environment-derived time,
 network access, provider lookup, or default policy.
+
+At the outer operation boundary, the four flags represented under
+`verification_inputs` are exact booleans. A supplied Freshness maximum age is
+an exact integer from 0 through `9007199254740991`, and a supplied reference
+time is a portable, calendar-valid exact `YYYY-MM-DDTHH:MM:SSZ` string. Reject
+violations before capability selection or input acquisition and return no tool
+result; CLI invocation errors use rc 64 and empty stdout. This operation-input
+envelope does not narrow the standalone legacy/inner Freshness primitive.
 
 ## Required verification order and reason precedence
 
@@ -141,18 +157,23 @@ Successfully acquiring bytes does not waive capability or resource checks.
 section 5.3 remains permitted, with its exact profile qualification and outer
 transport; it is not a universal v1 invalidity claim.
 
-**CURRENT IMPLEMENTATION DISCREPANCY — non-normative:** at repository baseline
+**HISTORICAL IMPLEMENTATION DISCREPANCY — non-normative:** at repository baseline
 `941fe2f1373825e880cf90e1ba360be81ca7c56a`, Python's trust loader converts direct
 I/O failures to `TrustStoreError`, and the verifier maps those errors to
 `TRUST_STORE_INVALID`. It does not implement the adopted operational boundary
-or immutable snapshot acquisition. Separate runtime alignment is still needed;
-Python behavior is not normative.
+or immutable snapshot acquisition. Python behavior at that baseline is not
+normative. The current unreleased working tree has since aligned the operation
+path: acquisition failure is operational, acquired malformed trust is semantic,
+and immutable snapshot bytes are not reread.
 
 This reconciliation aligns older public wording with the already-adopted
 operational contract. It changes no released v0.4.0 package bytes, evidence
 format, trust-membership or signature semantics, and adds no semantic reason or
-operational code. G-09's adopted policy is unchanged. This documentation change
-does not claim runtime alignment or close G-04, G-05, or G-06.
+operational code. G-09's adopted policy is unchanged. The reconciliation itself
+did not close G-04, G-05, or G-06. Their later Phase 2 status is recorded
+below: G-04, G-05, and G-06 are now closed after normative adoption and current
+unreleased runtime alignment. None of those statuses claims an independent
+implementation or changes released v0.4.0 behavior.
 
 ### 2. Establish payload integrity
 
@@ -167,9 +188,13 @@ Apply checks in this order and stop at the first failure:
    `MANIFEST_MISSING_FIELD`;
 5. exact identifiers: `MANIFEST_BAD_SCHEMA`, `MANIFEST_BAD_INPUT_SCHEMA`, then
    `MANIFEST_BAD_CANONICALIZATION`;
-6. when selected, manifest timestamp spelling against
-   `YYYY-MM-DDTHH:MM:SSZ`: `MANIFEST_BAD_TS_UTC`; this check is syntactic, not a
-   calendar or time-authority check;
+6. when `validate_manifest_timestamp=true`, validate `ts_utc` under the
+   route-specific rule in `VERIFIER_INPUT_CONTRACTS_V1.md`: the selected
+   capability-qualified v1 ASCII/frozen-`Nd` rule with zero or one decoded
+   final LF, or the exact 20-character ASCII-only v2 rule with no final LF;
+   failure is `MANIFEST_BAD_TS_UTC`. When the option is false, presence remains
+   required but type and spelling validation is bypassed. Neither route makes a
+   component-range, calendar, time-authority, or historical-time claim;
 7. manifest digest shape, exactly 64 lowercase hexadecimal characters:
    `MANIFEST_BAD_AI_HASH_SHA256`;
 8. canonical payload validation against `ai_output_v1`:
@@ -352,20 +377,52 @@ claim one unqualified complete v1 surface.
 
 ## Signature and external signing-key membership
 
+The complete source, source-collapse, structure, Base64, and failure contract is
+[`VERIFIER_INPUT_CONTRACTS_V1.md`](VERIFIER_INPUT_CONTRACTS_V1.md). Under
+`ed25519-v1`, root, key-entry, and signature-entry objects remain open after
+decoded-name last-name-wins collapse; unknown members are ignored.
+
 When `verification_keys.json` is absent, `signature_validity=ABSENT`. When it is
 present after payload validation, require:
 
 - `keyring_format` exactly `ed25519-v1`;
 - exactly one object in `keys` and exactly one object in `signatures`;
 - a non-empty string `key_id` shared by both entries;
-- strict standard Base64 public key and signature encodings;
+- the exact fixed-shape standard-alphabet Base64 compatibility profile in the
+  input contract, including acceptance of non-zero unused pad bits without an
+  encode-after-decode equality check;
 - 32 decoded public-key bytes and 64 decoded signature bytes;
 - signature algorithm exactly `ed25519`;
 - signature scope exactly `manifest.json`; and
 - Ed25519 verification over the raw bytes of `ai_manifest.json`, including any
-  terminal newline.
+  terminal newline; and
+- an explicitly requested and effective signature-verification capability of
+  `ED25519_PORTABLE_STRICT_1`.
 
-Bundled public-key material is not an independent trust input.
+`ED25519_PORTABLE_STRICT_1` is orthogonal to `ed25519-v1`, `algorithm`,
+and canonicalization. Requested and effective profiles must be explicit and
+agree for every semantic result; there is no
+implicit profile or fallback. An unsupported request produces operational
+`CAPABILITY_PROFILE_UNAVAILABLE` with no semantic verification or assurance
+result. The exact point decoding, identity, subgroup, small-order, scalar, hash,
+and uncofactored-equation rules are in
+`VERIFIER_INPUT_CONTRACTS_V1.md`. Neither `cryptography` nor OpenSSL defines
+those rules. The generic v0.4.0 edge-case acceptance domain is not normatively
+recoverable from its unpinned dependency/backend and is not a compatibility
+profile.
+
+The outer result distinguishes requested syntax from effective support. A
+structurally valid unsupported identifier is retained exactly as a parsed JSON
+value in `capability.requested`, while `capability.effective` is null when
+selection fails. Malformed request syntax produces no operation result. An
+effective declaration and both declarations in any semantic result remain
+limited to the supported registry; broad requested syntax cannot select a
+fallback or qualify a semantic result.
+
+Bundled public-key material is not an independent trust input. After immutable
+trust bytes are acquired, the legacy source map uses decoded-name
+last-name-wins collapse before closed-object semantic validation, as defined in
+the input contract.
 `trusted_signer_identity=VALID` requires a valid bundled signature and a
 matching fingerprint in an explicitly supplied `aelitium-trust-v1` file. The
 fingerprint is `ed25519:sha256:` followed by SHA-256 of the 32 raw public-key
@@ -471,6 +528,18 @@ and profile-qualified results use `aelitium-verifier-tool-result-v1`, whose
 RFC 8785 plus LF serialization is exact. Local paths must not appear in
 artifact, trust, policy, input-role, or operational references.
 
+Every returned tool result must already be in the portable-v2 RFC 8785 value
+domain, so serialization is total for every authorized semantic result. An
+established semantic result is not converted to an operational outcome merely
+because diagnostic metadata is nonportable. Public
+`verification_result.detail` is non-normative, diagnostic-only, and must not be
+compared or used for branching: preserve a nonempty exact portable-v2 string,
+otherwise emit null. This projection does not alter the internal semantic
+status, reason, assurance states, or the broader values accepted in authorized
+legacy evidence positions. Draft 7 numeric bounds constrain embedded outer
+Freshness integers; procedural runtime validation enforces the Unicode-scalar
+and noncharacter rules that JSON Schema does not portably express here.
+
 ## Conformance and acceptance gate
 
 A candidate is not accepted as independent until all of these pass:
@@ -492,17 +561,25 @@ A candidate is not accepted as independent until all of these pass:
 9. all 114 portable-v2 vectors, including dispatch under CPython integer digit
    limits 640, 4300, and disabled; and
 10. all cases in the separate legacy-v1 operational-policy corpus, including
-    exact operational wrappers and frozen Unicode profile audits; and
-11. a provenance review demonstrating that the decision engine neither imports
+    exact operational wrappers and frozen Unicode profile audits;
+11. all cases in the Phase 2 verifier-input corpus, including its frozen
+    source, schema, raw-message signature, strict Ed25519 profile,
+    trust-membership, and precedence expectations; and
+12. a provenance review demonstrating that the decision engine neither imports
     nor shells out to AELITIUM Python.
 
-The present Python conformance runner is an implementation-aligned oracle and
-corpus exerciser. It is not evidence that a second implementation exists.
+The production-oriented Python conformance runner is an
+implementation-aligned corpus exerciser. The Phase 2 maintenance runner checks
+committed expected data without importing production `engine.*` modules.
+Neither runner is evidence that a second implementation exists, and production
+Python is not an oracle for the Phase 2 expectations.
 
-As of this document revision, the portable-v2 Python implementation, the
-capability/operational policy, and their frozen corpora are present, but no
-independent implementation exists. The complete-surface readiness verdict
-remains **NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because G-04 through G-08 and
-G-10 remain open (with G-04/G-05/G-06 now unblocked by policy), and complete
-comparison construction remains deferred as G-12. G-02/G-09 closure does not
-authorize filling those gaps from Python.
+As of this document revision, the Phase 2 input contracts, schemas, frozen
+corpus, and current unreleased runtime alignment close G-04, G-05, and G-06.
+G-05 includes explicit requested/effective selection and strict
+`ED25519_PORTABLE_STRICT_1` execution without fallback. The frozen Phase 2
+manifest retains its adoption-time pending status as historical metadata. No
+independent implementation exists. The complete-surface readiness verdict remains
+**NOT_READY_FOR_CLEAN_ROOM_VERIFIER** because G-07, G-08, G-10, and G-11 remain
+open, and complete comparison construction remains deferred as G-12. No closure
+authorizes filling a remaining gap from Python.

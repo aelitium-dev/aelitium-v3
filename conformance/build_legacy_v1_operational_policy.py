@@ -29,6 +29,24 @@ OPERATION_CONTRACT = "AELITIUM-LEGACY-V1-POLICY-OPERATION-1"
 V1_IDENTIFIER = "json_sorted_keys_no_whitespace_utf8"
 V2_IDENTIFIER = "aelitium_jcs_profile_v2"
 
+# Exact source bytes frozen by the Phase 2 source vectors
+# manifest.v1.source.ignored_nan and
+# manifest.v1.source.ignored_opaque_unmatched_surrogate.
+PHASE2_IGNORED_NAN_MANIFEST = (
+    b'{"schema":"ai_pack_manifest_v1","ts_utc":"2026-01-01T00:00:00Z",'
+    b'"input_schema":"ai_output_v1","canonicalization":'
+    b'"json_sorted_keys_no_whitespace_utf8","ai_hash_sha256":'
+    b'"0000000000000000000000000000000000000000000000000000000000000000",'
+    b'"extension":NaN}'
+)
+PHASE2_IGNORED_OPAQUE_SURROGATE_MANIFEST = (
+    b'{"schema":"ai_pack_manifest_v1","ts_utc":"2026-01-01T00:00:00Z",'
+    b'"input_schema":"ai_output_v1","canonicalization":'
+    b'"json_sorted_keys_no_whitespace_utf8","ai_hash_sha256":'
+    b'"0000000000000000000000000000000000000000000000000000000000000000",'
+    b'"extension":"\\ud800"}'
+)
+
 UCD = {
     "13.0.0": {
         "profile_id": "AELITIUM_UCD_ND_13_0_0_1",
@@ -212,6 +230,17 @@ def _configuration(
         "input_mode": input_mode,
         "limits": _limit_state(limits, claimed=claimed),
     }
+
+
+def _current_configuration(
+    *,
+    v1: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    configuration = _configuration(v1=v1)
+    configuration["capability"]["signature_verification"] = {
+        "profile": "ED25519_PORTABLE_STRICT_1"
+    }
+    return configuration
 
 
 def _limit_fact(
@@ -1104,6 +1133,108 @@ def build_cases() -> list[dict[str, Any]]:
             phase="DISPATCH",
             input_ref="AI_MANIFEST_JSON",
             configuration=unsupported_config,
+        )
+    )
+
+    # SAFE_CLARIFICATION: categorical restricted-value-domain refusals retain
+    # the required limit member with a null value. These are appended after the
+    # original 94 cases so no existing identifier, source, or expected result
+    # is renumbered or rewritten.
+    for case_id, source, value_class in (
+        (
+            "legacy.restricted.nonfinite.ignored_nan",
+            PHASE2_IGNORED_NAN_MANIFEST,
+            "NONFINITE",
+        ),
+        (
+            "legacy.restricted.surrogate.ignored_opaque_unmatched_high",
+            PHASE2_IGNORED_OPAQUE_SURROGATE_MANIFEST,
+            "OPAQUE_SURROGATE",
+        ),
+    ):
+        cases.append(
+            _operational_case(
+                case_id,
+                "DETERMINISTIC_LEGACY",
+                "APPLY_LEGACY_RULE",
+                "A legacy-permitted ignored value is categorically outside "
+                "the restricted portable domain.",
+                {
+                    "position": "IGNORED_EXTENSION",
+                    "source": _source(_literal(source)),
+                    "source_role": "AI_MANIFEST_JSON",
+                    "value_class": value_class,
+                },
+                code="INPUT_OUTSIDE_DECLARED_CAPABILITY",
+                phase="MANIFEST_PARSE",
+                input_ref="AI_MANIFEST_JSON",
+                limit=None,
+                configuration=portable_config,
+            )
+        )
+
+    # SCHEMA_COMPATIBILITY_EXPANSION: these three current-request vectors are
+    # appended after the original 96. Their expected outcomes are authored
+    # policy decisions; no production verifier is consulted.
+    unsupported_v2 = _current_configuration()
+    unsupported_v2["capability"]["v2"]["capability"] = "V2_FUTURE"
+    cases.append(
+        _operational_case(
+            "capability.selection.unsupported_v2",
+            "OPERATIONAL_TRANSPORT",
+            "SELECT_CAPABILITY",
+            "A lexically valid unsupported v2 identifier is retained in the rejected request.",
+            {
+                "requested_component": "v2.capability",
+                "requested_identifier": "V2_FUTURE",
+            },
+            code="CAPABILITY_PROFILE_UNAVAILABLE",
+            phase="CAPABILITY_SELECTION",
+            input_ref=None,
+            configuration=unsupported_v2,
+        )
+    )
+
+    unsupported_signature = _current_configuration()
+    unsupported_signature["capability"]["signature_verification"][
+        "profile"
+    ] = "ED25519_FUTURE"
+    cases.append(
+        _operational_case(
+            "capability.selection.unsupported_signature_profile",
+            "OPERATIONAL_TRANSPORT",
+            "SELECT_CAPABILITY",
+            "A lexically valid unsupported signature profile is retained in the rejected request.",
+            {
+                "requested_component": "signature_verification.profile",
+                "requested_identifier": "ED25519_FUTURE",
+            },
+            code="CAPABILITY_PROFILE_UNAVAILABLE",
+            phase="CAPABILITY_SELECTION",
+            input_ref=None,
+            configuration=unsupported_signature,
+        )
+    )
+
+    mismatched_named = _current_configuration(v1=_v1_named(4300, "15.0.0"))
+    mismatched_profile = mismatched_named["capability"]["v1"][
+        "timestamp_digit_profile"
+    ]
+    mismatched_profile["range_file_sha256"] = "0" * 64
+    cases.append(
+        _operational_case(
+            "capability.selection.named_profile_tuple_mismatch",
+            "OPERATIONAL_TRANSPORT",
+            "SELECT_CAPABILITY",
+            "A known named profile with a lexically valid mismatched digest is retained and unavailable.",
+            {
+                "mismatched_member": "range_file_sha256",
+                "requested_profile": copy.deepcopy(mismatched_profile),
+            },
+            code="CAPABILITY_PROFILE_UNAVAILABLE",
+            phase="CAPABILITY_SELECTION",
+            input_ref=None,
+            configuration=mismatched_named,
         )
     )
 

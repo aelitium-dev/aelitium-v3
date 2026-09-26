@@ -253,13 +253,36 @@ require_literal "docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md" \
 require_literal "engine/schemas/verifier_tool_result_v1.json" \
   '"$id": "aelitium-verifier-tool-result-v1"'
 require_literal "conformance/legacy_v1_operational_policy/manifest.json" \
-  '"case_count": 94'
+  '"case_count": 99'
 require_literal "conformance/legacy_v1_operational_policy/unicode/profiles.json" \
   '"contract": "aelitium-unicode-nd-profiles-v1"'
 require_literal "docs/VERIFIER_PROTOCOL_V1.md" '| G-02 | **CLOSED** |'
 require_literal "docs/VERIFIER_PROTOCOL_V1.md" '| G-09 | **CLOSED** |'
-require_literal "docs/VERIFIER_PROTOCOL_V1.md" \
-  '| G-04 | **OPEN — UNBLOCKED_BY_POLICY** |'
+for gap in G-04 G-05 G-06; do
+  require_literal "docs/VERIFIER_PROTOCOL_V1.md" "| $gap | **CLOSED** |"
+done
+forbid_literal "docs/VERIFIER_PROTOCOL_V1.md" \
+  '| G-05 | **OPEN — NORMATIVE_PROFILE_READY_RUNTIME_ALIGNMENT_PENDING** |'
+for gap in G-07 G-08 G-10 G-11; do
+  require_literal "docs/VERIFIER_PROTOCOL_V1.md" "| $gap | **OPEN** |"
+done
+require_literal "docs/VERIFIER_PROTOCOL_V1.md" '| G-12 | **DEFERRED** |'
+require_literal "docs/VERIFIER_INPUT_CONTRACTS_V1.md" \
+  '**Status:** NORMATIVE-UNRELEASED'
+require_literal "docs/VERIFIER_INPUT_CONTRACTS_V1.md" \
+  'ED25519_PORTABLE_STRICT_1'
+require_literal "docs/VERIFIER_INPUT_CONTRACTS_V1.md" \
+  'PHASE2_NORMATIVE_INPUT_CONTRACTS_SCHEMAS_AND_CONFORMANCE'
+# These two values are adoption-time status metadata in a frozen Level 3
+# manifest. Current gap status is guarded above against the Level 1 protocol.
+require_literal "conformance/verifier_contract_phase2/manifest.json" \
+  '"G-05": "OPEN \u2014 NORMATIVE_PROFILE_READY_RUNTIME_ALIGNMENT_PENDING"'
+require_literal "conformance/verifier_contract_phase2/manifest.json" \
+  '"status": "NORMATIVE_PROFILE_READY_RUNTIME_ALIGNMENT_PENDING"'
+require_literal "conformance/verifier_contract_phase2/manifest.json" \
+  '"fallback": "NONE"'
+require_literal "engine/schemas/verifier_tool_result_v1.json" \
+  '"profile": {"const": "ED25519_PORTABLE_STRICT_1"}'
 forbid_literal "docs/CANONICALIZATION_SPEC.md" \
   'external operational-error contract remains open as G-09'
 

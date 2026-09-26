@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium://schemas/verification_keys_v1.json",
+  "title": "AELITIUM Verification Keys ed25519-v1",
+  "description": "Parsed-value constraints for verification_keys.json. Legacy source processing, decoding, cross-entry equality, and signature verification are procedural.",
+  "type": "object",
+  "required": [
+    "keyring_format",
+    "keys",
+    "signatures"
+  ],
+  "properties": {
+    "keyring_format": {
+      "const": "ed25519-v1"
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "key_id",
+          "public_key_b64"
+        ],
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "public_key_b64": {
+            "type": "string",
+            "minLength": 44,
+            "maxLength": 44,
+            "pattern": "^[A-Za-z0-9+/]{43}=$"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "key_id",
+          "algorithm",
+          "scope",
+          "sig_b64"
+        ],
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "algorithm": {
+            "const": "ed25519"
+          },
+          "scope": {
+            "const": "manifest.json"
+          },
+          "sig_b64": {
+            "type": "string",
+            "minLength": 88,
+            "maxLength": 88,
+            "pattern": "^[A-Za-z0-9+/]{86}==$"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
