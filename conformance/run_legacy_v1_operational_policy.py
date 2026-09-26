@@ -127,6 +127,8 @@ REQUIRED_CASE_IDS = {
     "legacy.nonfinite.infinity",
     "legacy.nonfinite.negative_infinity",
     "legacy.surrogate.unmatched_high",
+    "legacy.restricted.nonfinite.ignored_nan",
+    "legacy.restricted.surrogate.ignored_opaque_unmatched_high",
     "legacy.base64.public_key_pad_bits",
     "legacy.base64.signature_pad_bits",
     "legacy.open_member.accepted",
@@ -172,6 +174,9 @@ REQUIRED_CASE_IDS = {
     "operation.output_io",
     "operation.internal_failure",
     "capability.v1_unsupported.after_dispatch",
+    "capability.selection.unsupported_v2",
+    "capability.selection.unsupported_signature_profile",
+    "capability.selection.named_profile_tuple_mismatch",
 }
 
 
@@ -392,11 +397,32 @@ def _validate_operational(
     phase = result["operational_result"]["phase"]
     effective = result["capability"]["effective"]
     requested = result["capability"]["requested"]
+    if requested != case["configuration"]["capability"]:
+        raise CorpusFailure(f"{case_id}: rejected/requested capability was not retained")
     if code == "CAPABILITY_PROFILE_UNAVAILABLE":
         if effective is not None:
             raise CorpusFailure(f"{case_id}: unavailable capability has effective declaration")
     elif effective != requested:
         raise CorpusFailure(f"{case_id}: requested/effective capability differs")
+
+    limit = result["operational_result"]["limit"]
+    if case_id in {
+        "legacy.restricted.nonfinite.ignored_nan",
+        "legacy.restricted.surrogate.ignored_opaque_unmatched_high",
+    } and limit is not None:
+        raise CorpusFailure(f"{case_id}: categorical capability refusal has non-null limit")
+    if case_id == "integer.portable.641" and (
+        limit is None
+        or limit.get("name") != "INTEGER_DECIMAL_DIGITS"
+        or limit.get("unit") != "DIGITS"
+    ):
+        raise CorpusFailure(f"{case_id}: portable integer capability fact changed")
+    if case_id == "timestamp.portable.non_ascii_nd" and (
+        limit is None
+        or limit.get("name") != "TIMESTAMP_DIGIT_PROFILE"
+        or limit.get("unit") != "PROFILE"
+    ):
+        raise CorpusFailure(f"{case_id}: portable timestamp capability fact changed")
 
     encoded = _tool_bytes(result)
     if rfc8785.dumps(result) + b"\n" != encoded:
@@ -426,6 +452,16 @@ def _validate_base64_case(case: dict[str, Any]) -> None:
 
 def _validate_configuration(case: dict[str, Any], validator: Draft7Validator) -> None:
     configuration = case["configuration"]
+    expected = case.get("expected", {})
+    if (
+        expected.get("kind") == "OPERATIONAL_TOOL_RESULT"
+        and expected["tool_result"]["operational_result"]["operational_code"]
+        == "CAPABILITY_PROFILE_UNAVAILABLE"
+        and expected["tool_result"]["operational_result"]["phase"]
+        == "CAPABILITY_SELECTION"
+    ):
+        validator.validate(expected["tool_result"])
+        return
     candidate = {
         "capability": {
             "effective": configuration["capability"],

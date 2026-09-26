@@ -3,7 +3,7 @@
 Status: DRAFT — non-exhaustive inventory of the released 0.4.0 surface
 Rule: If not explicitly implemented or verifiable in the current code surface, it is not claimed.
 
-Sections 1–13 inventory the published v0.4.0 release. Sections 14–15 are
+Sections 1–13 inventory the published v0.4.0 release. Sections 14–16 are
 explicitly unreleased, additive branch work and do not redefine the released
 behavior.
 
@@ -351,5 +351,39 @@ behavior.
   - Does not solve v1 arbitrary-integer portability or apply RFC 8785 to v1
   - Does not provide a cross-version comparison bridge
   - Does not implement or claim a second independent verifier
+  - Does not establish semantic truth, provider execution, response causation,
+    capture completeness, authorization, or legal compliance
+
+---
+
+## 16. Verifier operation transport and capability profiles — UNRELEASED
+
+- Feature: deterministic `aelitium-verifier-tool-result-v1` operation path
+- Interface: Python operation API and opt-in `--operation-json` CLI
+- Source: `engine/verifier_operation.py`, `engine/verifier_snapshot.py`,
+  `engine/result_contracts.py`, `engine/verifier_capabilities.py`,
+  `conformance/legacy_v1_operational_policy/`,
+  `conformance/verifier_contract_phase2/`
+- Status: implemented on the current unreleased branch
+
+- Guarantees on this branch:
+  - Reports requested and effective capabilities separately and rejects valid
+    unsupported requests before input acquisition
+  - Implements `ED25519_PORTABLE_STRICT_1` without signature fallback
+  - Acquires direct-filesystem inputs as immutable no-follow snapshots and
+    keeps trust acquisition failure operational
+  - Separates semantic rc 0/2, operational rc 3, and malformed-request rc 64
+  - Emits deterministic portable RFC 8785 plus LF outer results
+  - Enforces structural/value limits with the v2 depth envelope executable
+    through depth 1024
+  - Uses the complete nine-phase operational registry, including
+    `SEMANTIC_EVALUATION`
+  - Passes the 99-case operational and 281-case Phase 2 frozen corpora
+
+- Non-guarantees:
+  - Does not change the published v0.4.0 package or release interfaces
+  - Does not implement or prove an independent clean-room verifier
+  - Does not close invocation, exhaustive reason/state, remaining end-to-end
+    corpus, Freshness-edge, or comparison-construction gaps
   - Does not establish semantic truth, provider execution, response causation,
     capture completeness, authorization, or legal compliance

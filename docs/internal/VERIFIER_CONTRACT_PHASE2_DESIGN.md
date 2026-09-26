@@ -63,6 +63,16 @@ field grammars, validation order, Base64/key/trust details, and frozen Phase 2
 vectors. The table above and final verdict remain the historical design-audit
 result at its stated baseline; they are not rewritten retroactively.
 
+### Subsequent Phase 2 adoption and runtime-alignment update
+
+The later Level 1 input contract, four schemas, and frozen Phase 2 corpus
+closed G-04 and G-06 and specified the strict profile needed for G-05. Current
+unreleased runtime alignment then completed explicit requested/effective
+selection and strict `ED25519_PORTABLE_STRICT_1` execution without fallback,
+closing G-05. The historical statuses and verdict in this design record remain
+unchanged; the live registry is section 7 of
+[`../VERIFIER_PROTOCOL_V1.md`](../VERIFIER_PROTOCOL_V1.md).
+
 ## 2. Method and authority
 
 The source hierarchy and conflict rules in
@@ -951,7 +961,7 @@ The proposed four schemas and three conformance families are otherwise
 sufficient to implement the closure without using Python as an unstated
 oracle once those decisions are made.
 
-Current post-adoption status: G-04, G-05, and G-06 remain open but are
+Status at this design revision: G-04, G-05, and G-06 remain open but are
 `UNBLOCKED_BY_POLICY`; the preliminary decisions above have been made, while
 the Phase 2 publication work itself remains outstanding.
 

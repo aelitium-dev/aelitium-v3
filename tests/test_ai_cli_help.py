@@ -194,7 +194,7 @@ class TestAICLIHelp(unittest.TestCase):
                         capture_output=True,
                         text=True,
                     )
-                    self.assertEqual(cp.returncode, 2, cp.stdout + cp.stderr)
+                    self.assertEqual(cp.returncode, 64, cp.stdout + cp.stderr)
                     self.assertIn("unrecognized arguments", cp.stderr)
 
 if __name__ == "__main__":

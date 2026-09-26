@@ -132,9 +132,10 @@ their separate meanings under
 [`LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md`](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
 See [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md#optional-vs-required-evaluation).
 
-Do not claim current Python implements this operational boundary: its direct
-trust-store I/O failures still map to `TRUST_STORE_INVALID`, a current
-implementation discrepancy requiring separate runtime alignment.
+The current unreleased operation path implements this boundary: acquisition
+failure is operational, and only successfully acquired malformed trust bytes
+produce `TRUST_STORE_INVALID` at the adopted semantic precedence. Describe it
+as unreleased branch behavior, not as part of the published v0.4.0 release.
 
 `trusted_signer_identity = VALID` means only that the verified signature's
 public-key fingerprint is present in the trust store supplied to this

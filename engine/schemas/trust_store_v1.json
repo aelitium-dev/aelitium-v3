@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium://schemas/trust_store_v1.json",
+  "title": "AELITIUM Trust Store v1",
+  "description": "Parsed-value constraints applied after legacy source-map collapse. Acquisition, decoding, fingerprinting, uniqueness, and membership are procedural.",
+  "type": "object",
+  "required": [
+    "trust_store_format",
+    "signers"
+  ],
+  "properties": {
+    "trust_store_format": {
+      "const": "aelitium-trust-v1"
+    },
+    "signers": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": [
+          "algorithm",
+          "public_key_b64"
+        ],
+        "properties": {
+          "algorithm": {
+            "const": "ed25519"
+          },
+          "public_key_b64": {
+            "type": "string",
+            "minLength": 44,
+            "maxLength": 44,
+            "pattern": "^[A-Za-z0-9+/]{43}=$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

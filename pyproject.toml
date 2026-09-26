@@ -44,4 +44,4 @@ packages = ["engine", "engine.capture", "engine.schemas", "aelitium"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-engine = ["schemas/*.json"]
+engine = ["schemas/*.json", "data/unicode/*.txt"]

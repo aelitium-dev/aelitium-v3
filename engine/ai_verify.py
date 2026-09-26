@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from .ai_canonical import AICanonicalError, canonicalize_ai_output
 from .ai_contract import (
@@ -35,7 +35,42 @@ from .freshness import (
 from .invocation import InvocationIdentityError, parse_invocation_identity
 from .invocation_binding import InvocationBindingError, parse_invocation_binding
 from .manifest_dispatch import DispatchScanError, scan_manifest_selector
-from .trust import TrustStore, TrustStoreError, fingerprint_public_key, load_trust_store
+from .signing import ManifestSignatureError
+from .trust import (
+    TrustStore,
+    TrustStoreError,
+    fingerprint_public_key,
+    load_trust_store,
+    load_trust_store_bytes,
+    parse_trust_store,
+)
+from .verifier_capabilities import (
+    ED25519_PORTABLE_STRICT_1,
+    EffectiveVerifierRoute,
+    PreparedVerifierCapabilities,
+    V1_LEGACY_UNSUPPORTED,
+    select_effective_route,
+    select_signature_verification_profile,
+)
+from .verifier_json_limits import enforce_json_traversal_limits
+from .verifier_snapshot import (
+    InputRef,
+    InputRole,
+    OperationalCode,
+    OperationalInputFailure,
+    OperationalLimits,
+    OperationalPhase,
+    VerifierSnapshot,
+)
+from .verifier_v1_capability import (
+    LegacyJsonSourceError,
+    canonical_json_v1_profile,
+    canonicalize_ai_output_v1_profile,
+    parse_v1_json_source,
+    validate_v1_manifest_timestamp,
+)
+from .verifier_diagnostics import describe_json_value
+from .verifier_capabilities import V1CapabilityDeclaration, V1_FROZEN_LEGACY_COMPATIBILITY
 
 
 class AssuranceState(str, Enum):
@@ -63,6 +98,12 @@ class AIVerificationOptions:
     Freshness is likewise inactive unless both ``freshness_max_age_seconds``
     and ``freshness_reference_time_utc`` are explicitly supplied. The
     verifier never supplies an ambient current time.
+
+    ``signature_verification_profile=None`` preserves the legacy unqualified
+    Python API and its existing backend verification behavior. Explicit
+    ``ED25519_PORTABLE_STRICT_1`` selects portable strict signature semantics.
+    Omission does not select a portable profile, and this options object is not
+    the complete outer verifier capability request.
     """
 
     validate_manifest_timestamp: bool = True
@@ -72,6 +113,7 @@ class AIVerificationOptions:
     require_trusted_signer: bool = False
     freshness_max_age_seconds: int | None = None
     freshness_reference_time_utc: str | None = None
+    signature_verification_profile: str | None = None
 
 
 @dataclass(frozen=True)
@@ -164,6 +206,40 @@ _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _V2_MANIFEST_TS_PATTERN = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"
 )
+
+
+class _LegacyBackendJsonError(ValueError):
+    """Deterministic rejection from the released CPython JSON boundary."""
+
+    def __init__(self, source_error: ValueError | RecursionError) -> None:
+        self.source_error = source_error
+        super().__init__(str(source_error))
+
+
+def _parse_legacy_backend_json(
+    text: str,
+    *,
+    recursion_is_input_rejection: bool,
+) -> Any:
+    """Preserve the released unqualified parser's documented rejection set."""
+
+    try:
+        return json.loads(text)
+    except RecursionError as exc:
+        if not recursion_is_input_rejection:
+            raise
+        raise _LegacyBackendJsonError(exc) from exc
+    except ValueError as exc:
+        raise _LegacyBackendJsonError(exc) from exc
+
+
+def _semantic_source_error(error: BaseException) -> tuple[str, str]:
+    source_error = (
+        error.source_error
+        if isinstance(error, _LegacyBackendJsonError)
+        else error
+    )
+    return type(source_error).__name__, str(source_error)
 
 
 def _decode_v1_manifest_bytes(source: bytes) -> str:
@@ -267,6 +343,8 @@ def _evaluate_invocation_identity(
     canonical: Any,
     *,
     canonicalization: str = AI_CANONICALIZATION,
+    qualified_v1: bool = False,
+    source_route: EffectiveVerifierRoute | None = None,
 ) -> _InvocationIdentityEvaluation:
     """Evaluate the stored invocation-identity object, if present.
 
@@ -294,6 +372,8 @@ def _evaluate_invocation_identity(
         parse_invocation_identity(
             metadata["invocation_identity"],
             canonicalization=canonicalization,
+            canonicalizer=canonical_json_v1_profile if qualified_v1 else None,
+            source_route=source_route if qualified_v1 else None,
         )
     except InvocationIdentityError as exc:
         return _InvocationIdentityEvaluation(
@@ -459,6 +539,17 @@ def _validate_freshness_policy(
     return _FreshnessEvaluation(AssuranceState.NOT_EVALUATED)
 
 
+def _freshness_policy_failure(
+    options: AIVerificationOptions,
+) -> AIVerificationResult | None:
+    """Map option-only validation to the existing semantic result."""
+
+    policy = _validate_freshness_policy(options)
+    if policy.reason:
+        return _invalid(policy.reason, policy.detail, freshness=policy.state)
+    return None
+
+
 def _evaluate_freshness(
     canonical: Any,
     options: AIVerificationOptions,
@@ -516,60 +607,172 @@ def _evaluate_freshness(
     )
 
 
-def verify_ai_bundle(
-    bundle_dir: str | Path,
+class _SemanticInputSource(Protocol):
+    """Role source used by the shared verification algorithm."""
+
+    def is_present(self, role: InputRole) -> bool: ...
+
+    def read_bytes(self, role: InputRole) -> bytes: ...
+
+    def read_text(self, role: InputRole) -> str: ...
+
+
+@dataclass(frozen=True)
+class _DirectSemanticInputs:
+    """Legacy path adapter preserving its existing lazy I/O behavior."""
+
+    bundle_dir: Path
+
+    def _path(self, role: InputRole) -> Path:
+        filenames = {
+            InputRole.AI_CANONICAL_JSON: AI_CANONICAL_FILENAME,
+            InputRole.AI_MANIFEST_JSON: AI_MANIFEST_FILENAME,
+            InputRole.VERIFICATION_KEYS_JSON: AI_VERIFICATION_KEYS_FILENAME,
+        }
+        return self.bundle_dir / filenames[role]
+
+    def is_present(self, role: InputRole) -> bool:
+        return self._path(role).exists()
+
+    def read_bytes(self, role: InputRole) -> bytes:
+        return self._path(role).read_bytes()
+
+    def read_text(self, role: InputRole) -> str:
+        return self._path(role).read_text(encoding="utf-8")
+
+
+@dataclass(frozen=True)
+class _SnapshotSemanticInputs:
+    """Filesystem-free adapter over an already-established snapshot."""
+
+    snapshot: VerifierSnapshot
+
+    def is_present(self, role: InputRole) -> bool:
+        return self.snapshot.bytes_for(role) is not None
+
+    def read_bytes(self, role: InputRole) -> bytes:
+        source = self.snapshot.bytes_for(role)
+        if source is None:
+            raise AssertionError("stable-absent role has no bytes")
+        return source
+
+    def read_text(self, role: InputRole) -> str:
+        return _decode_v1_manifest_bytes(self.read_bytes(role))
+
+
+def _raise_snapshot_parser_resource_failure(
+    error: BaseException,
     *,
-    options: AIVerificationOptions | None = None,
+    operational_limits: OperationalLimits | None,
+    phase: OperationalPhase,
+    input_ref: InputRef,
+) -> None:
+    """Keep host parser exhaustion outside the semantic reason vocabulary."""
+
+    if operational_limits is None:
+        return
+
+    current: BaseException | None = error
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        if isinstance(current, (MemoryError, RecursionError)):
+            raise OperationalInputFailure(
+                OperationalCode.RESOURCE_EXHAUSTED,
+                phase,
+                input_ref,
+                None,
+                None,
+            ) from error
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+
+
+def _invalid_trust_input(error: TrustStoreError) -> AIVerificationResult:
+    return _invalid(
+        "TRUST_STORE_INVALID",
+        error.reason,
+        error_message=str(error),
+        trusted_signer_identity=AssuranceState.UNESTABLISHED,
+        trusted_signer_reason="TRUST_STORE_INVALID",
+    )
+
+
+def _missing_required_trust_input() -> AIVerificationResult:
+    return _invalid(
+        "TRUST_INPUT_NOT_PROVIDED",
+        "require_trusted_signer=True requires trust_store_path",
+    )
+
+
+def _legacy_auxiliary_route(
+    capabilities: PreparedVerifierCapabilities | None,
+) -> EffectiveVerifierRoute | None:
+    """Select the legacy source profile shared by auxiliary JSON inputs."""
+
+    if capabilities is None:
+        return None
+    declaration = capabilities.requested.v1
+    if declaration.capability == V1_LEGACY_UNSUPPORTED:
+        # A v2 bundle still uses the frozen legacy auxiliary format. An
+        # unsupported *v1 bundle route* must not select ambient host JSON.
+        declaration = V1CapabilityDeclaration(V1_FROZEN_LEGACY_COMPATIBILITY)
+    return EffectiveVerifierRoute(
+        AI_CANONICALIZATION,
+        declaration,
+        capabilities.named_timestamp_profile if declaration is capabilities.requested.v1 else None,
+    )
+
+
+def _parse_acquired_snapshot_trust(
+    source: bytes,
+    *,
+    capabilities: PreparedVerifierCapabilities | None,
+) -> TrustStore:
+    """Validate acquired trust bytes before inspecting bundle content."""
+
+    trust_route = _legacy_auxiliary_route(capabilities)
+    if trust_route is None:
+        return load_trust_store_bytes(source)
+
+    trust_data = parse_v1_json_source(
+        source,
+        route=trust_route,
+        role=InputRole.TRUST_STORE,
+        phase=OperationalPhase.TRUST_INPUT,
+        input_ref=InputRef.TRUST_STORE,
+    )
+    return parse_trust_store(trust_data)
+
+
+def _verify_ai_semantic_source(
+    source: _SemanticInputSource,
+    *,
+    selected: AIVerificationOptions,
+    signature_verification_profile: str | None,
+    trust_store: TrustStore | None,
+    operational_limits: OperationalLimits | None = None,
+    capabilities: PreparedVerifierCapabilities | None = None,
 ) -> AIVerificationResult:
-    """Verify a v1 or v2 AI evidence bundle and report assurance states."""
+    """Run the shared semantic algorithm over one role-oriented source."""
 
-    selected = options or AIVerificationOptions()
+    policy_failure = _freshness_policy_failure(selected)
+    if policy_failure is not None:
+        return policy_failure
 
-    trust_store: TrustStore | None = None
-    if selected.trust_store_path is None:
-        if selected.require_trusted_signer:
-            return _invalid(
-                "TRUST_INPUT_NOT_PROVIDED",
-                "require_trusted_signer=True requires trust_store_path",
-            )
-    else:
-        try:
-            trust_store = load_trust_store(selected.trust_store_path)
-        except TrustStoreError as exc:
-            return _invalid(
-                "TRUST_STORE_INVALID",
-                exc.reason,
-                error_message=str(exc),
-                trusted_signer_identity=AssuranceState.UNESTABLISHED,
-                trusted_signer_reason="TRUST_STORE_INVALID",
-            )
-
-    freshness_policy = _validate_freshness_policy(selected)
-    if freshness_policy.reason:
-        return _invalid(
-            freshness_policy.reason,
-            freshness_policy.detail,
-            freshness=freshness_policy.state,
-        )
-
-    outdir = Path(bundle_dir)
-    canon_path = outdir / AI_CANONICAL_FILENAME
-    manifest_path = outdir / AI_MANIFEST_FILENAME
-    vk_path = outdir / AI_VERIFICATION_KEYS_FILENAME
     signature_before_evaluation = (
         AssuranceState.NOT_EVALUATED
-        if vk_path.exists()
+        if source.is_present(InputRole.VERIFICATION_KEYS_JSON)
         else AssuranceState.ABSENT
     )
 
-    if not canon_path.exists():
+    if not source.is_present(InputRole.AI_CANONICAL_JSON):
         return _invalid(
             "MISSING_CANONICAL",
             f"{AI_CANONICAL_FILENAME} not found",
             payload_integrity=AssuranceState.ABSENT,
             signature_validity=signature_before_evaluation,
         )
-    if not manifest_path.exists():
+    if not source.is_present(InputRole.AI_MANIFEST_JSON):
         return _invalid(
             "MISSING_MANIFEST",
             f"{AI_MANIFEST_FILENAME} not found",
@@ -582,7 +785,7 @@ def verify_ai_bundle(
     # route.  Scanner-derived nodes and values are discarded here and neither
     # version parser receives anything but the original bytes.
     try:
-        manifest_bytes: bytes | None = manifest_path.read_bytes()
+        manifest_bytes: bytes | None = source.read_bytes(InputRole.AI_MANIFEST_JSON)
     except OSError:
         manifest_bytes = None
         scanned_identifier = None
@@ -596,50 +799,129 @@ def verify_ai_bundle(
             # A failed lookahead still hands the same immutable original bytes
             # to the legacy parser.  The scanner failure is not observable.
             scanned_identifier = None
-    canonicalization = (
-        AI_CANONICALIZATION_V2
-        if scanned_identifier == AI_CANONICALIZATION_V2
-        else AI_CANONICALIZATION
-    )
+    effective_route: EffectiveVerifierRoute | None = None
+    if capabilities is None:
+        canonicalization = (
+            AI_CANONICALIZATION_V2
+            if scanned_identifier == AI_CANONICALIZATION_V2
+            else AI_CANONICALIZATION
+        )
+    else:
+        effective_route = select_effective_route(
+            capabilities,
+            scanned_identifier,
+        )
+        canonicalization = effective_route.canonicalization_identifier
 
     try:
-        canon_bytes = canon_path.read_bytes()
+        canon_bytes = source.read_bytes(InputRole.AI_CANONICAL_JSON)
+        if operational_limits is not None:
+            enforce_json_traversal_limits(
+                canon_bytes,
+                limits=operational_limits,
+                phase=OperationalPhase.CANONICAL_PARSE,
+                input_ref=InputRef.AI_CANONICAL_JSON,
+                allow_legacy_constants=(
+                    canonicalization != AI_CANONICALIZATION_V2
+                ),
+            )
         if canonicalization == AI_CANONICALIZATION_V2:
             canonical = parse_json_v2(canon_bytes)
+        elif effective_route is not None:
+            canonical = parse_v1_json_source(
+                canon_bytes,
+                route=effective_route,
+                role=InputRole.AI_CANONICAL_JSON,
+                phase=OperationalPhase.CANONICAL_PARSE,
+                input_ref=InputRef.AI_CANONICAL_JSON,
+            )
         else:
             canon_text = canon_bytes.decode("utf-8")
-            canonical = json.loads(canon_text)
-    except Exception as exc:
-        if canonicalization == AI_CANONICALIZATION_V2 and isinstance(
-            exc, RecursionError
-        ):
-            raise
+            canonical = _parse_legacy_backend_json(
+                canon_text,
+                recursion_is_input_rejection=operational_limits is None,
+            )
+    except OperationalInputFailure:
+        raise
+    except (MemoryError, RecursionError) as exc:
+        _raise_snapshot_parser_resource_failure(
+            exc,
+            operational_limits=operational_limits,
+            phase=OperationalPhase.CANONICAL_PARSE,
+            input_ref=InputRef.AI_CANONICAL_JSON,
+        )
+        raise
+    except (
+        _LegacyBackendJsonError,
+        UnicodeDecodeError,
+        LegacyJsonSourceError,
+        V2CanonicalizationError,
+    ) as exc:
+        detail, error_message = _semantic_source_error(exc)
         return _invalid(
             "CANONICAL_NOT_JSON",
-            type(exc).__name__,
-            error_message=str(exc),
+            detail,
+            error_message=error_message,
             payload_integrity=AssuranceState.INVALID,
             signature_validity=signature_before_evaluation,
         )
-
     try:
+        assert manifest_bytes is not None or operational_limits is None
+        if operational_limits is not None:
+            enforce_json_traversal_limits(
+                manifest_bytes,
+                limits=operational_limits,
+                phase=OperationalPhase.MANIFEST_PARSE,
+                input_ref=InputRef.AI_MANIFEST_JSON,
+                allow_legacy_constants=(
+                    canonicalization != AI_CANONICALIZATION_V2
+                ),
+            )
         if canonicalization == AI_CANONICALIZATION_V2:
             assert manifest_bytes is not None
             manifest = parse_json_v2(manifest_bytes)
+        elif effective_route is not None:
+            assert manifest_bytes is not None
+            manifest = parse_v1_json_source(
+                manifest_bytes,
+                route=effective_route,
+                role=InputRole.AI_MANIFEST_JSON,
+                phase=OperationalPhase.MANIFEST_PARSE,
+                input_ref=InputRef.AI_MANIFEST_JSON,
+                validate_manifest_timestamp=selected.validate_manifest_timestamp,
+            )
         else:
             if manifest_bytes is None:
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest = _parse_legacy_backend_json(
+                    source.read_text(InputRole.AI_MANIFEST_JSON),
+                    recursion_is_input_rejection=operational_limits is None,
+                )
             else:
-                manifest = json.loads(_decode_v1_manifest_bytes(manifest_bytes))
-    except Exception as exc:
-        if canonicalization == AI_CANONICALIZATION_V2 and isinstance(
-            exc, RecursionError
-        ):
-            raise
+                manifest = _parse_legacy_backend_json(
+                    _decode_v1_manifest_bytes(manifest_bytes),
+                    recursion_is_input_rejection=operational_limits is None,
+                )
+    except OperationalInputFailure:
+        raise
+    except (MemoryError, RecursionError) as exc:
+        _raise_snapshot_parser_resource_failure(
+            exc,
+            operational_limits=operational_limits,
+            phase=OperationalPhase.MANIFEST_PARSE,
+            input_ref=InputRef.AI_MANIFEST_JSON,
+        )
+        raise
+    except (
+        _LegacyBackendJsonError,
+        UnicodeDecodeError,
+        LegacyJsonSourceError,
+        V2CanonicalizationError,
+    ) as exc:
+        detail, error_message = _semantic_source_error(exc)
         return _invalid(
             "MANIFEST_NOT_JSON",
-            type(exc).__name__,
-            error_message=str(exc),
+            detail,
+            error_message=error_message,
             canonical=canonical,
             payload_integrity=AssuranceState.INVALID,
             signature_validity=signature_before_evaluation,
@@ -701,6 +983,11 @@ def verify_ai_bundle(
             timestamp_valid = isinstance(
                 manifest_timestamp, str
             ) and _V2_MANIFEST_TS_PATTERN.fullmatch(manifest_timestamp)
+        elif effective_route is not None:
+            timestamp_valid = validate_v1_manifest_timestamp(
+                manifest_timestamp,
+                route=effective_route,
+            )
         else:
             timestamp_valid = re.match(
                 AI_MANIFEST_TS_PATTERN,
@@ -722,7 +1009,7 @@ def verify_ai_bundle(
     ):
         return _invalid(
             "MANIFEST_BAD_AI_HASH_SHA256",
-            str(manifest_hash),
+            describe_json_value(manifest_hash),
             canonical=canonical,
             manifest=manifest,
             payload_integrity=AssuranceState.INVALID,
@@ -730,9 +1017,14 @@ def verify_ai_bundle(
         )
 
     try:
-        expected_canonical, actual_hash = canonicalize_ai_output(
-            canonical, canonicalization
-        )
+        if effective_route is not None and canonicalization == AI_CANONICALIZATION:
+            expected_canonical, actual_hash = canonicalize_ai_output_v1_profile(
+                canonical
+            )
+        else:
+            expected_canonical, actual_hash = canonicalize_ai_output(
+                canonical, canonicalization
+            )
     except AICanonicalError as exc:
         if str(exc) == "AI_OUTPUT_INVALID_UNICODE":
             return _invalid(
@@ -763,6 +1055,14 @@ def verify_ai_bundle(
             payload_integrity=AssuranceState.INVALID,
             signature_validity=signature_before_evaluation,
         )
+    except (MemoryError, RecursionError) as exc:
+        _raise_snapshot_parser_resource_failure(
+            exc,
+            operational_limits=operational_limits,
+            phase=OperationalPhase.CANONICAL_PARSE,
+            input_ref=InputRef.AI_CANONICAL_JSON,
+        )
+        raise
 
     expected_bytes = expected_canonical.encode("utf-8")
     if canon_bytes not in (expected_bytes, expected_bytes + b"\n"):
@@ -792,24 +1092,74 @@ def verify_ai_bundle(
     signature_validity = AssuranceState.ABSENT
     signature_error = ""
     verified_signature = None
-    if vk_path.exists():
+    if source.is_present(InputRole.VERIFICATION_KEYS_JSON):
+        verification_keys_bytes: bytes | None = None
+        if operational_limits is not None:
+            verification_keys_bytes = source.read_bytes(
+                InputRole.VERIFICATION_KEYS_JSON
+            )
+            enforce_json_traversal_limits(
+                verification_keys_bytes,
+                limits=operational_limits,
+                phase=OperationalPhase.SIGNATURE_MATERIAL,
+                input_ref=InputRef.VERIFICATION_KEYS_JSON,
+                allow_legacy_constants=True,
+            )
         try:
-            from .signing import verify_manifest_signature
+            if signature_verification_profile is None:
+                from .signing import verify_manifest_signature as signature_verifier
+            elif signature_verification_profile == ED25519_PORTABLE_STRICT_1:
+                from .signing import (
+                    verify_manifest_signature_portable_strict_1 as signature_verifier,
+                )
+            else:  # Selection above makes this unreachable without a code defect.
+                raise AssertionError("unselected signature verification profile")
 
-            vk = json.loads(vk_path.read_text(encoding="utf-8"))
-            verified_signature = verify_manifest_signature(
+            keyring_route = _legacy_auxiliary_route(capabilities)
+            if keyring_route is not None:
+                assert verification_keys_bytes is not None
+                vk = parse_v1_json_source(
+                    verification_keys_bytes,
+                    route=keyring_route,
+                    role=InputRole.VERIFICATION_KEYS_JSON,
+                    phase=OperationalPhase.SIGNATURE_MATERIAL,
+                    input_ref=InputRef.VERIFICATION_KEYS_JSON,
+                )
+            else:
+                vk = _parse_legacy_backend_json(
+                    _decode_v1_manifest_bytes(verification_keys_bytes)
+                    if verification_keys_bytes is not None
+                    else source.read_text(InputRole.VERIFICATION_KEYS_JSON),
+                    recursion_is_input_rejection=operational_limits is None,
+                )
+            verified_signature = signature_verifier(
                 (
                     manifest_bytes
                     if manifest_bytes is not None
-                    else manifest_path.read_bytes()
+                    else source.read_bytes(InputRole.AI_MANIFEST_JSON)
                 ),
                 vk,
             )
             signature = "VALID"
             signature_validity = AssuranceState.VALID
-        except Exception as exc:
+        except OperationalInputFailure:
+            raise
+        except (MemoryError, RecursionError) as exc:
+            _raise_snapshot_parser_resource_failure(
+                exc,
+                operational_limits=operational_limits,
+                phase=OperationalPhase.SIGNATURE_MATERIAL,
+                input_ref=InputRef.VERIFICATION_KEYS_JSON,
+            )
+            raise
+        except (
+            _LegacyBackendJsonError,
+            UnicodeDecodeError,
+            LegacyJsonSourceError,
+            ManifestSignatureError,
+        ) as exc:
             signature_validity = AssuranceState.INVALID
-            signature_error = str(exc)
+            signature_error = _semantic_source_error(exc)[1]
 
     trusted_signer_identity = AssuranceState.UNESTABLISHED
     trusted_signer_reason = ""
@@ -828,6 +1178,11 @@ def verify_ai_bundle(
     invocation = _evaluate_invocation_identity(
         canonical,
         canonicalization=canonicalization,
+        qualified_v1=(
+            capabilities is not None
+            and canonicalization == AI_CANONICALIZATION
+        ),
+        source_route=effective_route,
     )
     invocation_binding = _evaluate_invocation_binding(
         canonical,
@@ -996,4 +1351,107 @@ def verify_ai_bundle(
         trusted_signer_identity=trusted_signer_identity,
         trusted_signer_reason=trusted_signer_reason,
         freshness=freshness.state,
+    )
+
+
+def verify_ai_bundle(
+    bundle_dir: str | Path,
+    *,
+    options: AIVerificationOptions | None = None,
+) -> AIVerificationResult:
+    """Verify a path-oriented bundle with released-compatible I/O behavior."""
+
+    selected = options or AIVerificationOptions()
+    signature_verification_profile = select_signature_verification_profile(
+        selected.signature_verification_profile
+    )
+
+    trust_store: TrustStore | None = None
+    if selected.trust_store_path is None:
+        if selected.require_trusted_signer:
+            return _missing_required_trust_input()
+    else:
+        try:
+            trust_store = load_trust_store(selected.trust_store_path)
+        except TrustStoreError as exc:
+            return _invalid_trust_input(exc)
+
+    return _verify_ai_semantic_source(
+        _DirectSemanticInputs(Path(bundle_dir)),
+        selected=selected,
+        signature_verification_profile=signature_verification_profile,
+        trust_store=trust_store,
+    )
+
+
+def verify_ai_snapshot(
+    snapshot: VerifierSnapshot,
+    *,
+    options: AIVerificationOptions | None = None,
+    capabilities: PreparedVerifierCapabilities | None = None,
+) -> AIVerificationResult:
+    """Verify only immutable bytes and stable absence from ``snapshot``.
+
+    This internal production primitive performs semantic verification over the
+    frozen bytes after enforcing O2B1 traversal limits.  It does not acquire
+    paths or produce the outer operational result that belongs to O3.  An
+    explicitly prepared capability request enables post-dispatch route
+    enforcement; omission preserves the existing internal compatibility path.
+    The legacy ``trust_store_path`` option is ignored because trust presence
+    and bytes are already fixed by the snapshot.
+    """
+
+    selected = options or AIVerificationOptions()
+    if not isinstance(snapshot, VerifierSnapshot):
+        raise TypeError("snapshot must be a VerifierSnapshot")
+    if capabilities is not None and type(capabilities) is not PreparedVerifierCapabilities:
+        raise TypeError("capabilities must be PreparedVerifierCapabilities or None")
+    signature_verification_profile = (
+        select_signature_verification_profile(selected.signature_verification_profile)
+        if capabilities is None
+        else capabilities.signature_verification_profile
+    )
+
+    trust_store: TrustStore | None = None
+    trust_bytes = snapshot.bytes_for(InputRole.TRUST_STORE)
+    if trust_bytes is None:
+        if selected.require_trusted_signer:
+            return _missing_required_trust_input()
+    else:
+        enforce_json_traversal_limits(
+            trust_bytes,
+            limits=snapshot.effective_limits,
+            phase=OperationalPhase.TRUST_INPUT,
+            input_ref=InputRef.TRUST_STORE,
+            allow_legacy_constants=True,
+        )
+        try:
+            trust_store = _parse_acquired_snapshot_trust(
+                trust_bytes,
+                capabilities=capabilities,
+            )
+        except OperationalInputFailure:
+            raise
+        except (MemoryError, RecursionError) as exc:
+            _raise_snapshot_parser_resource_failure(
+                exc,
+                operational_limits=snapshot.effective_limits,
+                phase=OperationalPhase.TRUST_INPUT,
+                input_ref=InputRef.TRUST_STORE,
+            )
+            raise
+        except TrustStoreError as exc:
+            return _invalid_trust_input(exc)
+        except LegacyJsonSourceError as exc:
+            return _invalid_trust_input(
+                TrustStoreError("TRUST_STORE_NOT_JSON", type(exc).__name__)
+            )
+
+    return _verify_ai_semantic_source(
+        _SnapshotSemanticInputs(snapshot),
+        selected=selected,
+        signature_verification_profile=signature_verification_profile,
+        trust_store=trust_store,
+        operational_limits=snapshot.effective_limits,
+        capabilities=capabilities,
     )

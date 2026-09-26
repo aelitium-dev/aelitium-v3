@@ -23,11 +23,13 @@ out of the trust-store file.
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from .verifier_diagnostics import describe_json_value
 
 TRUST_STORE_FORMAT = "aelitium-trust-v1"
 SUPPORTED_ALGORITHM = "ed25519"
@@ -55,7 +57,7 @@ class TrustStoreError(ValueError):
 def _decode_b64_strict(value: str, reason: str, detail: str) -> bytes:
     try:
         return base64.b64decode(value, validate=True)
-    except Exception as exc:
+    except (binascii.Error, ValueError) as exc:
         raise TrustStoreError(reason, f"{detail} ({type(exc).__name__})") from exc
 
 
@@ -138,7 +140,7 @@ def _parse_signer_entry(entry: Any, index: int) -> TrustedSigner:
     if algorithm != SUPPORTED_ALGORITHM:
         raise TrustStoreError(
             "TRUST_STORE_BAD_SIGNER",
-            f"signers[{index}].algorithm must be {SUPPORTED_ALGORITHM!r}, got {algorithm!r}",
+            f"signers[{index}].algorithm must be {SUPPORTED_ALGORITHM!r}, got {describe_json_value(algorithm)}",
         )
 
     public_key_b64 = entry.get("public_key_b64")
@@ -205,7 +207,7 @@ def parse_trust_store(data: Any) -> TrustStore:
         raise TrustStoreError(
             "TRUST_STORE_BAD_FORMAT",
             f"trust_store_format must be {TRUST_STORE_FORMAT!r}, "
-            f"got {data.get('trust_store_format')!r}",
+            f"got {describe_json_value(data.get('trust_store_format'))}",
         )
 
     raw_signers = data.get("signers")
@@ -236,9 +238,25 @@ def load_trust_store_text(text: str) -> TrustStore:
 
     try:
         data = json.loads(text)
-    except Exception as exc:
+    except ValueError as exc:
         raise TrustStoreError("TRUST_STORE_NOT_JSON", type(exc).__name__) from exc
     return parse_trust_store(data)
+
+
+def load_trust_store_bytes(source: bytes) -> TrustStore:
+    """Parse acquired immutable trust-store bytes without filesystem access.
+
+    At this boundary decoding and JSON failures are semantic source failures:
+    byte acquisition has already completed successfully.
+    """
+
+    if not isinstance(source, bytes):
+        raise TypeError("source must be bytes")
+    try:
+        text = source.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise TrustStoreError("TRUST_STORE_NOT_JSON", type(exc).__name__) from exc
+    return load_trust_store_text(text)
 
 
 def load_trust_store(path: str | Path) -> TrustStore:

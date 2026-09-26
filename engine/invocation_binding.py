@@ -51,6 +51,7 @@ from typing import Any
 from .ai_contract import AI_CANONICALIZATION
 from .canonical import sha256_hash
 from .canonicalization import canonical_json_for_identifier
+from .verifier_diagnostics import describe_json_value
 
 INVOCATION_BINDING_FORMAT = "aelitium-invocation-binding-v1"
 
@@ -189,7 +190,7 @@ def parse_invocation_binding(
         raise InvocationBindingError(
             "INVOCATION_BINDING_BAD_FORMAT",
             f"format must be {INVOCATION_BINDING_FORMAT!r}, "
-            f"got {data.get('format')!r}",
+            f"got {describe_json_value(data.get('format'))}",
         )
 
     invocation_hash = _validate_hash_field(

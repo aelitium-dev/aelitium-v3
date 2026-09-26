@@ -26,6 +26,7 @@ from engine.canonical_v2 import (
     MAX_SAFE_NUMBER,
     V2CanonicalizationError,
     canonical_json_v2,
+    canonical_json_v2_bytes,
     parse_json_v2,
 )
 from engine.canonicalization import canonical_json_for_identifier
@@ -379,6 +380,55 @@ class TestPortableV2Dependency(unittest.TestCase):
 
 
 class TestPortableV2ProgrammaticDomain(unittest.TestCase):
+    def test_iterative_serializer_matches_pinned_rfc8785_for_shallow_values(self):
+        import rfc8785
+
+        values = (
+            None,
+            True,
+            False,
+            0,
+            -0.0,
+            1.5,
+            1e-7,
+            1e15,
+            "control:\x00\b\t\n\f\r quote:\" slash:/ backslash:\\",
+            [],
+            {},
+            [1, {"z": 2, "a": [False, None]}],
+            {"\ue000": 1, "😀": 2},
+        )
+
+        for value in values:
+            with self.subTest(value=value):
+                self.assertEqual(
+                    canonical_json_v2_bytes(value),
+                    rfc8785.dumps(value),
+                )
+
+    def test_iterative_serializer_preserves_utf16_key_order_and_escaping(self):
+        self.assertEqual(
+            canonical_json_v2_bytes({"\ue000": 1, "😀": 2}),
+            '{"😀":2,"\ue000":1}'.encode("utf-8"),
+        )
+        self.assertEqual(
+            canonical_json_v2_bytes("\x00\b\t\n\f\r\"\\/"),
+            b'"\\u0000\\b\\t\\n\\f\\r\\"\\\\/"',
+        )
+
+    def test_iterative_serializer_executes_declared_depth_without_global_change(self):
+        value = None
+        depth = 1_024
+        for _ in range(depth):
+            value = [value]
+        expected = b"[" * depth + b"null" + b"]" * depth
+        recursion_limit = sys.getrecursionlimit()
+
+        actual = canonical_json_v2_bytes(value)
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(sys.getrecursionlimit(), recursion_limit)
+
     def test_safe_integer_boundaries_and_non_finite_values(self):
         self.assertEqual(canonical_json_v2(MAX_SAFE_NUMBER), str(MAX_SAFE_NUMBER))
         self.assertEqual(canonical_json_v2(-MAX_SAFE_NUMBER), str(-MAX_SAFE_NUMBER))

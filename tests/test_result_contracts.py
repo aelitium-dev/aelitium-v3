@@ -256,6 +256,26 @@ class TestAssuranceResultV1(unittest.TestCase):
 
 
 class TestVerificationResultV1(unittest.TestCase):
+    def test_public_detail_is_exactly_portable_or_null(self):
+        cases = (
+            ("MANIFEST_SCHEMA_MISMATCH", "MANIFEST_SCHEMA_MISMATCH"),
+            ("diagnostic caf\u00e9 \U0001f680", "diagnostic caf\u00e9 \U0001f680"),
+            ("\ud800", None),
+            ("diagnostic \ufdd0", None),
+            ("", None),
+            (7, None),
+        )
+        for detail, expected in cases:
+            with self.subTest(detail=repr(detail)):
+                inner = _successful_result(
+                    valid=False,
+                    reason="SYNTHETIC_FAILURE",
+                    detail=detail,
+                )
+                payload = build_verification_result(inner)
+                self.assertEqual(payload["detail"], expected)
+                self.assertEqual(inner.detail, detail)
+
     def test_valid_contract_matches_both_schemas(self):
         result = _run(
             "verify-bundle",
@@ -371,7 +391,7 @@ class TestVerificationResultV1(unittest.TestCase):
             "--json",
             "--contract-json",
         )
-        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.returncode, 64)
         self.assertIn("not allowed with argument", result.stderr)
         self.assertEqual(result.stdout, "")
 

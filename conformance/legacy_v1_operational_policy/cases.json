@@ -1,5 +1,5 @@
 {
-  "case_count": 94,
+  "case_count": 99,
   "contract": "aelitium-legacy-v1-operational-policy-conformance-v1",
   "operation_contract": "AELITIUM-LEGACY-V1-POLICY-OPERATION-1",
   "recipe_contract": "AELITIUM-BYTES-RECIPE-1",
@@ -8768,6 +8768,562 @@
         }
       },
       "operation": "DISPATCH_MANIFEST"
+    },
+    {
+      "case_id": "legacy.restricted.nonfinite.ignored_nan",
+      "category": "DETERMINISTIC_LEGACY",
+      "configuration": {
+        "capability": {
+          "dispatch": "AELITIUM-DISPATCH-JSON-1",
+          "v1": {
+            "capability": "V1_RESTRICTED_PORTABLE",
+            "integer_conversion": {
+              "maximum_decimal_digits": 640,
+              "mode": "BOUNDED"
+            },
+            "timestamp_digit_profile": "ASCII",
+            "timestamp_final_lf": "ACCEPT_ONE"
+          },
+          "v2": {
+            "capability": "V2_PORTABLE"
+          }
+        },
+        "input_mode": "IMMUTABLE_BYTES",
+        "limits": {
+          "advertised": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          },
+          "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+          "effective": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          }
+        }
+      },
+      "description": "A legacy-permitted ignored value is categorically outside the restricted portable domain.",
+      "expected": {
+        "kind": "OPERATIONAL_TOOL_RESULT",
+        "tool_result": {
+          "capability": {
+            "effective": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "v1": {
+                "capability": "V1_RESTRICTED_PORTABLE",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            },
+            "requested": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "v1": {
+                "capability": "V1_RESTRICTED_PORTABLE",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            }
+          },
+          "contract": "aelitium-verifier-tool-result-v1",
+          "input_mode": "IMMUTABLE_BYTES",
+          "limits": {
+            "advertised": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            },
+            "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+            "effective": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            }
+          },
+          "operation": "VERIFY_BUNDLE",
+          "operational_result": {
+            "detail": null,
+            "input_ref": "AI_MANIFEST_JSON",
+            "limit": null,
+            "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+            "phase": "MANIFEST_PARSE"
+          },
+          "outcome": "OPERATIONAL_OUTCOME",
+          "rc": 3,
+          "verification_result": null
+        },
+        "tool_result_sha256": "d66db48e43af91dd866234c7269c00fca1b575cdd0730219db8ee45ba1baf343",
+        "tool_result_utf8_hex": "7b226361706162696c697479223a7b22656666656374697665223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227631223a7b226361706162696c697479223a2256315f524553545249435445445f504f525441424c45222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d2c22726571756573746564223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227631223a7b226361706162696c697479223a2256315f524553545249435445445f504f525441424c45222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d7d2c22636f6e7472616374223a2261656c697469756d2d76657269666965722d746f6f6c2d726573756c742d7631222c22696e7075745f6d6f6465223a22494d4d555441424c455f4259544553222c226c696d697473223a7b2261647665727469736564223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d2c22636c61696d65645f656e76656c6f7065223a2241454c495449554d5f434c45414e524f4f4d5f4d494e494d554d5f31222c22656666656374697665223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d7d2c226f7065726174696f6e223a225645524946595f42554e444c45222c226f7065726174696f6e616c5f726573756c74223a7b2264657461696c223a6e756c6c2c22696e7075745f726566223a2241495f4d414e49464553545f4a534f4e222c226c696d6974223a6e756c6c2c226f7065726174696f6e616c5f636f6465223a22494e5055545f4f5554534944455f4445434c415245445f4341504142494c495459222c227068617365223a224d414e49464553545f5041525345227d2c226f7574636f6d65223a224f5045524154494f4e414c5f4f5554434f4d45222c227263223a332c22766572696669636174696f6e5f726573756c74223a6e756c6c7d0a"
+      },
+      "input": {
+        "position": "IGNORED_EXTENSION",
+        "source": {
+          "byte_length": 251,
+          "recipe": {
+            "hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c22657874656e73696f6e223a4e614e7d",
+            "op": "LITERAL_HEX"
+          },
+          "sha256": "6de4ec0308cb186d7ad61b0403f699046c12116c510cd0ca636c24b4178821d4"
+        },
+        "source_role": "AI_MANIFEST_JSON",
+        "value_class": "NONFINITE"
+      },
+      "operation": "APPLY_LEGACY_RULE"
+    },
+    {
+      "case_id": "legacy.restricted.surrogate.ignored_opaque_unmatched_high",
+      "category": "DETERMINISTIC_LEGACY",
+      "configuration": {
+        "capability": {
+          "dispatch": "AELITIUM-DISPATCH-JSON-1",
+          "v1": {
+            "capability": "V1_RESTRICTED_PORTABLE",
+            "integer_conversion": {
+              "maximum_decimal_digits": 640,
+              "mode": "BOUNDED"
+            },
+            "timestamp_digit_profile": "ASCII",
+            "timestamp_final_lf": "ACCEPT_ONE"
+          },
+          "v2": {
+            "capability": "V2_PORTABLE"
+          }
+        },
+        "input_mode": "IMMUTABLE_BYTES",
+        "limits": {
+          "advertised": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          },
+          "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+          "effective": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          }
+        }
+      },
+      "description": "A legacy-permitted ignored value is categorically outside the restricted portable domain.",
+      "expected": {
+        "kind": "OPERATIONAL_TOOL_RESULT",
+        "tool_result": {
+          "capability": {
+            "effective": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "v1": {
+                "capability": "V1_RESTRICTED_PORTABLE",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            },
+            "requested": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "v1": {
+                "capability": "V1_RESTRICTED_PORTABLE",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            }
+          },
+          "contract": "aelitium-verifier-tool-result-v1",
+          "input_mode": "IMMUTABLE_BYTES",
+          "limits": {
+            "advertised": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            },
+            "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+            "effective": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            }
+          },
+          "operation": "VERIFY_BUNDLE",
+          "operational_result": {
+            "detail": null,
+            "input_ref": "AI_MANIFEST_JSON",
+            "limit": null,
+            "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+            "phase": "MANIFEST_PARSE"
+          },
+          "outcome": "OPERATIONAL_OUTCOME",
+          "rc": 3,
+          "verification_result": null
+        },
+        "tool_result_sha256": "d66db48e43af91dd866234c7269c00fca1b575cdd0730219db8ee45ba1baf343",
+        "tool_result_utf8_hex": "7b226361706162696c697479223a7b22656666656374697665223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227631223a7b226361706162696c697479223a2256315f524553545249435445445f504f525441424c45222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d2c22726571756573746564223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227631223a7b226361706162696c697479223a2256315f524553545249435445445f504f525441424c45222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d7d2c22636f6e7472616374223a2261656c697469756d2d76657269666965722d746f6f6c2d726573756c742d7631222c22696e7075745f6d6f6465223a22494d4d555441424c455f4259544553222c226c696d697473223a7b2261647665727469736564223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d2c22636c61696d65645f656e76656c6f7065223a2241454c495449554d5f434c45414e524f4f4d5f4d494e494d554d5f31222c22656666656374697665223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d7d2c226f7065726174696f6e223a225645524946595f42554e444c45222c226f7065726174696f6e616c5f726573756c74223a7b2264657461696c223a6e756c6c2c22696e7075745f726566223a2241495f4d414e49464553545f4a534f4e222c226c696d6974223a6e756c6c2c226f7065726174696f6e616c5f636f6465223a22494e5055545f4f5554534944455f4445434c415245445f4341504142494c495459222c227068617365223a224d414e49464553545f5041525345227d2c226f7574636f6d65223a224f5045524154494f4e414c5f4f5554434f4d45222c227263223a332c22766572696669636174696f6e5f726573756c74223a6e756c6c7d0a"
+      },
+      "input": {
+        "position": "IGNORED_EXTENSION",
+        "source": {
+          "byte_length": 256,
+          "recipe": {
+            "hex": "7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c22657874656e73696f6e223a225c7564383030227d",
+            "op": "LITERAL_HEX"
+          },
+          "sha256": "1b67b5df070236141c7c89e33f8b3c89d4e484ac92e2af9b931988b9b354f0c1"
+        },
+        "source_role": "AI_MANIFEST_JSON",
+        "value_class": "OPAQUE_SURROGATE"
+      },
+      "operation": "APPLY_LEGACY_RULE"
+    },
+    {
+      "case_id": "capability.selection.unsupported_v2",
+      "category": "OPERATIONAL_TRANSPORT",
+      "configuration": {
+        "capability": {
+          "dispatch": "AELITIUM-DISPATCH-JSON-1",
+          "signature_verification": {
+            "profile": "ED25519_PORTABLE_STRICT_1"
+          },
+          "v1": {
+            "capability": "V1_FROZEN_LEGACY_COMPATIBILITY",
+            "integer_conversion": {
+              "maximum_decimal_digits": 640,
+              "mode": "BOUNDED"
+            },
+            "timestamp_digit_profile": "ASCII",
+            "timestamp_final_lf": "ACCEPT_ONE"
+          },
+          "v2": {
+            "capability": "V2_FUTURE"
+          }
+        },
+        "input_mode": "IMMUTABLE_BYTES",
+        "limits": {
+          "advertised": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          },
+          "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+          "effective": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          }
+        }
+      },
+      "description": "A lexically valid unsupported v2 identifier is retained in the rejected request.",
+      "expected": {
+        "kind": "OPERATIONAL_TOOL_RESULT",
+        "tool_result": {
+          "capability": {
+            "effective": null,
+            "requested": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "signature_verification": {
+                "profile": "ED25519_PORTABLE_STRICT_1"
+              },
+              "v1": {
+                "capability": "V1_FROZEN_LEGACY_COMPATIBILITY",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_FUTURE"
+              }
+            }
+          },
+          "contract": "aelitium-verifier-tool-result-v1",
+          "input_mode": "IMMUTABLE_BYTES",
+          "limits": {
+            "advertised": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            },
+            "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+            "effective": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            }
+          },
+          "operation": "VERIFY_BUNDLE",
+          "operational_result": {
+            "detail": null,
+            "input_ref": null,
+            "limit": null,
+            "operational_code": "CAPABILITY_PROFILE_UNAVAILABLE",
+            "phase": "CAPABILITY_SELECTION"
+          },
+          "outcome": "OPERATIONAL_OUTCOME",
+          "rc": 3,
+          "verification_result": null
+        },
+        "tool_result_sha256": "07b5498323272e152f5934a0b968febb3f5b22413c93d8bdec32e356f24ab664",
+        "tool_result_utf8_hex": "7b226361706162696c697479223a7b22656666656374697665223a6e756c6c2c22726571756573746564223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227369676e61747572655f766572696669636174696f6e223a7b2270726f66696c65223a22454432353531395f504f525441424c455f5354524943545f31227d2c227631223a7b226361706162696c697479223a2256315f46524f5a454e5f4c45474143595f434f4d5041544942494c495459222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f465554555245227d7d7d2c22636f6e7472616374223a2261656c697469756d2d76657269666965722d746f6f6c2d726573756c742d7631222c22696e7075745f6d6f6465223a22494d4d555441424c455f4259544553222c226c696d697473223a7b2261647665727469736564223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d2c22636c61696d65645f656e76656c6f7065223a2241454c495449554d5f434c45414e524f4f4d5f4d494e494d554d5f31222c22656666656374697665223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d7d2c226f7065726174696f6e223a225645524946595f42554e444c45222c226f7065726174696f6e616c5f726573756c74223a7b2264657461696c223a6e756c6c2c22696e7075745f726566223a6e756c6c2c226c696d6974223a6e756c6c2c226f7065726174696f6e616c5f636f6465223a224341504142494c4954595f50524f46494c455f554e415641494c41424c45222c227068617365223a224341504142494c4954595f53454c454354494f4e227d2c226f7574636f6d65223a224f5045524154494f4e414c5f4f5554434f4d45222c227263223a332c22766572696669636174696f6e5f726573756c74223a6e756c6c7d0a"
+      },
+      "input": {
+        "requested_component": "v2.capability",
+        "requested_identifier": "V2_FUTURE"
+      },
+      "operation": "SELECT_CAPABILITY"
+    },
+    {
+      "case_id": "capability.selection.unsupported_signature_profile",
+      "category": "OPERATIONAL_TRANSPORT",
+      "configuration": {
+        "capability": {
+          "dispatch": "AELITIUM-DISPATCH-JSON-1",
+          "signature_verification": {
+            "profile": "ED25519_FUTURE"
+          },
+          "v1": {
+            "capability": "V1_FROZEN_LEGACY_COMPATIBILITY",
+            "integer_conversion": {
+              "maximum_decimal_digits": 640,
+              "mode": "BOUNDED"
+            },
+            "timestamp_digit_profile": "ASCII",
+            "timestamp_final_lf": "ACCEPT_ONE"
+          },
+          "v2": {
+            "capability": "V2_PORTABLE"
+          }
+        },
+        "input_mode": "IMMUTABLE_BYTES",
+        "limits": {
+          "advertised": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          },
+          "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+          "effective": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          }
+        }
+      },
+      "description": "A lexically valid unsupported signature profile is retained in the rejected request.",
+      "expected": {
+        "kind": "OPERATIONAL_TOOL_RESULT",
+        "tool_result": {
+          "capability": {
+            "effective": null,
+            "requested": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "signature_verification": {
+                "profile": "ED25519_FUTURE"
+              },
+              "v1": {
+                "capability": "V1_FROZEN_LEGACY_COMPATIBILITY",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 640,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": "ASCII",
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            }
+          },
+          "contract": "aelitium-verifier-tool-result-v1",
+          "input_mode": "IMMUTABLE_BYTES",
+          "limits": {
+            "advertised": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            },
+            "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+            "effective": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            }
+          },
+          "operation": "VERIFY_BUNDLE",
+          "operational_result": {
+            "detail": null,
+            "input_ref": null,
+            "limit": null,
+            "operational_code": "CAPABILITY_PROFILE_UNAVAILABLE",
+            "phase": "CAPABILITY_SELECTION"
+          },
+          "outcome": "OPERATIONAL_OUTCOME",
+          "rc": 3,
+          "verification_result": null
+        },
+        "tool_result_sha256": "ed4bf6a8e42264f3e615d84230ba8ac713ed6740aa3dfdb937aa9fbfc51bd500",
+        "tool_result_utf8_hex": "7b226361706162696c697479223a7b22656666656374697665223a6e756c6c2c22726571756573746564223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227369676e61747572655f766572696669636174696f6e223a7b2270726f66696c65223a22454432353531395f465554555245227d2c227631223a7b226361706162696c697479223a2256315f46524f5a454e5f4c45474143595f434f4d5041544942494c495459222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a3634302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a224153434949222c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d7d2c22636f6e7472616374223a2261656c697469756d2d76657269666965722d746f6f6c2d726573756c742d7631222c22696e7075745f6d6f6465223a22494d4d555441424c455f4259544553222c226c696d697473223a7b2261647665727469736564223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d2c22636c61696d65645f656e76656c6f7065223a2241454c495449554d5f434c45414e524f4f4d5f4d494e494d554d5f31222c22656666656374697665223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d7d2c226f7065726174696f6e223a225645524946595f42554e444c45222c226f7065726174696f6e616c5f726573756c74223a7b2264657461696c223a6e756c6c2c22696e7075745f726566223a6e756c6c2c226c696d6974223a6e756c6c2c226f7065726174696f6e616c5f636f6465223a224341504142494c4954595f50524f46494c455f554e415641494c41424c45222c227068617365223a224341504142494c4954595f53454c454354494f4e227d2c226f7574636f6d65223a224f5045524154494f4e414c5f4f5554434f4d45222c227263223a332c22766572696669636174696f6e5f726573756c74223a6e756c6c7d0a"
+      },
+      "input": {
+        "requested_component": "signature_verification.profile",
+        "requested_identifier": "ED25519_FUTURE"
+      },
+      "operation": "SELECT_CAPABILITY"
+    },
+    {
+      "case_id": "capability.selection.named_profile_tuple_mismatch",
+      "category": "OPERATIONAL_TRANSPORT",
+      "configuration": {
+        "capability": {
+          "dispatch": "AELITIUM-DISPATCH-JSON-1",
+          "signature_verification": {
+            "profile": "ED25519_PORTABLE_STRICT_1"
+          },
+          "v1": {
+            "capability": "V1_NAMED_RUNTIME_COMPATIBILITY",
+            "integer_conversion": {
+              "maximum_decimal_digits": 4300,
+              "mode": "BOUNDED"
+            },
+            "timestamp_digit_profile": {
+              "profile_id": "AELITIUM_UCD_ND_15_0_0_1",
+              "range_file_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "unicode_version": "15.0.0"
+            },
+            "timestamp_final_lf": "ACCEPT_ONE"
+          },
+          "v2": {
+            "capability": "V2_PORTABLE"
+          }
+        },
+        "input_mode": "IMMUTABLE_BYTES",
+        "limits": {
+          "advertised": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          },
+          "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+          "effective": {
+            "max_file_bytes": 65536,
+            "max_structural_depth": 1024,
+            "max_total_snapshot_bytes": 262144,
+            "max_value_occurrences": 65536
+          }
+        }
+      },
+      "description": "A known named profile with a lexically valid mismatched digest is retained and unavailable.",
+      "expected": {
+        "kind": "OPERATIONAL_TOOL_RESULT",
+        "tool_result": {
+          "capability": {
+            "effective": null,
+            "requested": {
+              "dispatch": "AELITIUM-DISPATCH-JSON-1",
+              "signature_verification": {
+                "profile": "ED25519_PORTABLE_STRICT_1"
+              },
+              "v1": {
+                "capability": "V1_NAMED_RUNTIME_COMPATIBILITY",
+                "integer_conversion": {
+                  "maximum_decimal_digits": 4300,
+                  "mode": "BOUNDED"
+                },
+                "timestamp_digit_profile": {
+                  "profile_id": "AELITIUM_UCD_ND_15_0_0_1",
+                  "range_file_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                  "unicode_version": "15.0.0"
+                },
+                "timestamp_final_lf": "ACCEPT_ONE"
+              },
+              "v2": {
+                "capability": "V2_PORTABLE"
+              }
+            }
+          },
+          "contract": "aelitium-verifier-tool-result-v1",
+          "input_mode": "IMMUTABLE_BYTES",
+          "limits": {
+            "advertised": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            },
+            "claimed_envelope": "AELITIUM_CLEANROOM_MINIMUM_1",
+            "effective": {
+              "max_file_bytes": 65536,
+              "max_structural_depth": 1024,
+              "max_total_snapshot_bytes": 262144,
+              "max_value_occurrences": 65536
+            }
+          },
+          "operation": "VERIFY_BUNDLE",
+          "operational_result": {
+            "detail": null,
+            "input_ref": null,
+            "limit": null,
+            "operational_code": "CAPABILITY_PROFILE_UNAVAILABLE",
+            "phase": "CAPABILITY_SELECTION"
+          },
+          "outcome": "OPERATIONAL_OUTCOME",
+          "rc": 3,
+          "verification_result": null
+        },
+        "tool_result_sha256": "11f50bdc968e3de1cd6545dc704478d36a67be9a9122371d067cfd5e79060705",
+        "tool_result_utf8_hex": "7b226361706162696c697479223a7b22656666656374697665223a6e756c6c2c22726571756573746564223a7b226469737061746368223a2241454c495449554d2d44495350415443482d4a534f4e2d31222c227369676e61747572655f766572696669636174696f6e223a7b2270726f66696c65223a22454432353531395f504f525441424c455f5354524943545f31227d2c227631223a7b226361706162696c697479223a2256315f4e414d45445f52554e54494d455f434f4d5041544942494c495459222c22696e74656765725f636f6e76657273696f6e223a7b226d6178696d756d5f646563696d616c5f646967697473223a343330302c226d6f6465223a22424f554e444544227d2c2274696d657374616d705f64696769745f70726f66696c65223a7b2270726f66696c655f6964223a2241454c495449554d5f5543445f4e445f31355f305f305f31222c2272616e67655f66696c655f736861323536223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c22756e69636f64655f76657273696f6e223a2231352e302e30227d2c2274696d657374616d705f66696e616c5f6c66223a224143434550545f4f4e45227d2c227632223a7b226361706162696c697479223a2256325f504f525441424c45227d7d7d2c22636f6e7472616374223a2261656c697469756d2d76657269666965722d746f6f6c2d726573756c742d7631222c22696e7075745f6d6f6465223a22494d4d555441424c455f4259544553222c226c696d697473223a7b2261647665727469736564223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d2c22636c61696d65645f656e76656c6f7065223a2241454c495449554d5f434c45414e524f4f4d5f4d494e494d554d5f31222c22656666656374697665223a7b226d61785f66696c655f6279746573223a36353533362c226d61785f7374727563747572616c5f6465707468223a313032342c226d61785f746f74616c5f736e617073686f745f6279746573223a3236323134342c226d61785f76616c75655f6f6363757272656e636573223a36353533367d7d2c226f7065726174696f6e223a225645524946595f42554e444c45222c226f7065726174696f6e616c5f726573756c74223a7b2264657461696c223a6e756c6c2c22696e7075745f726566223a6e756c6c2c226c696d6974223a6e756c6c2c226f7065726174696f6e616c5f636f6465223a224341504142494c4954595f50524f46494c455f554e415641494c41424c45222c227068617365223a224341504142494c4954595f53454c454354494f4e227d2c226f7574636f6d65223a224f5045524154494f4e414c5f4f5554434f4d45222c227263223a332c22766572696669636174696f6e5f726573756c74223a6e756c6c7d0a"
+      },
+      "input": {
+        "mismatched_member": "range_file_sha256",
+        "requested_profile": {
+          "profile_id": "AELITIUM_UCD_ND_15_0_0_1",
+          "range_file_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "unicode_version": "15.0.0"
+        }
+      },
+      "operation": "SELECT_CAPABILITY"
     }
   ]
 }

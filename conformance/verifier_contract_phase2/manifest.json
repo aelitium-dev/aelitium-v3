@@ -1,0 +1,78 @@
+{
+  "block_2a_frozen": {
+    "case_count": 210,
+    "schema_vectors_sha256": "65a99dd490e9710aefb7dbb7547beb07f75bdfb3e6e0d8f292d9cc8a6e295fe4",
+    "source_vectors_sha256": "2caa5c78cae1c145e1c4630469a49ebf2ebc6ec85df91f90e8628bc1d3b9268e"
+  },
+  "block_2b1_frozen": {
+    "case_count": 36,
+    "original_semantic_vectors_sha256": "b2f6d5c0263c97006bad15af985099869264ac5f4833ef356526a6945909ffd9",
+    "original_vector_set_sha256": "7260d1216c1fe0b9e340fc4e1a0d1ee075a37c785d486d7370fabf9c73c958f1"
+  },
+  "block_2b2_frozen": {
+    "case_count": 23,
+    "precedence_vectors_sha256": "810b62d3a9d0c311a1bb58c7a361083bb1881a16406c65bcea9d6c76ee3f89c1"
+  },
+  "block_3": {
+    "closure_claimed": false,
+    "closure_mechanism": null,
+    "status": "ED25519_RUNTIME_ALIGNMENT_PENDING"
+  },
+  "byte_source_contract": "INLINE_UTF8_OR_INLINE_HEX_OR_FIXTURE_WITH_SHA256",
+  "case_counts": {
+    "ed25519_strict_semantic": 12,
+    "keyring_schema": 39,
+    "keyring_source": 17,
+    "manifest_schema": 46,
+    "manifest_source": 69,
+    "precedence_total": 23,
+    "schema_total": 110,
+    "semantic_total": 48,
+    "signature_semantic": 17,
+    "source_total": 100,
+    "total": 281,
+    "trust_schema": 25,
+    "trust_semantic": 19,
+    "trust_source": 14
+  },
+  "case_id_policy": "GLOBALLY_UNIQUE_ASCII_LOWERCASE_DOT_SEPARATED",
+  "contract": "aelitium-verifier-contract-phase2-conformance-v1",
+  "ed25519_portable_profile": {
+    "case_count": 12,
+    "fallback": "NONE",
+    "profile": "ED25519_PORTABLE_STRICT_1",
+    "status": "NORMATIVE_PROFILE_READY_RUNTIME_ALIGNMENT_PENDING"
+  },
+  "fixture_count": 25,
+  "gap_status": {
+    "G-04": "CLOSED",
+    "G-05": "OPEN \u2014 NORMATIVE_PROFILE_READY_RUNTIME_ALIGNMENT_PENDING",
+    "G-06": "CLOSED"
+  },
+  "instance_recipe_contract": "AELITIUM-SCHEMA-INSTANCE-RECIPE-1",
+  "notes": [
+    "Expected decisions are authored from Level 1 prose, not generated from Python verifier behavior.",
+    "Runner code is non-normative and cannot override frozen expected data or Level 1 prose.",
+    "Filesystem acquisition remains in the existing G-09 operational-policy corpus.",
+    "The original 269 Phase 2 cases retain their identifiers and expected decisions.",
+    "ED25519_PORTABLE_STRICT_1 expectations are evaluated by a conformance-only arithmetic implementation, not the production or cryptography verifier.",
+    "G-04 and G-06 are closed by Phase 2 normative input contracts, schemas, and conformance data.",
+    "G-05 remains open until production capability selection and ED25519_PORTABLE_STRICT_1 execution align."
+  ],
+  "runner": "../run_verifier_contract_phase2.py",
+  "schemas": {
+    "MANIFEST_V1": "../../engine/schemas/ai_manifest_v1.json",
+    "MANIFEST_V2": "../../engine/schemas/ai_manifest_v2.json",
+    "TRUST_STORE_V1": "../../engine/schemas/trust_store_v1.json",
+    "VERIFICATION_KEYS_V1": "../../engine/schemas/verification_keys_v1.json"
+  },
+  "scope": "SOURCE_SCHEMA_SIGNATURE_TRUST_ED25519_PORTABLE_PROFILE_PRECEDENCE",
+  "status": "NORMATIVE-UNRELEASED",
+  "subject_contract": "aelitium-verifier-input-contracts-v1",
+  "vector_files": [
+    "source_vectors.json",
+    "schema_vectors.json",
+    "semantic_vectors.json",
+    "precedence_vectors.json"
+  ]
+}

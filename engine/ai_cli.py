@@ -2,6 +2,11 @@
 import argparse
 import json
 import jsonschema
+import os
+import sys
+from dataclasses import dataclass
+from functools import lru_cache
+from importlib import resources
 from pathlib import Path
 
 # Support both:
@@ -15,13 +20,48 @@ if __package__:
         AI_CANONICALIZATION_V2,
     )
     from .ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
-    from .canonical_v2 import parse_json_v2
+    from .canonical_v2 import parse_json_v2, validate_v2_value
     from .result_contracts import (
+        AELITIUM_CLEANROOM_MINIMUM_1,
+        ResultContractError,
+        VerifierLimitState,
+        VerifierToolResult,
         build_comparison_contract_fields,
         build_verification_result,
+        serialize_verifier_tool_result,
+    )
+    from .verifier_result_invariants import validate_verifier_result_invariants
+    from .verifier_emergency_output import recovery_failure, serialize_emergency_operation_failure
+    from .verifier_invocation_facts import EstablishedOperationalFailure, VerifierInvocationFacts, VerifierOperationEvidence, copy_recovery_metadata
+    from .verifier_output_bytes import require_canonical_result_bytes
+    from .verifier_capabilities import (
+        V1_FROZEN_LEGACY_COMPATIBILITY,
+        V1_LEGACY_UNSUPPORTED,
+        V1_NAMED_RUNTIME_COMPATIBILITY,
+        V1_RESTRICTED_PORTABLE,
+        DispatchCapabilityDeclaration,
+        IntegerConversionDeclaration,
+        SignatureVerificationDeclaration,
+        TimestampDigitProfileDeclaration,
+        V1CapabilityDeclaration,
+        V2CapabilityDeclaration,
+        VerifierCapabilityRequest,
+        validate_verifier_capability_request,
+    )
+    from .verifier_operation import (
+        validate_verifier_operation_options,
+        verify_bundle_operation,
+    )
+    from .verifier_json_limits import JsonTraversalLimitExceeded, scan_json_limits
+    from .verifier_snapshot import (
+        DirectFilesystemInputs,
+        InputMode,
+        OperationalCode,
+        OperationalInputFailure,
+        OperationalLimits,
+        OperationalPhase,
     )
 else:
-    import sys
     from pathlib import Path as _Path
     sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
     from engine.ai_canonical import AICanonicalError, canonicalize_ai_output
@@ -31,10 +71,46 @@ else:
         AI_CANONICALIZATION_V2,
     )
     from engine.ai_verify import AssuranceState, AIVerificationOptions, verify_ai_bundle
-    from engine.canonical_v2 import parse_json_v2
+    from engine.canonical_v2 import parse_json_v2, validate_v2_value
     from engine.result_contracts import (
+        AELITIUM_CLEANROOM_MINIMUM_1,
+        ResultContractError,
+        VerifierLimitState,
+        VerifierToolResult,
         build_comparison_contract_fields,
         build_verification_result,
+        serialize_verifier_tool_result,
+    )
+    from engine.verifier_result_invariants import validate_verifier_result_invariants
+    from engine.verifier_emergency_output import recovery_failure, serialize_emergency_operation_failure
+    from engine.verifier_invocation_facts import EstablishedOperationalFailure, VerifierInvocationFacts, VerifierOperationEvidence, copy_recovery_metadata
+    from engine.verifier_output_bytes import require_canonical_result_bytes
+    from engine.verifier_capabilities import (
+        V1_FROZEN_LEGACY_COMPATIBILITY,
+        V1_LEGACY_UNSUPPORTED,
+        V1_NAMED_RUNTIME_COMPATIBILITY,
+        V1_RESTRICTED_PORTABLE,
+        DispatchCapabilityDeclaration,
+        IntegerConversionDeclaration,
+        SignatureVerificationDeclaration,
+        TimestampDigitProfileDeclaration,
+        V1CapabilityDeclaration,
+        V2CapabilityDeclaration,
+        VerifierCapabilityRequest,
+        validate_verifier_capability_request,
+    )
+    from engine.verifier_operation import (
+        validate_verifier_operation_options,
+        verify_bundle_operation,
+    )
+    from engine.verifier_json_limits import JsonTraversalLimitExceeded, scan_json_limits
+    from engine.verifier_snapshot import (
+        DirectFilesystemInputs,
+        InputMode,
+        OperationalCode,
+        OperationalInputFailure,
+        OperationalLimits,
+        OperationalPhase,
     )
 
 
@@ -48,6 +124,258 @@ COMPARISON_BASIS_INVOCATION_IDENTITY_V1 = "INVOCATION_IDENTITY_V1"
 COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK = "REQUEST_HASH_V1_FALLBACK"
 COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY = "REQUEST_HASH_V1_LEGACY"
 COMPARISON_BASIS_NONE = "NONE"
+
+TOOL_USAGE_ERROR_RC = 64
+
+
+class _UsageArgumentParser(argparse.ArgumentParser):
+    """Argparse with the Level 1 tool-usage process code."""
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(TOOL_USAGE_ERROR_RC, f"{self.prog}: error: {message}\n")
+
+
+@dataclass(frozen=True, slots=True)
+class _OperationCLIConfiguration:
+    capability_request: VerifierCapabilityRequest
+    limits: VerifierLimitState
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON constant {value} is not allowed")
+
+
+def _parse_config_integer(token: str) -> int:
+    # No configuration field admits more than the portable 2^53-1 domain.
+    # Refuse lexically before the ambient CPython decimal guard can decide.
+    if len(token.lstrip("-")) > 16:
+        raise ValueError("operation configuration integer exceeds portable domain")
+    return int(token)
+
+
+def _reject_config_fraction(token: str) -> None:
+    raise ValueError("operation configuration fractional number is not permitted")
+
+
+def _ensure_operation_serializer_available() -> None:
+    """Preflight machine-result support without affecting legacy CLI imports."""
+
+    try:
+        __import__("rfc8785")
+    except ModuleNotFoundError as error:
+        raise ResultContractError(
+            "VERIFIER_TOOL_RESULT_SERIALIZATION_UNAVAILABLE",
+            "rfc8785 dependency is unavailable",
+        ) from error
+
+
+def _closed_json_object(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for name, value in pairs:
+        if name in result:
+            raise ValueError(f"duplicate member {name!r}")
+        result[name] = value
+    return result
+
+
+def _require_object(
+    value: object,
+    *,
+    members: set[str],
+    label: str,
+) -> dict:
+    if type(value) is not dict or set(value) != members:
+        raise ValueError(
+            f"{label} must contain exactly {', '.join(sorted(members))}"
+        )
+    return value
+
+
+def _parse_integer_conversion(value: object) -> IntegerConversionDeclaration:
+    source = _require_object(
+        value,
+        members={"mode", "maximum_decimal_digits"},
+        label="integer_conversion",
+    )
+    return IntegerConversionDeclaration(
+        source["mode"],
+        source["maximum_decimal_digits"],
+    )
+
+
+def _parse_named_timestamp_profile(
+    value: object,
+) -> TimestampDigitProfileDeclaration:
+    source = _require_object(
+        value,
+        members={"profile_id", "range_file_sha256", "unicode_version"},
+        label="timestamp_digit_profile",
+    )
+    return TimestampDigitProfileDeclaration(
+        source["profile_id"],
+        source["range_file_sha256"],
+        source["unicode_version"],
+    )
+
+
+def _parse_capability_request(value: object) -> VerifierCapabilityRequest:
+    source = _require_object(
+        value,
+        members={"dispatch", "v1", "v2", "signature_verification"},
+        label="capability",
+    )
+    v2_source = _require_object(
+        source["v2"],
+        members={"capability"},
+        label="v2",
+    )
+    signature_source = _require_object(
+        source["signature_verification"],
+        members={"profile"},
+        label="signature_verification",
+    )
+
+    v1_source = source["v1"]
+    if type(v1_source) is not dict or "capability" not in v1_source:
+        raise ValueError("v1 must contain a capability member")
+    v1_name = v1_source["capability"]
+    if v1_name == V1_LEGACY_UNSUPPORTED:
+        _require_object(
+            v1_source,
+            members={"capability"},
+            label="v1 legacy unsupported",
+        )
+        v1 = V1CapabilityDeclaration(v1_name)
+    elif v1_name in {
+        V1_RESTRICTED_PORTABLE,
+        V1_FROZEN_LEGACY_COMPATIBILITY,
+    }:
+        portable = _require_object(
+            v1_source,
+            members={
+                "capability",
+                "integer_conversion",
+                "timestamp_digit_profile",
+                "timestamp_final_lf",
+            },
+            label="portable v1",
+        )
+        integer = _parse_integer_conversion(portable["integer_conversion"])
+        v1 = V1CapabilityDeclaration(
+            v1_name,
+            integer,
+            portable["timestamp_digit_profile"],
+            portable["timestamp_final_lf"],
+        )
+    elif v1_name == V1_NAMED_RUNTIME_COMPATIBILITY:
+        named = _require_object(
+            v1_source,
+            members={
+                "capability",
+                "integer_conversion",
+                "timestamp_digit_profile",
+                "timestamp_final_lf",
+            },
+            label="named v1",
+        )
+        integer = _parse_integer_conversion(named["integer_conversion"])
+        timestamp = _parse_named_timestamp_profile(
+            named["timestamp_digit_profile"]
+        )
+        v1 = V1CapabilityDeclaration(
+            v1_name,
+            integer,
+            timestamp,
+            named["timestamp_final_lf"],
+        )
+    else:
+        _require_object(
+            v1_source,
+            members={"capability"},
+            label="unknown v1",
+        )
+        v1 = V1CapabilityDeclaration(v1_name)
+
+    request = VerifierCapabilityRequest(
+        DispatchCapabilityDeclaration(source["dispatch"]),
+        v1,
+        V2CapabilityDeclaration(v2_source["capability"]),
+        SignatureVerificationDeclaration(signature_source["profile"]),
+    )
+    validate_verifier_capability_request(request)
+    return request
+
+
+def _parse_limit_values(value: object, *, label: str) -> OperationalLimits:
+    source = _require_object(
+        value,
+        members={
+            "max_file_bytes",
+            "max_total_snapshot_bytes",
+            "max_structural_depth",
+            "max_value_occurrences",
+        },
+        label=label,
+    )
+    return OperationalLimits(
+        max_file_bytes=source["max_file_bytes"],
+        max_total_snapshot_bytes=source["max_total_snapshot_bytes"],
+        max_structural_depth=source["max_structural_depth"],
+        max_value_occurrences=source["max_value_occurrences"],
+    )
+
+
+def _parse_operation_config_json(source: str) -> _OperationCLIConfiguration:
+    try:
+        # The configuration grammar has only a few object levels. Screen the
+        # raw source iteratively before CPython's recursive JSON decoder sees
+        # untrusted nesting; this is a usage boundary, not a bundle limit.
+        scan_json_limits(
+            source.encode("utf-8"),
+            limits=OperationalLimits(
+                max_structural_depth=64,
+                max_value_occurrences=65_536,
+            ),
+            allow_legacy_constants=False,
+        )
+        value = json.loads(
+            source,
+            object_pairs_hook=_closed_json_object,
+            parse_constant=_reject_json_constant,
+            parse_int=_parse_config_integer,
+            parse_float=_reject_config_fraction,
+        )
+        root = _require_object(
+            value,
+            members={"capability", "limits"},
+            label="operation configuration",
+        )
+        capability_request = _parse_capability_request(root["capability"])
+        limit_source = _require_object(
+            root["limits"],
+            members={"claimed_envelope", "advertised", "effective"},
+            label="limits",
+        )
+        claimed = limit_source["claimed_envelope"]
+        if claimed not in {AELITIUM_CLEANROOM_MINIMUM_1, None}:
+            raise ValueError("unknown claimed limit envelope")
+        limits = VerifierLimitState(
+            claimed,
+            _parse_limit_values(limit_source["advertised"], label="advertised"),
+            _parse_limit_values(limit_source["effective"], label="effective"),
+        )
+    except JsonTraversalLimitExceeded as error:
+        raise argparse.ArgumentTypeError(
+            "operation configuration exceeds structural or value limit"
+        ) from error
+    except (json.JSONDecodeError, TypeError, ValueError, RecursionError) as error:
+        if isinstance(error, RecursionError):
+            raise argparse.ArgumentTypeError(
+                "operation configuration is too deeply nested"
+            ) from error
+        raise argparse.ArgumentTypeError(str(error)) from error
+    return _OperationCLIConfiguration(capability_request, limits)
 
 
 def _out(args, text_lines: list[str], json_obj: dict) -> None:
@@ -115,6 +443,186 @@ def _verification_fail(result) -> int:
     return 2
 
 
+def _write_fd_all(fd: int, data: bytes) -> None:
+    remaining = memoryview(data)
+    while remaining:
+        written = os.write(fd, remaining)
+        if written <= 0:
+            raise OSError("output channel made no progress")
+        remaining = remaining[written:]
+
+
+def _write_stream_all(stream, data: bytes) -> None:
+    remaining = memoryview(data)
+    while remaining:
+        written = stream.write(remaining)
+        if written is None or written <= 0:
+            raise OSError("output channel made no progress")
+        remaining = remaining[written:]
+    stream.flush()
+
+
+def _write_stdout(data: bytes, *, stream=None) -> None:
+    if stream is None:
+        _write_fd_all(sys.stdout.fileno(), data)
+    else:
+        _write_stream_all(stream, data)
+
+
+def _best_effort_stderr(data: bytes, *, stream=None) -> None:
+    try:
+        if stream is None:
+            _write_fd_all(sys.stderr.fileno(), data)
+        else:
+            _write_stream_all(stream, data)
+    except Exception:
+        pass
+
+
+def _operational_diagnostic(failure: OperationalInputFailure) -> bytes:
+    input_ref = (
+        failure.input_ref.value if failure.input_ref is not None else "NONE"
+    )
+    return (
+        f"AELITIUM_OPERATIONAL {failure.operational_code.value} "
+        f"{failure.phase.value} {input_ref}\n"
+    ).encode("ascii")
+
+
+def _emit_legacy_operational_failure(
+    failure: OperationalInputFailure,
+    *,
+    stderr=None,
+) -> int:
+    """Emit no semantic stdout when a legacy surface ends operationally."""
+
+    _best_effort_stderr(_operational_diagnostic(failure), stream=stderr)
+    return 3
+
+
+@lru_cache(maxsize=1)
+def _operation_result_validator() -> jsonschema.Draft7Validator:
+    # Legacy source-checkout commands do not need this machine-result schema
+    # dependency. Load it only after operation JSON mode has been selected.
+    from referencing import Registry, Resource
+
+    outer = json.loads(
+        resources.files("engine").joinpath("schemas", "verifier_tool_result_v1.json").read_bytes()
+    )
+    inner = json.loads(
+        resources.files("engine").joinpath("schemas", "verification_result_v1.json").read_bytes()
+    )
+    registry = Registry().with_resource(inner["$id"], Resource.from_contents(inner))
+    return jsonschema.Draft7Validator(outer, registry=registry)
+
+
+def _reject_output_duplicates(pairs: list[tuple[str, object]]) -> dict:
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("operation serializer returned duplicate names")
+        value[key] = item
+    return value
+
+
+def _reject_noninteger_output_token(token: str):
+    # Policy 8.2: every outer-result number is a safe integer. RFC8785 spells
+    # every integer in that range without a fraction or exponent. Do not round
+    # a source token through binary64 and then treat equality as exactness.
+    raise ValueError("operation serializer returned a noncanonical number")
+
+
+def _require_machine_frame(data: bytes, *, result: VerifierToolResult, process_rc: int,
+                           invocation_facts: VerifierInvocationFacts | None = None,
+                           established_failure: EstablishedOperationalFailure | None = None) -> bytes:
+    if type(data) is not bytes or not data.endswith(b"\n") or data.count(b"\n") != 1:
+        raise ValueError("operation serializer did not return one complete frame")
+    value = json.loads(
+        data[:-1].decode("utf-8"),
+        object_pairs_hook=_reject_output_duplicates,
+        parse_constant=_reject_json_constant,
+        parse_float=_reject_noninteger_output_token,
+    )
+    validate_v2_value(value)
+    _operation_result_validator().validate(value)
+    validate_verifier_result_invariants(
+        value, expected_result=result, process_rc=process_rc, invocation_facts=invocation_facts,
+        established_failure=established_failure,
+    )
+    # JSON validity, domain/schema and semantic equality above are distinct
+    # from wire canonicality. Compare the actual bytes before any write.
+    require_canonical_result_bytes(data, value)
+    return data
+
+
+def _emit_operation_json(result, *, stdout=None, stderr=None, evidence=None) -> int:
+    """Serialize in memory, then write exactly once through a write-all path.
+
+    The CLI supplies evidence retained before construction. Standalone internal
+    callers without evidence must supply an already authenticated core result;
+    that convenience route is not the CLI's source of invocation or decision.
+    """
+
+    try:
+        if evidence is not None:
+            invocation_facts, established_failure = evidence.facts, evidence.failure
+        else:
+            invocation_facts = VerifierInvocationFacts(
+                result.input_mode, copy_recovery_metadata(result.requested_capability),
+                copy_recovery_metadata(result.effective_capability), copy_recovery_metadata(result.limits),
+            )
+            established_failure = (
+                EstablishedOperationalFailure.retain(result.operational_result.failure, normal_capture=False)
+                if result.operational_result is not None else None
+            )
+    except Exception as error:
+        _emit_terminal_operation_error(error, stderr=stderr)
+        return 3
+    try:
+        invocation_facts.validate_result(result)
+        if established_failure is not None:
+            established_failure.validate_result(result)
+        result_rc = result.rc
+        result_bytes = _require_machine_frame(
+            serialize_verifier_tool_result(result), result=result, process_rc=result_rc,
+            invocation_facts=invocation_facts,
+            established_failure=established_failure,
+        )
+    except Exception as error:
+        try:
+            output_failure = recovery_failure(
+                OperationalCode.RESOURCE_EXHAUSTED
+                if isinstance(error, (MemoryError, RecursionError))
+                else OperationalCode.INTERNAL_OPERATION_ERROR,
+                OperationalPhase.OUTPUT,
+            )
+            result_bytes = serialize_emergency_operation_failure(
+                result, output_failure=output_failure, invocation_facts=invocation_facts,
+                established_failure=established_failure,
+            )
+            # Independent terminal assurance for a deliberately closed frame.
+            # Do not call any normal projection, serializer, or validator here.
+            if (type(result_bytes) is not bytes or not result_bytes.endswith(b"\n")
+                    or result_bytes.count(b"\n") != 1):
+                raise ValueError("invalid emergency frame")
+        except Exception as emergency_error:
+            _emit_terminal_operation_error(emergency_error, stderr=stderr)
+            return 3
+        result_rc = 3
+
+    try:
+        _write_stdout(result_bytes, stream=stdout)
+    except Exception as error:
+        code = (
+            b"RESOURCE_EXHAUSTED" if isinstance(error, (MemoryError, RecursionError))
+            else b"OUTPUT_IO_ERROR" if isinstance(error, (OSError, ValueError))
+            else b"INTERNAL_OPERATION_ERROR"
+        )
+        _best_effort_stderr(b"AELITIUM_OPERATIONAL " + code + b" OUTPUT NONE\n", stream=stderr)
+        return 3
+    return result_rc
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     obj = json.loads(Path(args.input).read_text(encoding="utf-8"))
     schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
@@ -148,10 +656,13 @@ def cmd_verify(args: argparse.Namespace) -> int:
     outdir = Path(args.out)
 
     options = _verification_options(args)
-    result = verify_ai_bundle(
-        outdir,
-        options=options,
-    )
+    try:
+        result = verify_ai_bundle(
+            outdir,
+            options=options,
+        )
+    except OperationalInputFailure as failure:
+        return _emit_legacy_operational_failure(failure)
     if getattr(args, "contract_json", False):
         print(
             json.dumps(
@@ -252,6 +763,33 @@ def cmd_verify_receipt(args: argparse.Namespace) -> int:
     return 0
 
 
+def _emit_terminal_operation_error(error: Exception, *, stderr=None) -> None:
+    code = b"RESOURCE_EXHAUSTED" if isinstance(error, (MemoryError, RecursionError)) else b"INTERNAL_OPERATION_ERROR"
+    _best_effort_stderr(b"AELITIUM_OPERATIONAL " + code + b" OUTPUT NONE\n", stream=stderr)
+
+
+def _emit_operation_entry_failure(configuration, error: Exception, phase: OperationalPhase) -> int:
+    """Contain unexpected failures after a valid machine invocation exists."""
+    try:
+        failure = recovery_failure(
+            OperationalCode.RESOURCE_EXHAUSTED
+            if isinstance(error, (MemoryError, RecursionError))
+            else OperationalCode.INTERNAL_OPERATION_ERROR,
+            phase,
+        )
+        result = VerifierToolResult.emergency_operational(
+            input_mode=InputMode.DIRECT_FILESYSTEM,
+            requested_capability=configuration.capability_request,
+            effective_capability=None,
+            limits=configuration.limits,
+            failure=failure,
+        )
+    except Exception as emergency_error:
+        _emit_terminal_operation_error(emergency_error)
+        return 3
+    return _emit_operation_json(result)
+
+
 def cmd_verify_bundle(args: argparse.Namespace) -> int:
     """
     Verify an evidence bundle directory.
@@ -262,10 +800,40 @@ def cmd_verify_bundle(args: argparse.Namespace) -> int:
 
     Usage: aelitium verify-bundle <bundle_dir>
     """
-    outdir = Path(args.bundle)
+    operation_configuration = getattr(args, "operation_json", None)
+    if operation_configuration is not None:
+        phase = OperationalPhase.CAPABILITY_SELECTION
+        try:
+            evidence = VerifierOperationEvidence(
+                input_mode=InputMode.DIRECT_FILESYSTEM,
+                requested_capability=operation_configuration.capability_request,
+                limits=operation_configuration.limits,
+            )
+            outdir = Path(args.bundle)
+            options = _verification_options(args)
+            phase = OperationalPhase.OUTPUT
+            _ensure_operation_serializer_available()
+            phase = OperationalPhase.CAPABILITY_SELECTION
+            result = verify_bundle_operation(
+                DirectFilesystemInputs(
+                    outdir,
+                    trust_store_path=getattr(args, "trust_store", None),
+                ),
+                capability_request=operation_configuration.capability_request,
+                limits=operation_configuration.limits,
+                options=options,
+                _evidence=evidence,
+            )
+        except Exception as error:
+            return _emit_operation_entry_failure(operation_configuration, error, phase)
+        return _emit_operation_json(result, evidence=evidence)
 
+    outdir = Path(args.bundle)
     options = _verification_options(args)
-    result = verify_ai_bundle(outdir, options=options)
+    try:
+        result = verify_ai_bundle(outdir, options=options)
+    except OperationalInputFailure as failure:
+        return _emit_legacy_operational_failure(failure)
     if getattr(args, "contract_json", False):
         print(
             json.dumps(
@@ -892,8 +1460,12 @@ def cmd_pack(args: argparse.Namespace) -> int:
     return 0
 
 def main() -> int:
-    ap = argparse.ArgumentParser(prog="aelitium")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    ap = _UsageArgumentParser(prog="aelitium")
+    sub = ap.add_subparsers(
+        dest="cmd",
+        required=True,
+        parser_class=_UsageArgumentParser,
+    )
 
     v = sub.add_parser("validate", help="Validate ai_output_v1 minimal contract")
     v.add_argument("--schema", default="engine/schemas/ai_output_v1.json")
@@ -987,6 +1559,17 @@ def main() -> int:
             "results"
         ),
     )
+    verify_bundle_output.add_argument(
+        "--operation-json",
+        type=_parse_operation_config_json,
+        metavar="CONFIG_JSON",
+        default=None,
+        help=(
+            "Run capability-qualified verification and emit one "
+            "aelitium-verifier-tool-result-v1; CONFIG_JSON contains exact "
+            "capability and limits objects"
+        ),
+    )
     vb.add_argument("--require-signature", action="store_true",
                     help="Reject bundles without signature material")
     vb.add_argument("--require-binding", action="store_true",
@@ -1063,6 +1646,15 @@ def main() -> int:
     exp.set_defaults(fn=cmd_export)
 
     args = ap.parse_args()
+    if getattr(args, "operation_json", None) is not None:
+        try:
+            validate_verifier_operation_options(_verification_options(args))
+        except (TypeError, ValueError) as error:
+            ap.error(str(error))
+        except Exception as error:
+            return _emit_operation_entry_failure(
+                args.operation_json, error, OperationalPhase.CAPABILITY_SELECTION
+            )
     return int(args.fn(args))
 
 if __name__ == "__main__":

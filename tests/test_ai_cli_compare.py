@@ -856,7 +856,7 @@ class TestCompareOutputContract(unittest.TestCase):
             FROZEN_PRE_INVOCATION_A,
             ["--require-invocation-evidence", "--legacy-request-hash-v1"],
         )
-        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.returncode, 64)
         self.assertIn("not allowed with argument", result.stderr)
         self.assertNotIn("STATUS=", result.stdout)
 

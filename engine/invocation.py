@@ -38,8 +38,8 @@ from __future__ import annotations
 import json
 import math
 import re
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, Callable, TYPE_CHECKING
 
 from .ai_contract import AI_CANONICALIZATION
 from .canonical import (
@@ -48,6 +48,10 @@ from .canonical import (
 )
 from .canonical_v2 import V2CanonicalizationError
 from .canonicalization import canonical_json_for_identifier
+from .verifier_diagnostics import describe_json_value
+
+if TYPE_CHECKING:
+    from .verifier_capabilities import EffectiveVerifierRoute
 
 INVOCATION_FORMAT = "aelitium-invocation-v1"
 
@@ -122,21 +126,37 @@ class InvocationIdentity:
     mode: str
     hash_sha256: str
     request_canonical_json: str
+    source_route: EffectiveVerifierRoute | None = field(
+        default=None, repr=False, compare=False
+    )
 
     def to_stored_object(self) -> dict[str, Any]:
         """Return a fresh, mutable dict matching the conceptual stored shape."""
 
+        if self.source_route is not None:
+            from .verifier_snapshot import InputRef, InputRole, OperationalPhase
+            from .verifier_v1_capability import parse_v1_json_source
+
+            request = parse_v1_json_source(
+                self.request_canonical_json.encode("utf-8"),
+                route=self.source_route,
+                role=InputRole.AI_CANONICAL_JSON,
+                phase=OperationalPhase.CANONICAL_PARSE,
+                input_ref=InputRef.AI_CANONICAL_JSON,
+            )
+        else:
+            request = json.loads(self.request_canonical_json)
         return {
             "format": self.format,
             "surface": self.surface,
             "mode": self.mode,
-            "request": json.loads(self.request_canonical_json),
+            "request": request,
             "hash_sha256": self.hash_sha256,
         }
 
 
 def _validate_json_value(value: Any, path: str) -> None:
-    """Recursively require deterministic, JSON-compatible data.
+    """Iteratively require deterministic, JSON-compatible data.
 
     Accepts null, bool, str, int, finite float, list, and dict-with-string-
     keys. Everything else (NaN/Infinity floats, bytes, set, tuple, arbitrary
@@ -144,46 +164,46 @@ def _validate_json_value(value: Any, path: str) -> None:
     relying on json.dumps to reject or silently coerce it.
     """
 
-    if value is None:
-        return
-    if isinstance(value, bool):
-        return
-    if isinstance(value, str):
-        return
-    if isinstance(value, int):
-        return
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise InvocationIdentityError(
-                "INVOCATION_BAD_VALUE", f"{path}: non-finite float"
-            )
-        return
-    if isinstance(value, list):
-        for index, item in enumerate(value):
-            _validate_json_value(item, f"{path}[{index}]")
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if not isinstance(key, str):
+    pending = [(value, path)]
+    while pending:
+        item, current_path = pending.pop()
+        if item is None or isinstance(item, (bool, str, int)):
+            continue
+        if isinstance(item, float):
+            if not math.isfinite(item):
                 raise InvocationIdentityError(
-                    "INVOCATION_BAD_VALUE", f"{path}: non-string key {key!r}"
+                    "INVOCATION_BAD_VALUE", f"{current_path}: non-finite float"
                 )
-            _validate_json_value(item, f"{path}.{key}")
-        return
-    raise InvocationIdentityError(
-        "INVOCATION_BAD_VALUE",
-        f"{path}: unsupported type {type(value).__name__}",
-    )
+            continue
+        if isinstance(item, list):
+            pending.extend(
+                (child, f"{current_path}[{index}]")
+                for index, child in reversed(list(enumerate(item)))
+            )
+            continue
+        if isinstance(item, dict):
+            children = list(item.items())
+            for key, child in reversed(children):
+                if not isinstance(key, str):
+                    raise InvocationIdentityError(
+                        "INVOCATION_BAD_VALUE", f"{current_path}: non-string key {key!r}"
+                    )
+                pending.append((child, f"{current_path}.{key}"))
+            continue
+        raise InvocationIdentityError(
+            "INVOCATION_BAD_VALUE",
+            f"{current_path}: unsupported type {type(item).__name__}",
+        )
 
 
 def _validate_surface_mode(surface: Any, mode: Any) -> tuple[str, str]:
     if not isinstance(surface, str) or surface not in _VALID_SURFACE_MODES:
         raise InvocationIdentityError(
-            "INVOCATION_BAD_SURFACE", f"unsupported surface: {surface!r}"
+            "INVOCATION_BAD_SURFACE", f"unsupported surface: {describe_json_value(surface)}"
         )
     if not isinstance(mode, str) or mode not in _ALL_MODES:
         raise InvocationIdentityError(
-            "INVOCATION_BAD_MODE", f"unsupported mode: {mode!r}"
+            "INVOCATION_BAD_MODE", f"unsupported mode: {describe_json_value(mode)}"
         )
     if mode not in _VALID_SURFACE_MODES[surface]:
         raise InvocationIdentityError(
@@ -258,6 +278,8 @@ def _finalize(
     mode: str,
     request: dict[str, Any],
     canonicalization: str = AI_CANONICALIZATION,
+    canonicalizer: Callable[[Any], str] | None = None,
+    source_route: EffectiveVerifierRoute | None = None,
 ) -> InvocationIdentity:
     hash_material = {
         "format": INVOCATION_FORMAT,
@@ -266,12 +288,13 @@ def _finalize(
         "request": request,
     }
     try:
+        encode = canonicalizer or (
+            lambda value: canonical_json_for_identifier(value, canonicalization)
+        )
         digest = sha256_hash(
-            canonical_json_for_identifier(hash_material, canonicalization)
+            encode(hash_material)
         )
-        request_canonical_json = canonical_json_for_identifier(
-            request, canonicalization
-        )
+        request_canonical_json = encode(request)
     except (CanonicalizationError, V2CanonicalizationError) as exc:
         raise InvocationIdentityError(
             "INVOCATION_BAD_VALUE", exc.reason
@@ -282,6 +305,7 @@ def _finalize(
         mode=mode,
         hash_sha256=digest,
         request_canonical_json=request_canonical_json,
+        source_route=source_route,
     )
 
 
@@ -319,6 +343,8 @@ def parse_invocation_identity(
     data: Any,
     *,
     canonicalization: str = AI_CANONICALIZATION,
+    canonicalizer: Callable[[Any], str] | None = None,
+    source_route: EffectiveVerifierRoute | None = None,
 ) -> InvocationIdentity:
     """Strictly validate a stored invocation-identity object and recompute
     its hash from the stored semantic fields.
@@ -344,7 +370,7 @@ def parse_invocation_identity(
     if data.get("format") != INVOCATION_FORMAT:
         raise InvocationIdentityError(
             "INVOCATION_BAD_FORMAT",
-            f"format must be {INVOCATION_FORMAT!r}, got {data.get('format')!r}",
+            f"format must be {INVOCATION_FORMAT!r}, got {describe_json_value(data.get('format'))}",
         )
 
     surface, mode = _validate_surface_mode(data.get("surface"), data.get("mode"))
@@ -364,6 +390,8 @@ def parse_invocation_identity(
         mode,
         normalized_request,
         canonicalization=canonicalization,
+        canonicalizer=canonicalizer,
+        source_route=source_route,
     )
     if identity.hash_sha256 != stored_hash:
         raise InvocationIdentityError(

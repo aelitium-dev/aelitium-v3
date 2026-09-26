@@ -1085,6 +1085,20 @@ class TestAIFreshnessAssurance(unittest.TestCase):
             self.assertTrue(result.valid)
             self.assertEqual(result.freshness, AssuranceState.VALID)
 
+    def test_legacy_inner_freshness_domain_is_not_narrowed_by_outer_transport(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(maximum_age=9_007_199_254_740_992),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
     def test_one_second_stale_is_invalid(self):
         with tempfile.TemporaryDirectory() as directory:
             bundle = Path(directory)

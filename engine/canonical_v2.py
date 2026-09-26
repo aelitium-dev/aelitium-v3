@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from collections.abc import Callable
 from typing import Any
 
 from .manifest_dispatch import DispatchScanError, _parse_dispatch_tree
@@ -253,6 +254,53 @@ def parse_json_v2(source: bytes) -> Any:
     return value
 
 
+def _serialize_v2_iterative(
+    data: Any,
+    *,
+    scalar_dumps: Callable[[Any], bytes],
+) -> bytes:
+    """Serialize containers iteratively and delegate exact scalar JCS bytes."""
+
+    canonical = bytearray()
+    work: list[Any] = [data]
+
+    while work:
+        value = work.pop()
+        value_type = type(value)
+        if value_type is bytes:
+            canonical.extend(value)
+            continue
+
+        if value_type is list:
+            canonical.extend(b"[")
+            work.append(b"]")
+            for index in range(len(value) - 1, -1, -1):
+                if index < len(value) - 1:
+                    work.append(b",")
+                work.append(value[index])
+            continue
+
+        if value_type is dict:
+            items = sorted(
+                value.items(),
+                key=lambda item: item[0].encode("utf-16be"),
+            )
+            canonical.extend(b"{")
+            work.append(b"}")
+            for index in range(len(items) - 1, -1, -1):
+                if index < len(items) - 1:
+                    work.append(b",")
+                key, item = items[index]
+                work.append(item)
+                work.append(b":")
+                work.append(scalar_dumps(key))
+            continue
+
+        canonical.extend(scalar_dumps(value))
+
+    return bytes(canonical)
+
+
 def canonical_json_v2_bytes(data: Any) -> bytes:
     """Serialize a programmatic v2 value to exact RFC 8785 UTF-8 bytes."""
 
@@ -267,7 +315,10 @@ def canonical_json_v2_bytes(data: Any) -> bytes:
             "JCS_SERIALIZATION_FAILED", "rfc8785 dependency is unavailable"
         ) from exc
     try:
-        canonical = rfc8785.dumps(data)
+        canonical = _serialize_v2_iterative(
+            data,
+            scalar_dumps=rfc8785.dumps,
+        )
     except rfc8785.CanonicalizationError as exc:
         raise V2CanonicalizationError("JCS_SERIALIZATION_FAILED", str(exc)) from exc
     if canonical.startswith(b"\xef\xbb\xbf") or canonical.endswith(b"\n"):

@@ -6,7 +6,7 @@
 
 **Operation contract:** `AELITIUM-LEGACY-V1-POLICY-OPERATION-1`
 
-This separate 94-case corpus supplies language-neutral acceptance evidence for
+This separate 99-case corpus supplies language-neutral acceptance evidence for
 [`aelitium-legacy-v1-compatibility-operational-policy-v1`](../../docs/LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md).
 It does not edit, renumber, reinterpret, or replace the existing 44-case result
 contract, 30-case v1 canonicalization, or 114-case v2 canonicalization corpus.
@@ -21,11 +21,11 @@ the Python verification engine or claim that an independent verifier exists.
 |---|---:|---|
 | `INTEGER_CAPABILITY` | 23 | 640/641/4300/4301/10000 and arbitrary limits, bounded/unlimited profiles, occurrence-wide conversion, dispatch isolation |
 | `TIMESTAMP_COMPATIBILITY` | 16 | ASCII, frozen Unicode Nd membership, outside-table behavior, and exact final-LF structure |
-| `DETERMINISTIC_LEGACY` | 12 | last-name-wins, non-finites, surrogate code units, Base64 pad bits, open members, empty trust input |
+| `DETERMINISTIC_LEGACY` | 14 | last-name-wins, non-finites, surrogate code units, categorical restricted-domain refusals, Base64 pad bits, open members, empty trust input |
 | `OPERATIONAL_LIMIT` | 12 | below/at/above file, aggregate, depth, and value-occurrence limits |
 | `OPERATIONAL_RESOURCE` | 4 | deterministic injected exhaustion in dispatch and parsers |
 | `FILESYSTEM_SNAPSHOT` | 24 | regular/non-regular inputs, no-follow behavior, I/O, instability, stable absence, immutable equivalence |
-| `OPERATIONAL_TRANSPORT` | 3 | output/internal failure and unsupported-v1 dispatch |
+| `OPERATIONAL_TRANSPORT` | 6 | output/internal failure, unsupported-v1 dispatch, and rejected capability-selection requests |
 
 ## Frozen case form
 
@@ -54,12 +54,12 @@ Python implementation. Unknown operations are corpus errors.
 
 | Operation | Exact harness action |
 |---|---|
-| `SELECT_CAPABILITY` | Authenticate the requested frozen profile before acquiring evidence and compare the resulting operational wrapper |
+| `SELECT_CAPABILITY` | Validate and retain the requested declaration, authenticate any requested frozen profile before acquiring evidence, and compare the resulting operational wrapper |
 | `CLASSIFY_INTEGER_SOURCE` | Materialize the identified source, traverse integer occurrences in source order under its declared role/position, and apply policy section 5 at the recorded occurrence |
 | `CLASSIFY_PROGRAMMATIC_INTEGER` | Treat the recipe bytes as the exact signed base-10 magnitude supplied by a non-source API and apply the declared conversion capability without binary64 narrowing |
 | `DISPATCH_MANIFEST` | Materialize the original manifest bytes, run `AELITIUM-DISPATCH-JSON-1`, and consult only the selected route's capability after scanning completes |
 | `VALIDATE_MANIFEST_TIMESTAMP` | Decode the standalone JSON-string source, verify the committed `decoded_code_points`, and apply policy section 6 with the selected timestamp profile |
-| `APPLY_LEGACY_RULE` | Apply the section 7 rule named by the case and compare the complete committed checkpoint facts |
+| `APPLY_LEGACY_RULE` | Apply the section 7 rule named by the case and compare the complete committed checkpoint or categorical operational wrapper |
 | `DECODE_LEGACY_BASE64` | Decode the committed standard-alphabet/padded spelling with the legacy unused-pad-bit rule and compare the exact decoded bytes and canonical re-encoding facts |
 | `MEASURE_SOURCE_LIMIT` | Compare the materialized role's exact byte count with the effective per-file limit; equality is within limit |
 | `MEASURE_SNAPSHOT_LIMIT` | Sum the exact bytes of every committed present role and compare with the effective aggregate limit; equality is within limit |

@@ -44,7 +44,12 @@
         "capability": {
           "allOf": [
             {"$ref": "#/definitions/capability_state"},
-            {"properties": {"effective": {"$ref": "#/definitions/capability_request"}}}
+            {
+              "properties": {
+                "requested": {"$ref": "#/definitions/current_supported_capability_request"},
+                "effective": {"$ref": "#/definitions/current_supported_capability_request"}
+              }
+            }
           ]
         },
         "verification_result": {
@@ -63,7 +68,12 @@
         "capability": {
           "allOf": [
             {"$ref": "#/definitions/capability_state"},
-            {"properties": {"effective": {"$ref": "#/definitions/capability_request"}}}
+            {
+              "properties": {
+                "requested": {"$ref": "#/definitions/current_supported_capability_request"},
+                "effective": {"$ref": "#/definitions/current_supported_capability_request"}
+              }
+            }
           ]
         },
         "verification_result": {
@@ -116,6 +126,15 @@
                 "not": {"const": "CAPABILITY_PROFILE_UNAVAILABLE"}
               }
             },
+            "not": {
+              "properties": {
+                "operational_code": {
+                  "enum": ["INTERNAL_OPERATION_ERROR", "RESOURCE_EXHAUSTED"]
+                },
+                "phase": {"enum": ["CAPABILITY_SELECTION", "OUTPUT"]}
+              },
+              "required": ["operational_code", "phase"]
+            },
             "required": ["operational_code"]
           }
         },
@@ -124,7 +143,35 @@
       "then": {
         "properties": {
           "capability": {
-            "properties": {"effective": {"$ref": "#/definitions/capability_request"}}
+            "properties": {
+              "requested": {"$ref": "#/definitions/supported_capability_request_compat"},
+              "effective": {"$ref": "#/definitions/supported_capability_request_compat"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {"const": "OPERATIONAL_OUTCOME"},
+          "operational_result": {
+            "type": "object",
+            "properties": {
+              "operational_code": {"const": "CAPABILITY_PROFILE_UNAVAILABLE"},
+              "phase": {"const": "DISPATCH"}
+            },
+            "required": ["operational_code", "phase"]
+          }
+        },
+        "required": ["outcome", "operational_result"]
+      },
+      "then": {
+        "properties": {
+          "capability": {
+            "properties": {
+              "requested": {"$ref": "#/definitions/supported_capability_request_compat"}
+            }
           }
         }
       }
@@ -135,12 +182,7 @@
           "operational_result": {
             "type": "object",
             "properties": {
-              "operational_code": {
-                "enum": [
-                  "INPUT_OUTSIDE_DECLARED_CAPABILITY",
-                  "RESOURCE_LIMIT_EXCEEDED"
-                ]
-              }
+              "operational_code": {"const": "RESOURCE_LIMIT_EXCEEDED"}
             },
             "required": ["operational_code"]
           }
@@ -150,6 +192,33 @@
         "properties": {
           "operational_result": {
             "properties": {"limit": {"$ref": "#/definitions/limit_fact"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verification_result": {"type": "object"}
+        },
+        "required": ["verification_result"]
+      },
+      "then": {
+        "properties": {
+          "verification_result": {
+            "properties": {
+              "policy_inputs": {
+                "items": {
+                  "properties": {
+                    "maximum_age_seconds": {
+                      "type": ["integer", "null"],
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -288,29 +357,224 @@
         "capability": {"const": "V2_PORTABLE"}
       }
     },
-    "capability_request": {
+    "signature_verification_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile"],
+      "properties": {
+        "profile": {"const": "ED25519_PORTABLE_STRICT_1"}
+      }
+    },
+    "capability_identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "requested_integer_conversion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maximum_decimal_digits"],
+      "properties": {
+        "mode": {"$ref": "#/definitions/capability_identifier"},
+        "maximum_decimal_digits": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "requested_timestamp_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "range_file_sha256", "unicode_version"],
+      "properties": {
+        "profile_id": {"$ref": "#/definitions/capability_identifier"},
+        "range_file_sha256": {"$ref": "#/definitions/sha256"},
+        "unicode_version": {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+){2}$"
+        }
+      }
+    },
+    "requested_v1_restricted_portable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_RESTRICTED_PORTABLE"},
+        "integer_conversion": {"$ref": "#/definitions/requested_integer_conversion"},
+        "timestamp_digit_profile": {"$ref": "#/definitions/capability_identifier"},
+        "timestamp_final_lf": {"$ref": "#/definitions/capability_identifier"}
+      }
+    },
+    "requested_v1_frozen_legacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_FROZEN_LEGACY_COMPATIBILITY"},
+        "integer_conversion": {"$ref": "#/definitions/requested_integer_conversion"},
+        "timestamp_digit_profile": {"$ref": "#/definitions/capability_identifier"},
+        "timestamp_final_lf": {"$ref": "#/definitions/capability_identifier"}
+      }
+    },
+    "requested_v1_named_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "integer_conversion",
+        "timestamp_digit_profile",
+        "timestamp_final_lf"
+      ],
+      "properties": {
+        "capability": {"const": "V1_NAMED_RUNTIME_COMPATIBILITY"},
+        "integer_conversion": {"$ref": "#/definitions/requested_integer_conversion"},
+        "timestamp_digit_profile": {"$ref": "#/definitions/requested_timestamp_profile"},
+        "timestamp_final_lf": {"$ref": "#/definitions/capability_identifier"}
+      }
+    },
+    "requested_v1_legacy_unsupported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "properties": {
+        "capability": {"const": "V1_LEGACY_UNSUPPORTED"}
+      }
+    },
+    "requested_v1_unknown": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "properties": {
+        "capability": {
+          "allOf": [
+            {"$ref": "#/definitions/capability_identifier"},
+            {
+              "not": {
+                "enum": [
+                  "V1_RESTRICTED_PORTABLE",
+                  "V1_FROZEN_LEGACY_COMPATIBILITY",
+                  "V1_NAMED_RUNTIME_COMPATIBILITY",
+                  "V1_LEGACY_UNSUPPORTED"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "requested_v1_declaration": {
+      "oneOf": [
+        {"$ref": "#/definitions/requested_v1_restricted_portable"},
+        {"$ref": "#/definitions/requested_v1_frozen_legacy"},
+        {"$ref": "#/definitions/requested_v1_named_runtime"},
+        {"$ref": "#/definitions/requested_v1_legacy_unsupported"},
+        {"$ref": "#/definitions/requested_v1_unknown"}
+      ]
+    },
+    "requested_v2_declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "properties": {
+        "capability": {"$ref": "#/definitions/capability_identifier"}
+      }
+    },
+    "requested_signature_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile"],
+      "properties": {
+        "profile": {"$ref": "#/definitions/capability_identifier"}
+      }
+    },
+    "capability_requested": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dispatch", "v1", "v2", "signature_verification"],
+      "properties": {
+        "dispatch": {"$ref": "#/definitions/capability_identifier"},
+        "v1": {"$ref": "#/definitions/requested_v1_declaration"},
+        "v2": {"$ref": "#/definitions/requested_v2_declaration"},
+        "signature_verification": {
+          "$ref": "#/definitions/requested_signature_verification"
+        }
+      }
+    },
+    "supported_capability_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dispatch", "v1", "v2", "signature_verification"],
+      "properties": {
+        "dispatch": {"const": "AELITIUM-DISPATCH-JSON-1"},
+        "v1": {"$ref": "#/definitions/v1_capability"},
+        "v2": {"$ref": "#/definitions/v2_capability"},
+        "signature_verification": {
+          "$ref": "#/definitions/signature_verification_capability"
+        }
+      }
+    },
+    "historical_supported_capability_request": {
       "type": "object",
       "additionalProperties": false,
       "required": ["dispatch", "v1", "v2"],
+      "$comment": "Compatibility-only shape for frozen operational records that predate the mandatory signature-verification request; omission selects no profile and is forbidden in current semantic results",
       "properties": {
         "dispatch": {"const": "AELITIUM-DISPATCH-JSON-1"},
         "v1": {"$ref": "#/definitions/v1_capability"},
         "v2": {"$ref": "#/definitions/v2_capability"}
       }
     },
+    "supported_capability_request_compat": {
+      "oneOf": [
+        {"$ref": "#/definitions/supported_capability_request"},
+        {"$ref": "#/definitions/historical_supported_capability_request"}
+      ]
+    },
+    "current_supported_capability_request": {
+      "$ref": "#/definitions/supported_capability_request"
+    },
     "capability_state": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["requested", "effective"],
-      "properties": {
-        "requested": {"$ref": "#/definitions/capability_request"},
-        "effective": {
-          "oneOf": [
-            {"$ref": "#/definitions/capability_request"},
-            {"type": "null"}
-          ]
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requested", "effective"],
+          "properties": {
+            "requested": {"$ref": "#/definitions/capability_requested"},
+            "effective": {
+              "oneOf": [
+                {"$ref": "#/definitions/supported_capability_request"},
+                {"type": "null"}
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requested", "effective"],
+          "properties": {
+            "requested": {"$ref": "#/definitions/historical_supported_capability_request"},
+            "effective": {
+              "oneOf": [
+                {"$ref": "#/definitions/historical_supported_capability_request"},
+                {"type": "null"}
+              ]
+            }
+          }
         }
-      }
+      ]
     },
     "limit_values": {
       "type": "object",
@@ -551,19 +815,24 @@
             "properties": {
               "input_ref": {"not": {"type": "null"}},
               "limit": {
-                "allOf": [
-                  {"$ref": "#/definitions/limit_fact"},
+                "oneOf": [
+                  {"type": "null"},
                   {
-                    "properties": {
-                      "name": {
-                        "enum": [
-                          "INTEGER_DECIMAL_DIGITS",
-                          "TIMESTAMP_DIGIT_PROFILE"
-                        ]
-                      },
-                      "maximum": {"type": ["integer", "string"]},
-                      "observed_at_least": {"type": ["integer", "string"]}
-                    }
+                    "allOf": [
+                      {"$ref": "#/definitions/limit_fact"},
+                      {
+                        "properties": {
+                          "name": {
+                            "enum": [
+                              "INTEGER_DECIMAL_DIGITS",
+                              "TIMESTAMP_DIGIT_PROFILE"
+                            ]
+                          },
+                          "maximum": {"type": ["integer", "string"]},
+                          "observed_at_least": {"type": ["integer", "string"]}
+                        }
+                      }
+                    ]
                   }
                 ]
               }
