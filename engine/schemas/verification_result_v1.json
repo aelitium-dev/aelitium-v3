@@ -1,0 +1,462 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium-verification-result-v1",
+  "title": "AELITIUM verification result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "artifact",
+    "status",
+    "rc",
+    "reason",
+    "detail",
+    "assurance",
+    "verification_inputs",
+    "trust_inputs",
+    "policy_inputs",
+    "claim_boundary_contract",
+    "claim_boundaries"
+  ],
+  "properties": {
+    "contract": {"const": "aelitium-verification-result-v1"},
+    "artifact": {"$ref": "#/definitions/artifact_ref"},
+    "status": {"enum": ["VALID", "INVALID"]},
+    "rc": {"enum": [0, 2]},
+    "reason": {"type": "string", "minLength": 1},
+    "detail": {"type": ["string", "null"]},
+    "assurance": {"$ref": "#/definitions/assurance_result"},
+    "verification_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validate_manifest_timestamp",
+        "require_signature",
+        "require_binding",
+        "require_trusted_signer"
+      ],
+      "properties": {
+        "validate_manifest_timestamp": {"type": "boolean"},
+        "require_signature": {"type": "boolean"},
+        "require_binding": {"type": "boolean"},
+        "require_trusted_signer": {"type": "boolean"}
+      }
+    },
+    "trust_inputs": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "format", "source"],
+        "properties": {
+          "ref": {"const": "verification-input:trust-store"},
+          "format": {"const": "aelitium-trust-v1"},
+          "source": {"const": "explicit_local_file"}
+        }
+      }
+    },
+    "policy_inputs": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "kind",
+          "maximum_age_seconds",
+          "reference_time_utc"
+        ],
+        "properties": {
+          "ref": {"const": "verification-input:freshness-policy"},
+          "kind": {"const": "declared_time_freshness_v1"},
+          "maximum_age_seconds": {"type": ["integer", "null"]},
+          "reference_time_utc": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "claim_boundary_contract": {"const": "aelitium-claim-boundary-v1"},
+    "claim_boundaries": {
+      "const": [
+        "provider_execution_not_established",
+        "response_causation_not_established",
+        "semantic_truth_not_established",
+        "capture_completeness_not_established",
+        "historical_occurrence_not_established",
+        "historical_non_modification_not_established",
+        "authorization_not_established",
+        "trusted_historical_time_not_established",
+        "legal_compliance_not_established",
+        "complete_invocation_identity_not_established"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "VALID"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 0},
+          "reason": {"const": "OK"},
+          "detail": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "INVALID"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 2},
+          "reason": {"not": {"const": "OK"}}
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "assurance_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "dimensions",
+        "claim_boundary_contract",
+        "claim_boundaries"
+      ],
+      "properties": {
+        "contract": {"const": "aelitium-assurance-result-v1"},
+        "dimensions": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": [
+            {"$ref": "#/definitions/payload_integrity_dimension"},
+            {"$ref": "#/definitions/binding_field_consistency_dimension"},
+            {"$ref": "#/definitions/invocation_identity_consistency_dimension"},
+            {"$ref": "#/definitions/invocation_binding_consistency_dimension"},
+            {"$ref": "#/definitions/signature_validity_dimension"},
+            {"$ref": "#/definitions/trusted_signer_identity_dimension"},
+            {"$ref": "#/definitions/freshness_dimension"},
+            {"$ref": "#/definitions/authorization_dimension"}
+          ],
+          "additionalItems": false
+        },
+        "claim_boundary_contract": {"const": "aelitium-claim-boundary-v1"},
+        "claim_boundaries": {
+          "const": [
+            "provider_execution_not_established",
+            "response_causation_not_established",
+            "semantic_truth_not_established",
+            "capture_completeness_not_established",
+            "historical_occurrence_not_established",
+            "historical_non_modification_not_established",
+            "authorization_not_established",
+            "trusted_historical_time_not_established",
+            "legal_compliance_not_established",
+            "complete_invocation_identity_not_established"
+          ]
+        }
+      }
+    },
+    "assurance_dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dimension",
+        "state",
+        "basis",
+        "evidence_refs",
+        "trust_input_refs",
+        "policy_ref",
+        "claim_boundaries"
+      ],
+      "properties": {
+        "dimension": {
+          "enum": [
+            "payload_integrity",
+            "binding_field_consistency",
+            "invocation_identity_consistency",
+            "invocation_binding_consistency",
+            "signature_validity",
+            "trusted_signer_identity",
+            "freshness",
+            "authorization"
+          ]
+        },
+        "state": {"enum": ["VALID", "INVALID", "ABSENT", "UNESTABLISHED", "NOT_EVALUATED"]},
+        "basis": {"type": "string", "minLength": 1},
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "trust_input_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"const": "verification-input:trust-store"}
+        },
+        "policy_ref": {
+          "type": ["string", "null"],
+          "enum": ["verification-input:freshness-policy", null]
+        },
+        "claim_boundaries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/definitions/claim_boundary"}
+        }
+      }
+    },
+    "payload_integrity_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "payload_integrity"},
+            "state": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+            "basis": {"const": "ai_output_v1_canonical_manifest_digest_consistency"},
+            "evidence_refs": {
+              "const": ["bundle:ai_canonical.json", "bundle:ai_manifest.json"]
+            },
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "historical_occurrence_not_established",
+                "historical_non_modification_not_established",
+                "semantic_truth_not_established",
+                "capture_completeness_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "binding_field_consistency_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "binding_field_consistency"},
+            "state": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+            "basis": {"const": "stored_request_response_binding_field_consistency"},
+            "evidence_refs": {
+              "const": [
+                "bundle:ai_canonical.json#/metadata/request_hash",
+                "bundle:ai_canonical.json#/metadata/response_hash",
+                "bundle:ai_canonical.json#/metadata/binding_hash",
+                "bundle:ai_manifest.json#/binding_hash"
+              ]
+            },
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "response_causation_not_established",
+                "provider_execution_not_established",
+                "historical_occurrence_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "invocation_identity_consistency_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "invocation_identity_consistency"},
+            "state": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+            "basis": {"const": "aelitium-invocation-v1_recomputation"},
+            "evidence_refs": {
+              "const": ["bundle:ai_canonical.json#/metadata/invocation_identity"]
+            },
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "provider_execution_not_established",
+                "complete_invocation_identity_not_established",
+                "response_causation_not_established",
+                "historical_occurrence_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "invocation_binding_consistency_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "invocation_binding_consistency"},
+            "state": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+            "basis": {"const": "aelitium-invocation-binding-v1_recomputation_and_bundle_linkage"},
+            "evidence_refs": {
+              "const": [
+                "bundle:ai_canonical.json#/metadata/invocation_binding",
+                "bundle:ai_canonical.json#/metadata/invocation_identity/hash_sha256",
+                "bundle:ai_canonical.json#/metadata/response_hash"
+              ]
+            },
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "response_causation_not_established",
+                "provider_execution_not_established",
+                "historical_occurrence_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "signature_validity_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "signature_validity"},
+            "state": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+            "basis": {"const": "ed25519_manifest_signature_verification"},
+            "evidence_refs": {
+              "const": ["bundle:ai_manifest.json", "bundle:verification_keys.json"]
+            },
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "trusted_signer_identity_not_established_by_signature",
+                "authorization_not_established",
+                "historical_occurrence_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "trusted_signer_identity_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "trusted_signer_identity"},
+            "state": {"enum": ["VALID", "UNESTABLISHED"]},
+            "basis": {"const": "verified_ed25519_key_fingerprint_membership_in_explicit_aelitium-trust-v1"},
+            "evidence_refs": {"const": ["bundle:verification_keys.json"]},
+            "trust_input_refs": {
+              "enum": [[], ["verification-input:trust-store"]]
+            },
+            "policy_ref": {"const": null},
+            "claim_boundaries": {
+              "const": [
+                "authorization_not_established",
+                "provider_execution_not_established",
+                "historical_occurrence_not_established",
+                "trusted_historical_time_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "freshness_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "freshness"},
+            "state": {"enum": ["VALID", "INVALID", "UNESTABLISHED", "NOT_EVALUATED"]},
+            "basis": {"const": "declared_canonical_timestamp_recency_under_explicit_policy"},
+            "evidence_refs": {"const": ["bundle:ai_canonical.json#/ts_utc"]},
+            "trust_input_refs": {"const": []},
+            "policy_ref": {
+              "enum": ["verification-input:freshness-policy", null]
+            },
+            "claim_boundaries": {
+              "const": [
+                "trusted_historical_time_not_established",
+                "historical_occurrence_not_established",
+                "historical_non_modification_not_established",
+                "provider_execution_not_established",
+                "response_causation_not_established"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "authorization_dimension": {
+      "allOf": [
+        {"$ref": "#/definitions/assurance_dimension"},
+        {
+          "properties": {
+            "dimension": {"const": "authorization"},
+            "state": {"const": "NOT_EVALUATED"},
+            "basis": {"const": "not_implemented_in_v0.4-compatible_semantics"},
+            "evidence_refs": {"const": []},
+            "trust_input_refs": {"const": []},
+            "policy_ref": {"const": null},
+            "claim_boundaries": {"const": ["authorization_not_established"]}
+          }
+        }
+      ]
+    },
+    "artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "expected_payload_schema",
+        "expected_manifest_schema",
+        "canonical_ref",
+        "manifest_ref",
+        "canonical_payload_digest"
+      ],
+      "properties": {
+        "artifact_type": {"const": "ai_evidence_bundle"},
+        "expected_payload_schema": {"const": "ai_output_v1"},
+        "expected_manifest_schema": {"const": "ai_pack_manifest_v1"},
+        "canonical_ref": {"const": "bundle:ai_canonical.json"},
+        "manifest_ref": {"const": "bundle:ai_manifest.json"},
+        "canonical_payload_digest": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["algorithm", "scope", "value"],
+              "properties": {
+                "algorithm": {"const": "sha256"},
+                "scope": {"const": "canonical_payload"},
+                "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "claim_boundary": {
+      "enum": [
+        "authorization_not_established",
+        "capture_completeness_not_established",
+        "complete_invocation_identity_not_established",
+        "historical_non_modification_not_established",
+        "historical_occurrence_not_established",
+        "legal_compliance_not_established",
+        "model_drift_not_established",
+        "provider_execution_not_established",
+        "provider_fault_not_established",
+        "quality_degradation_not_established",
+        "regression_not_established",
+        "response_causation_not_established",
+        "semantic_equivalence_not_established",
+        "semantic_truth_not_established",
+        "trusted_historical_time_not_established",
+        "trusted_signer_identity_not_established_by_signature"
+      ]
+    }
+  }
+}

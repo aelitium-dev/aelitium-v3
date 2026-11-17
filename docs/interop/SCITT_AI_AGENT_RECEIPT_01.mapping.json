@@ -1,0 +1,178 @@
+{
+  "profile": "aelitium-experimental-scitt-ai-agent-action-receipt-01",
+  "status": "EXPERIMENTAL",
+  "implementation_status": "BLOCKED",
+  "runtime_surface": null,
+  "reviewed_date": "2026-09-04",
+  "source_specification": {
+    "title": "A SCITT Profile for AI-Agent Action Receipts",
+    "identifier": "draft-noa-scitt-ai-agent-receipt-01",
+    "wire_identifier": "noa.receipt/0.1",
+    "draft_date": "2026-08-15",
+    "expires": "2027-02-16",
+    "uri": "https://datatracker.ietf.org/doc/draft-noa-scitt-ai-agent-receipt/01/",
+    "standing": "ACTIVE_INDIVIDUAL_INTERNET_DRAFT_WORK_IN_PROGRESS"
+  },
+  "source_scope": {
+    "considered_presentations": [
+      "bare_noa_receipt_0_1",
+      "attached_payload_cose_sign1"
+    ],
+    "excluded": [
+      "scitt_transparency_receipt",
+      "transparency_log_consistency_monitoring",
+      "identity_manifest_import",
+      "checkpoint_import",
+      "chain_set_completeness",
+      "companion_action_digest",
+      "settlement_evidence"
+    ]
+  },
+  "safe_metadata_mappings": [
+    {
+      "source": "draft identifier plus receipt.spec",
+      "target": "external_evidence_format_identifier",
+      "qualifier": "exact_version_only"
+    },
+    {
+      "source": "receipt.id",
+      "target": "source_receipt_identifier",
+      "qualifier": "issuer_key_scoped_not_globally_unique"
+    },
+    {
+      "source": "receipt.scope.chain and receipt.chain.seq",
+      "target": "source_chain_coordinates",
+      "qualifier": "source_assertion_not_invocation_identity"
+    },
+    {
+      "source": "receipt.chain.hash",
+      "target": "source_native_chain_link_digest",
+      "qualifier": "not_complete_artifact_digest_not_aelitium_digest"
+    },
+    {
+      "source": "receipt.sig.kid and protected COSE kid",
+      "target": "separate_source_key_references",
+      "qualifier": "opaque_and_not_trust_decisions"
+    },
+    {
+      "source": "receipt.ts",
+      "target": "source_declared_recorded_time",
+      "qualifier": "signer_chosen_not_aelitium_freshness"
+    },
+    {
+      "source": "receipt.agent receipt.action receipt.governance",
+      "target": "source_attributed_assertions",
+      "qualifier": "not_native_request_invocation_authorization_or_policy_result"
+    }
+  ],
+  "native_assurance_projection": [
+    {
+      "dimension": "payload_integrity",
+      "source_receipt_alone_can_establish": false,
+      "reason": "MISSING_AELITIUM_CANONICAL_PAYLOAD_AND_MANIFEST_BASIS"
+    },
+    {
+      "dimension": "binding_field_consistency",
+      "source_receipt_alone_can_establish": false,
+      "reason": "MISSING_AELITIUM_REQUEST_RESPONSE_BINDING_FIELDS"
+    },
+    {
+      "dimension": "invocation_identity_consistency",
+      "source_receipt_alone_can_establish": false,
+      "reason": "MISSING_AELITIUM_INVOCATION_V1"
+    },
+    {
+      "dimension": "invocation_binding_consistency",
+      "source_receipt_alone_can_establish": false,
+      "reason": "MISSING_AELITIUM_INVOCATION_BINDING_V1"
+    },
+    {
+      "dimension": "signature_validity",
+      "source_receipt_alone_can_establish": false,
+      "reason": "SOURCE_SIGNATURE_BASIS_IS_NOT_AELITIUM_MANIFEST_SIGNATURE"
+    },
+    {
+      "dimension": "trusted_signer_identity",
+      "source_receipt_alone_can_establish": false,
+      "reason": "SOURCE_KEY_INPUT_IS_NOT_EXPLICIT_AELITIUM_TRUST_V1_MEMBERSHIP"
+    },
+    {
+      "dimension": "freshness",
+      "source_receipt_alone_can_establish": false,
+      "reason": "SOURCE_TIMESTAMP_IS_NOT_AELITIUM_CANONICAL_TIMESTAMP_POLICY_INPUT"
+    },
+    {
+      "dimension": "authorization",
+      "source_receipt_alone_can_establish": false,
+      "reason": "AUTHORIZATION_REMAINS_NOT_EVALUATED"
+    }
+  ],
+  "prohibited_mappings": [
+    {
+      "case": "valid_native_or_cose_source_signature",
+      "must_not_emit": [
+        "signature_validity=VALID",
+        "trusted_signer_identity=VALID"
+      ]
+    },
+    {
+      "case": "source_receipt_without_aelitium_invocation_material",
+      "must_not_emit": [
+        "invocation_identity_consistency=VALID",
+        "invocation_binding_consistency=VALID"
+      ]
+    },
+    {
+      "case": "source_governance_or_approval_label_present",
+      "must_not_emit": [
+        "authorization=VALID"
+      ]
+    },
+    {
+      "case": "well_formed_or_signed_source_timestamp",
+      "must_not_emit": [
+        "freshness=VALID"
+      ]
+    },
+    {
+      "case": "equal_source_params_hash_or_chain_hash",
+      "must_not_emit": [
+        "comparison_basis=INVOCATION_IDENTITY_V1",
+        "comparison_basis=REQUEST_HASH_V1_FALLBACK",
+        "comparison_basis=REQUEST_HASH_V1_LEGACY"
+      ]
+    }
+  ],
+  "trust_assumptions_external": [
+    "native_key_resolution_and_authority",
+    "outer_cose_key_resolution_and_relay_role",
+    "revocation_rotation_validity_and_compromise",
+    "identity_manifest_and_checkpoint_provenance",
+    "transparency_log_policy_consistency_and_monitoring",
+    "timestamp_authority_or_relying_party_age_policy",
+    "producer_commitment_opening_rules_and_secrets"
+  ],
+  "claim_boundary_contract": "aelitium-claim-boundary-v1",
+  "claim_boundaries": [
+    "provider_execution_not_established",
+    "response_causation_not_established",
+    "semantic_truth_not_established",
+    "capture_completeness_not_established",
+    "historical_occurrence_not_established",
+    "historical_non_modification_not_established",
+    "authorization_not_established",
+    "trusted_historical_time_not_established",
+    "legal_compliance_not_established",
+    "trusted_signer_identity_not_established_by_signature",
+    "complete_invocation_identity_not_established"
+  ],
+  "blockers": [
+    "JCS_CANONICALIZATION_NOT_IMPLEMENTED",
+    "NATIVE_RECEIPT_SIGNATURE_CONSTRUCTION_NOT_IMPLEMENTED",
+    "DETERMINISTIC_CBOR_AND_COSE_SIGN1_PROFILE_NOT_IMPLEMENTED",
+    "SOURCE_SIGNATURE_CANNOT_REDEFINE_NATIVE_SIGNATURE_DIMENSION",
+    "NO_AELITIUM_INVOCATION_OR_COMPARISON_BASIS_IN_SOURCE",
+    "SOURCE_GOVERNANCE_AND_TIME_CANNOT_CREATE_NATIVE_ASSURANCE"
+  ],
+  "smallest_safe_alternative": "KEEP_AS_SEPARATELY_REFERENCED_EXTERNAL_EVIDENCE_PENDING_SOURCE_SPECIFIC_VERIFICATION_RESULT"
+}

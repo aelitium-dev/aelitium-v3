@@ -1,0 +1,20 @@
+{
+  "corpus": "aelitium-contract-conformance-v1",
+  "gaps": [
+    {
+      "current_evidence": "aelitium-invocation-v1 has no selected tool-declaration field",
+      "gap_id": "comparison.tool_declaration_changed",
+      "reason": "Representing this as a supported vector would invent evidence outside the current invocation identity grammar.",
+      "scenario": "tool declaration changed",
+      "status": "RESEARCH_GAP"
+    },
+    {
+      "current_evidence": "The invocation identity selects adapter surface, not a complete provider route.",
+      "gap_id": "comparison.provider_route_changed",
+      "reason": "A route-change result cannot be derived when the route is not selected by the current identity.",
+      "scenario": "provider route changed",
+      "status": "RESEARCH_GAP"
+    }
+  ],
+  "status": "RESEARCH"
+}

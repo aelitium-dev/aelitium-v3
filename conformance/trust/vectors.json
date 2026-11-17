@@ -1,0 +1,214 @@
+{
+  "case_count": 7,
+  "category": "trust",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "trust.unsigned",
+      "description": "An explicit signature requirement rejects unsigned evidence while preserving ABSENT.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "authorization_not_established"
+        ],
+        "rc": 2,
+        "reason": "SIGNATURE_REQUIRED",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/model_changed",
+        "options": [
+          "--require-signature"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.valid_signature_required",
+      "description": "A valid bundled signature satisfies the explicit signature requirement.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_signer_identity_not_established_by_signature"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/signed_valid",
+        "options": [
+          "--require-signature"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.valid_signature_without_trust_store",
+      "description": "Signature validity alone leaves signer trust UNESTABLISHED.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_signer_identity_not_established_by_signature"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/signed_valid",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.valid_signature_with_trusted_key",
+      "description": "An explicit matching trust store establishes key-fingerprint membership.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "VALID"
+        },
+        "expected_non_claims": [
+          "authorization_not_established",
+          "provider_execution_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/signed_valid",
+        "options": [
+          "--trust-store",
+          "fixtures/trust/legitimate.json",
+          "--require-trusted-signer"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.invalid_signature",
+      "description": "Malformed signature value is INVALID, not UNESTABLISHED or ABSENT.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "INVALID",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "historical_occurrence_not_established"
+        ],
+        "rc": 2,
+        "reason": "SIGNATURE_INVALID",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/signed_invalid",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.attacker_key_substitution_optional",
+      "description": "A substituted key can make a mathematical signature valid but not trusted by the supplied store.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "trusted_signer_identity_not_established_by_signature",
+          "historical_occurrence_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/attacker_key_substitution",
+        "options": [
+          "--trust-store",
+          "fixtures/trust/legitimate.json"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "trust.attacker_key_substitution_required",
+      "description": "Required trust-store membership rejects a substituted signing key.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "VALID",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "historical_occurrence_not_established"
+        ],
+        "rc": 2,
+        "reason": "TRUSTED_SIGNER_NOT_FOUND",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/attacker_key_substitution",
+        "options": [
+          "--trust-store",
+          "fixtures/trust/legitimate.json",
+          "--require-trusted-signer"
+        ]
+      },
+      "operation": "verify"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+
+# Local outputs
+# Raw demo recordings (local only — never commit)
+demo.cast
+demo_final.cast
+demo_full.cast
+
+output/
+*.log
+*.tmp
+
+# OS
+.DS_Store
+test.json
+HEAD
+
+# Bundling artifacts
+/aelitium-v3_bundle/
+/aelitium-v3_bundle.tar.gz
+/aelitium-v3_bundle.tar.gz.sha256
+
+.obsidian/
+governance/.obsidian/
+dist/
+
+# AELITIUM runtime artifacts (generated; not source-of-truth)
+artifacts/results/
+artifacts/handoff_kit/
+release_output/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets / credentials — never commit
+.env
+*.pem
+*.key
+
+# Internal (keep private)
+governance/authority/
+governance/logs/
+founder/
+artifacts/governance/
+artifacts/real_input/
+audit_results/
+
+# Test artifacts (manual smoke tests — never commit)
+evidence_signed_test/
+evidence_*/
+
+
+# Strategy — never public
+docs/COMPETITIVE_INTEL.md
+docs/OUTREACH.md
+docs/MARKET_FEEDBACK.md
+docs/ENGINEERING_TASKS.md
+docs/PHASE4_PLAN.md
+docs/PHASE4_7DAY_LOOP.md
+docs/PRODUCTS_3_OPTIONS.md
+
+# Session handoffs — operational, not public artifacts
+archive/SESSION_HANDOFF_*.md

@@ -1,0 +1,2741 @@
+{
+  "case_count": 100,
+  "contract": "aelitium-verifier-contract-phase2-source-vectors-v1",
+  "scope": "SOURCE",
+  "source_descriptor_contract": {
+    "FIXTURE": "path is relative to this corpus directory and names exact raw bytes",
+    "INLINE_HEX": "hex is an even-length lowercase hexadecimal encoding of exact raw bytes",
+    "INLINE_UTF8": "text is encoded once as strict UTF-8 to obtain exact raw bytes",
+    "sha256": "lowercase hexadecimal SHA-256 of the exact raw bytes"
+  },
+  "vectors": [
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.valid_object",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "FIXTURE",
+        "path": "fixtures/manifest_v1_valid.json",
+        "sha256": "80df08da69752feb631a27baa909c63e561cbcd758d78b8906bb022dd8fef33e"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.leading_whitespace",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "72e4bb90b3393f831cadaa57344b36b3b703364109504704aa0ee0575c30ad8a",
+        "text": " \t\r\n{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.trailing_whitespace",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "449b5a0338534bbad94873b1d518f43f65b17860eb6c008fb3cb9acc74f7ad36",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"} \t\r\n"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.leading_bom",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "hex": "efbbbf7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a226a736f6e5f736f727465645f6b6579735f6e6f5f776869746573706163655f75746638222c2261695f686173685f736861323536223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030227d",
+        "kind": "INLINE_HEX",
+        "sha256": "84c6f83662d84884f9a54cf3c36a605870d057d9ced440416d67acbf30c50007"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.malformed_utf8",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "hex": "7b22736368656d61223a22ff227d",
+        "kind": "INLINE_HEX",
+        "sha256": "e10b37a8b7e3b832874cf7a2ef79b1a355c784703c6c46e5f558287dbb16a48b"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.trailing_garbage",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "d9674bba5c830c89c411cb88022f3a63180ef4f8c46e3fe27aa7e86d9e0038cd",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}x"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.second_top_level",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "37e9adf497659f20b9a0f2d9fdeba19a6b3605fddeea2cceeb3eb76b34543a73",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}{}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.non_object_root",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_OBJECT",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": "[]"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.valid_object",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "FIXTURE",
+        "path": "fixtures/manifest_v2_valid.json",
+        "sha256": "757c41f827f60d56c16e5b7d082801c7e3439d00b9d4f92ab90b20599b78901c"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.leading_whitespace",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "a5b96fbef223000ab52066428fdade7a8cb0aefb078fe5d44ee72ea854e2f2fe",
+        "text": " \t\r\n{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.trailing_whitespace",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "c248a3bab29c0978dcdabba8a7423722ef9c35b404e7bd9ba154f64f340a27ae",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"} \t\r\n"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.leading_bom",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "hex": "efbbbf7b22736368656d61223a2261695f7061636b5f6d616e69666573745f7631222c2274735f757463223a22323032362d30312d30315430303a30303a30305a222c22696e7075745f736368656d61223a2261695f6f75747075745f7631222c2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2261695f686173685f736861323536223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030227d",
+        "kind": "INLINE_HEX",
+        "sha256": "d212c63fd82697d4ab28e7de169e855fe306122080e737e70de55ca02a3207e4"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.malformed_utf8",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "hex": "7b2263616e6f6e6963616c697a6174696f6e223a2261656c697469756d5f6a63735f70726f66696c655f7632222c2278223aff7d",
+        "kind": "INLINE_HEX",
+        "sha256": "918785c4c367ac19f10c4448978c3c361d749efbe391b66fe93afb4c7ca62743"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.trailing_garbage",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "7837c7b7fb615e0df2d9ada1f814ca173764e407cd9f0e1c27a5551a819c8ea9",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}x"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.second_top_level",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "70e2429af80430967e270ed8c13abca9a61b46db81d6765dea2f7ef3239e1700",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}{}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.non_object_root",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_OBJECT",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "LEGACY_ERROR_RESOLUTION",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": "[]"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.duplicate_required_final_wins",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "34fe9c886c1face0b051bb8ea8e09a0c1bd9733dc5a184a3f5b790e3d676bde4",
+        "text": "{\"schema\":\"bad\",\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.escaped_duplicate_final_wins",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "fcf72068b43f1e51401e47916de939e693a8fd93c97f61e6e6266afae4798f1d",
+        "text": "{\"schema\":\"bad\",\"schem\\u0061\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.invalid_first_valid_final",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "0e74c73f28627d4af227bc760348138714c913a3a9db6713958a4d13f45613e1",
+        "text": "{\"schema\":false,\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.valid_first_invalid_final",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "INVALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_SCHEMA",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "76d4793d777d8dc33afd94793cc528ff68d925f6d9a3b03f7a50c56d4126861a",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"schema\":false,\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.duplicate_inside_unknown_extension",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "d97b9435b8bbc0419e7dca8b7da1671cf13505ed3bca00fb65562936d667018c",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":{\"x\":1,\"x\":2}}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.unknown_ordinary_extension",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "6bf3ef00ea0e662e2d353547fcc11d0edfa21092e167aae72a0adf5df908af27",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":{\"nested\":[1,true,null]}}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_nan",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "6de4ec0308cb186d7ad61b0403f699046c12116c510cd0ca636c24b4178821d4",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":NaN}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_infinity",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "5d39ecee484c71c70f61f87c3bba033e010482ee207bdcb8dac795806eb19fd3",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":Infinity}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_negative_infinity",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "34c3ff94ab6b2d09531de0a3a0da881a5fe619eba644b92a7e4f4ab1dc6ba06a",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":-Infinity}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_opaque_unmatched_surrogate",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "1b67b5df070236141c7c89e33f8b3c89d4e484ac92e2af9b931988b9b354f0c1",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":\"\\ud800\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_integer_640_digits",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "ec542f9cc247a067d31aec3dc54193efe71cb32cc66e905a77e212435ecad643",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.source.ignored_integer_641_digits_outside_capability",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": null,
+        "source_profile_decision": "OPERATIONAL",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "ef288e1a6557e3d101940ebba3b7cb62512b8dc8e57a0baad8efa1ed896fb022",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.duplicate_required_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "7553a62afb504df9ed3ebbcb802df63e4f8e3c737cd5694256e45c5027fec870",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.escaped_duplicate_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "f0fc2ba70769dec62804c9293f4854cd0958aa15ef3151a41129d657ad3b8462",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"schem\\u0061\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.nested_duplicate_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "891cf15847f3a80f6b31e49a55f8829b20f4c28106856e77291174a964680790",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":{\"x\":1,\"x\":2}}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.duplicate_unknown_extension_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "0eaf8fbe1d6458536c715d0ce1ab8820f1eb838bbffc0071e01c6cb91cff9427",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":1,\"extensi\\u006fn\":2}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.valid_unknown_extension",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "601b97e56ab42beb265d8978ab5da4c4ecf8f6d6fca91a6785cdb9b057eb95c1",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":{\"safe\":[0,\"ok\"]}}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.legacy_nan_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "454e846697cf124bfe1953ff6e3ed49f6f2a0fc630f9e7fde57057cd74d0e5e4",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":NaN}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.legacy_infinity_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "e1ac3c6df2a8a03918e6d02a7116c458b30de8398619b8eba52d59113a560c0b",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":Infinity}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.unmatched_surrogate_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "12e7ff2341da1cd918e099cd7ed8c0d5ae2a6b69b2c192ce0e4275f4f38b9cee",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":\"\\ud800\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.noncharacter_rejected",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "af1c756047a9c7452e158e7ab865797f2a22f3cb474ff97bfd37a857ea3e3c11",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":\"\ufdd0\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.safe_integer_boundary",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "db5f9d367973ee1110c136decb2f7f840d8fb0b9960a114604a01331999e6c18",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":9007199254740991}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.integer_out_of_profile",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "751c2d1f05d965bf35bae4a724d1a6ce1a9a1304df3990c3e1a1522179c8516e",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":9007199254740992}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.source.number_overflow_out_of_profile",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "MANIFEST_NOT_JSON",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_REACHED"
+      },
+      "family": "MANIFEST_SOURCE",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "ea14fd26f7e866d31f2472def48bfaf6c3d6e4f135ffc2ba52d43557ab5a5c04",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-01T00:00:00Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"extension\":1e309}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.ascii_lexical_valid",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "0d9a77157670ec07c344785c103d9bad3c65793ebd01218eb58771417299d5b1",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.impossible_calendar_lexical_valid",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "f9fb43cb752c8bed59bf7ea3e710536b61d1cd73e9253422ac6d25c598724f3d",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"9999-99-99T99:99:99Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.zero_final_lf",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "6cb49a9b117e7a9a8c4e89e98f1d3c3e316d05c3c25fb0577c8359655839ab0a",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"0000-00-00T00:00:60Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.one_final_decoded_lf",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "8b3ffd75f3f72a02367f2b26d3e25aad1919f9af012e5b5cee5699576f41c476",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.two_final_decoded_lfs",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "9520531def5671f4f66fd8ce2430f24e081f119690a5df3a9577727fa74e94a7",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\n\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.final_cr",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "91b6fb868dc91ba4845ad802f9f4affcccd642fedeb4d53b8f3d1090772737c7",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\r\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.final_crlf",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "d39d913071089e3438434bcfb366b05003bf4e18b4af26701ab2c6b2392feb0f",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\r\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.wrong_separator",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "9d42dfd879b1f02a58e9e6e0111194ecf5ea9b5122ef68b477cf02522fdef33f",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026/01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.embedded_lf",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "f1d4c1c758bd8b16efb21b5ffbd53bbe4dff48a8735971bba62b3d24c7a77e85",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:\\n04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_NAMED_RUNTIME_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 4300,
+        "timestamp_digit_profile": "AELITIUM_UCD_ND_15_0_0_1"
+      },
+      "case_id": "manifest.v1.timestamp.named_profile_matching_nd",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "22c1d00438b0d4f7cca86df39b6f6d7c888afbff7eb6f05c3cae0b09ea012380",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"\u0662\u0660\u0662\u0666-\u0660\u0661-\u0660\u0662T\u0660\u0663:\u0660\u0664:\u0660\u0665Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.non_ascii_nd_outside_ascii_capability",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "OPERATIONAL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "22c1d00438b0d4f7cca86df39b6f6d7c888afbff7eb6f05c3cae0b09ea012380",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"\u0662\u0660\u0662\u0666-\u0660\u0661-\u0660\u0662T\u0660\u0663:\u0660\u0664:\u0660\u0665Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_NAMED_RUNTIME_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 4300,
+        "timestamp_digit_profile": "AELITIUM_UCD_ND_13_0_0_1"
+      },
+      "case_id": "manifest.v1.timestamp.outside_selected_frozen_nd_table",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "86da23393e494449bca82a67614c4cc5520752b1d83b8efaa4dc251e36305ab0",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"\ud839\udcf0026-01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "manifest.v1.timestamp.disabled_non_string",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "BYPASSED"
+      },
+      "family": "MANIFEST_TIMESTAMP_V1",
+      "input_kind": "MANIFEST_V1",
+      "selected_route": "LEGACY_V1",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "5c5284b13a445330f2c98224f405b363d773e9cf35c874771098e496b6af8a70",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":{\"not\":\"a timestamp\"},\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"json_sorted_keys_no_whitespace_utf8\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": false
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.ascii_exact_valid",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "d5ad0978e216ef89c3eb05ec573cc891ab165489ab35b7a8f575e6545398353e",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.impossible_calendar_lexical_valid",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "PASS"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "c3f4fe24c86188320f6ee16ad0f8ca39d2d40400144dda6a0070e6ad17ecca67",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"9999-99-99T99:99:99Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.arabic_indic_digits",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "91a302d7c3c60318ac0b3bb56f1e20a86a07a27e6cbb9ba023996950f61e2f18",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"\u0662\u0660\u0662\u0666-\u0660\u0661-\u0660\u0662T\u0660\u0663:\u0660\u0664:\u0660\u0665Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.fullwidth_digits",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "721976b2e3937524f01c6dcd97e1356447bbbb27fecd653d7a356e3dee12c853",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"\uff12\uff10\uff12\uff16-\uff10\uff11-\uff10\uff12T\uff10\uff13:\uff10\uff14:\uff10\uff15Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.one_final_decoded_lf",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "87ff7d26bd7443908aa9e0dd4b248e80ed97876bedfae29fe3322b8228556957",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.two_final_decoded_lfs",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "efd4e6fa4f2b79c80275ce1254666488a9bdf4e2562580ddf4c1a4ed89225456",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z\\n\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.wrong_separator",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "f18ae7b4329f936243828d91828519e4afde9bc03a0613a407f666d381eb7767",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026/01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.lowercase_t_z",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "a82e2a6c2ccc289996cded8ac62384b58501e5a161a68c95b9aab1ce7bab5f1c",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02t03:04:05z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.prefix_whitespace",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "9ab44c52759fbb3379e3d44555405c0b3cf2760135fdee974cde070a21d1c91c",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\" 2026-01-02T03:04:05Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.suffix_whitespace",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "c34fd282491dee05da202aa6798bc7300082368966b04a7509ae5176423ec742",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05Z \",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.utc_offset",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "740bbfbf3a4afa36a405e7d4f6139b1550bfe5d563dae3bb74013aa8a31eb61c",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05+00:00\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.fractional_seconds",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "7532824eb47779dace72c08cf8595b6eeef58747a91467a6b1eda056c3b7f902",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"2026-01-02T03:04:05.000Z\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.enabled_non_string",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": "MANIFEST_BAD_TS_UTC",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "FAIL"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "50d1908febfd16bb52258aac5922cea5988727247f253b17c979b6d4041004bc",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":{\"not\":\"a timestamp\"},\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": true
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.disabled_malformed_string",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "BYPASSED"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "d31eba48ac7c742fe54b512043da734ea128aeb571a795ddad542ea2bf29c259",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":\"not-a-timestamp\\n\",\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": false
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.disabled_object",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "BYPASSED"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "67c02edf784ae803989845e7737b868d22e7afbefaf08287091c1a4393abc7cd",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":{\"valid\":[1,2,3]},\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": false
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V2_PORTABLE"
+      },
+      "case_id": "manifest.v2.timestamp.disabled_null",
+      "compatibility": "UNRELEASED_V2_ONLY",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "BYPASSED"
+      },
+      "family": "MANIFEST_TIMESTAMP_V2",
+      "input_kind": "MANIFEST_V2",
+      "selected_route": "PORTABLE_V2",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "0cf75ddafb6894bb0f306d35cd531c5fa30ab030d5680d2424f30b4c4d419d38",
+        "text": "{\"schema\":\"ai_pack_manifest_v1\",\"ts_utc\":null,\"input_schema\":\"ai_output_v1\",\"canonicalization\":\"aelitium_jcs_profile_v2\",\"ai_hash_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": false
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.valid",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "FIXTURE",
+        "path": "fixtures/verification_keys_valid.json",
+        "sha256": "9c841d2d6e9256861f20fdce5ceeba239433b19a3e9da5b51f97909790fa0e58"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.bom",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "SIGNATURE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "hex": "efbbbf7b226b657972696e675f666f726d6174223a22656432353531392d7631222c226b657973223a5b7b226b65795f6964223a226b65792d31222c227075626c69635f6b65795f623634223a22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d227d5d2c227369676e617475726573223a5b7b226b65795f6964223a226b65792d31222c22616c676f726974686d223a2265643235353139222c2273636f7065223a226d616e69666573742e6a736f6e222c227369675f623634223a2241414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d3d227d5d7d",
+        "kind": "INLINE_HEX",
+        "sha256": "67631663c7c9318fe88920e8e5e34f2050c27131b443beb5bd0433d14f91f18c"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.malformed_utf8",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "SIGNATURE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "hex": "7b226b657972696e675f666f726d6174223a22ff227d",
+        "kind": "INLINE_HEX",
+        "sha256": "990baae9fbdb867ed7af9019765f88296ff11b33f4ab43dbdf2bb2319405c67b"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.surrounding_whitespace",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "627972d45921f7a5df97aba80ee248be3af71324394c6e804a9910ff5fcf5045",
+        "text": " \t\n{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}\r "
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.trailing_garbage",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "SIGNATURE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "b9a4384b9cb428a1cdb67756ec5aaf0adc57dc0ccd4367ed712a260916be9336",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}x"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.second_top_level",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "SIGNATURE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "527b6b85960c6e746e1658a631681176b4e4d331b1d1f66ae233885d2e0c3eae",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}{}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.non_object_root",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "INVALID",
+        "schema_reached": true,
+        "semantic_reason": "SIGNATURE_INVALID",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": "[]"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.root_duplicate_last_wins",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "00b75225feeddecf4baca81fbcd1996844ef6b9be791ba3167f0d1edbc1ccae7",
+        "text": "{\"keyring_format\":\"bad\",\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.key_entry_duplicate_last_wins",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "34452fefbce565e6ea24cae85343de33ef18fe0c067b8328d467f592c4a0b869",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":false,\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.signature_entry_duplicate_last_wins",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "19beac19254325df40f099b867abc322c7e8d4f09ac7e287a0410e98e34cad87",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"bad\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.escaped_equivalent_duplicate",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "7aa1b8640a4344250206bb0b744aec10238c18e04bc78a56db282b7dba005ef0",
+        "text": "{\"keyring_format\":\"bad\",\"keyring_f\\u006frmat\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.unknown_root_open",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "24ab5e32af9f6dafdecb1a3f662d224bff1d5bd847634b595a1bcb083bc6fad3",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}],\"extension\":true}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.unknown_key_entry_open",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "cdc2aa591e4063269568cbf7807ae63755ab394b99e736b96cabf383884a0ef8",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"extension\":true}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.unknown_signature_entry_open",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "71396e967540b1b9d0430cf1702440e51bbf88ad09b1945f67674eda5355e3c5",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\",\"extension\":true}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.opaque_ignored_string",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "8a2b5292ab4f10b185d696d084e264e20e3bc5916902ca6d587f68608b364c36",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}],\"extension\":\"\\ud800\"}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.ignored_integer_640_digits",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "a58f43305dbd9a03c5a8807131eca1d1c5a3864c36d65e924c550d32e206d644",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}],\"extension\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "keyring.source.overwritten_integer_641_outside_capability",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": null,
+        "source_profile_decision": "OPERATIONAL",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "KEYRING_SOURCE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "e496aaeb7261d6e60ea79b182f4c11eb737f2b01d99fd40ccc68329df3a40cb3",
+        "text": "{\"keyring_format\":\"ed25519-v1\",\"keys\":[{\"key_id\":\"key-1\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}],\"signatures\":[{\"key_id\":\"key-1\",\"algorithm\":\"ed25519\",\"scope\":\"manifest.json\",\"sig_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"}],\"extension\":99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,\"extension\":0}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.valid",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "FIXTURE",
+        "path": "fixtures/trust_store_valid.json",
+        "sha256": "3f3b6ce7349b3bf548b7a584fb89c486ba7db3dd4ccb46c23754edd6d33160bf"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.bom",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "TRUST_STORE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "hex": "efbbbf7b2274727573745f73746f72655f666f726d6174223a2261656c697469756d2d74727573742d7631222c227369676e657273223a5b7b22616c676f726974686d223a2265643235353139222c227075626c69635f6b65795f623634223a22414141414141414141414141414141414141414141414141414141414141414141414141414141414141413d222c226c6162656c223a2266697874757265207369676e6572227d5d7d",
+        "kind": "INLINE_HEX",
+        "sha256": "d5d8cab6070b629804923250222504f2d8b4ced1e39f90ba7edaf6f62412a8f5"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.malformed_utf8",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "TRUST_STORE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "hex": "7b2274727573745f73746f72655f666f726d6174223a22ff227d",
+        "kind": "INLINE_HEX",
+        "sha256": "48906f7b355ac2b9a830e07dbc5027691decb8ae2a43bf9a1fc0f23b24e8f4d5"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.surrounding_whitespace",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "025c85de1a5d6f9da08be15a8d7066fbd8698049e46dd37b36c0e8559fe3f861",
+        "text": " \t\n{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}\r "
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.trailing_garbage",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "TRUST_STORE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "8e4e1ecbcd2e720665fc1f3ac07abf4f2889071f4879842c24fd2cc1a07643b7",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}x"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.second_top_level",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": "TRUST_STORE_INVALID",
+        "source_profile_decision": "REJECT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "ee99bd634d9da53dffe8276d6b98bdf862c334ea958b420acbb2213d8a6a9811",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}{}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.wrong_root_type",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "INVALID",
+        "schema_reached": true,
+        "semantic_reason": "TRUST_STORE_INVALID",
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "text": "[]"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.root_duplicate_last_wins",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "2386eebffc71015363652d78bd99a33797ea944d92bd00e2ad2652ca7588b6ca",
+        "text": "{\"trust_store_format\":\"bad\",\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.signer_duplicate_last_wins",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "b6079b3c37306532dc9d67f116ba2cd306061e985504b7ee42526b0eb34f73fa",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":false,\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.escaped_equivalent_duplicate",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "08a71ccfea5cda3823b7caa92954466f7fa9beab041e6a1ba4d22687f4978a8f",
+        "text": "{\"trust_store_format\":\"bad\",\"trust_store_f\\u006frmat\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.overwritten_invalid_value_then_valid",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "194e27da7caf6854b4150bef913ec8f9d7f9477e5f51a741718d2b8519c2ab5e",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":0,\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.overwritten_integer_640_digits",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "ab4108b294363228793ba95c8ffa025cafa649e7f7a868db93836dec2a9aa03b",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}],\"signers\":9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,\"signers\":[]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.overwritten_integer_641_outside_capability",
+      "compatibility": "ADOPTED_CAPABILITY_POLICY",
+      "expected": {
+        "operational_code": "INPUT_OUTSIDE_DECLARED_CAPABILITY",
+        "schema_decision": "NOT_REACHED",
+        "schema_reached": false,
+        "semantic_reason": null,
+        "source_profile_decision": "OPERATIONAL",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "b26e00982863d13fbef10739af8f785ba573de36163433fb5846841d17a289e2",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"fixture signer\"}],\"signers\":99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,\"signers\":[]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    },
+    {
+      "capability": {
+        "identifier": "V1_FROZEN_LEGACY_COMPATIBILITY",
+        "integer_maximum_decimal_digits": 640,
+        "timestamp_digit_profile": "ASCII"
+      },
+      "case_id": "trust.source.opaque_label",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "operational_code": null,
+        "schema_decision": "VALID",
+        "schema_reached": true,
+        "semantic_reason": null,
+        "source_profile_decision": "ACCEPT",
+        "timestamp_decision": "NOT_APPLICABLE"
+      },
+      "family": "TRUST_SOURCE",
+      "input_kind": "TRUST_STORE_V1",
+      "selected_route": "NOT_APPLICABLE",
+      "source": {
+        "kind": "INLINE_UTF8",
+        "sha256": "561714e1f1cb695f7423a3e63ab0dced4520ef0b29a9103fccd12086b56b677b",
+        "text": "{\"trust_store_format\":\"aelitium-trust-v1\",\"signers\":[{\"algorithm\":\"ed25519\",\"public_key_b64\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"label\":\"\\ud800\"}]}"
+      },
+      "verifier_options": {
+        "validate_manifest_timestamp": null
+      }
+    }
+  ]
+}

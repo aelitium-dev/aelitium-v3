@@ -1,0 +1,149 @@
+{
+  "case_count": 5,
+  "category": "invocation",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "invocation.valid_identity",
+      "description": "A stored invocation identity recomputes independently when invocation binding is absent.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "provider_execution_not_established",
+          "complete_invocation_identity_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/identity_only",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "invocation.missing_identity",
+      "description": "A valid Freshness result does not upgrade missing invocation identity from ABSENT.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "VALID",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "ABSENT",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "provider_execution_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/legacy_request_changed",
+        "options": [
+          "--freshness-max-age-seconds",
+          "300",
+          "--freshness-reference-time-utc",
+          "2026-01-15T12:05:00Z"
+        ]
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "invocation.malformed_identity",
+      "description": "A stale invocation identity hash is INVALID and invalidates its dependent binding.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "INVALID",
+          "invocation_identity_consistency": "INVALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "provider_execution_not_established"
+        ],
+        "rc": 2,
+        "reason": "INVOCATION_HASH_MISMATCH",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/malformed_invocation",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "invocation.valid_binding",
+      "description": "A binding that recomputes and matches the local identity and response is VALID.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "response_causation_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/full_b_changed_response",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "invocation.binding_cross_field_mismatch",
+      "description": "An internally valid binding that references another identity is INVALID.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "INVALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "INVOCATION_BINDING_INPUT_MISMATCH",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/invocation_binding_mismatch",
+        "options": []
+      },
+      "operation": "verify"
+    }
+  ]
+}

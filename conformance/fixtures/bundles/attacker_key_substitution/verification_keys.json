@@ -1,0 +1,1 @@
+{"keyring_format": "ed25519-v1", "keys": [{"key_id": "conformance-key", "public_key_b64": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc="}], "signatures": [{"algorithm": "ed25519", "key_id": "conformance-key", "scope": "manifest.json", "sig_b64": "g9I7jGnmuWkBnciyRU1HB3E2fzfNmwIKwGJlkU23L5JYMCN0EVjfrP9XbGL4NtZO4sh8Pvp5pTVGPfIh19BgDA=="}]}

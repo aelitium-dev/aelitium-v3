@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aelitium-compare-v1",
+  "title": "AELITIUM comparison result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "rc",
+    "comparison_contract",
+    "comparison_mode",
+    "comparison_basis",
+    "required_comparison_basis",
+    "comparison_reason",
+    "invocation_identity_hash",
+    "invocation_identity_hash_a",
+    "invocation_identity_hash_b",
+    "invocation_identity_consistency_a",
+    "invocation_binding_consistency_a",
+    "invocation_identity_consistency_b",
+    "invocation_binding_consistency_b",
+    "interpretation",
+    "comparability_result",
+    "response_relationship",
+    "left",
+    "right",
+    "claim_boundary_contract",
+    "claim_boundaries"
+  ],
+  "properties": {
+    "status": {"enum": ["UNCHANGED", "CHANGED", "NOT_COMPARABLE", "INVALID_BUNDLE"]},
+    "rc": {"enum": [0, 1, 2]},
+    "comparison_contract": {"const": "aelitium-compare-v1"},
+    "comparison_mode": {"enum": ["INVOCATION_FIRST", "STRICT_INVOCATION", "LEGACY_REQUEST_HASH_V1"]},
+    "comparison_basis": {"enum": ["INVOCATION_IDENTITY_V1", "REQUEST_HASH_V1_FALLBACK", "REQUEST_HASH_V1_LEGACY", "NONE"]},
+    "required_comparison_basis": {"type": ["string", "null"], "enum": ["INVOCATION_IDENTITY_V1", null]},
+    "comparison_reason": {"type": "string", "minLength": 1},
+    "invocation_identity_hash": {"enum": ["SAME", "DIFFERENT", "UNAVAILABLE"]},
+    "invocation_identity_hash_a": {"$ref": "#/definitions/hash_or_null"},
+    "invocation_identity_hash_b": {"$ref": "#/definitions/hash_or_null"},
+    "invocation_identity_consistency_a": {"$ref": "#/definitions/assurance_state"},
+    "invocation_binding_consistency_a": {"$ref": "#/definitions/assurance_state"},
+    "invocation_identity_consistency_b": {"$ref": "#/definitions/assurance_state"},
+    "invocation_binding_consistency_b": {"$ref": "#/definitions/assurance_state"},
+    "request_hash": {"$ref": "#/definitions/relation"},
+    "response_hash": {"$ref": "#/definitions/relation"},
+    "binding_hash": {"$ref": "#/definitions/relation"},
+    "request_hash_a": {"$ref": "#/definitions/hash_or_null"},
+    "request_hash_b": {"$ref": "#/definitions/hash_or_null"},
+    "response_hash_a": {"$ref": "#/definitions/hash_or_null"},
+    "response_hash_b": {"$ref": "#/definitions/hash_or_null"},
+    "ts_utc_a": {"type": ["string", "null"]},
+    "ts_utc_b": {"type": ["string", "null"]},
+    "interpretation": {"type": "string", "minLength": 1},
+    "detail": {"type": "string"},
+    "hint": {"type": "string"},
+    "comparability_result": {
+      "type": ["string", "null"],
+      "enum": ["UNCHANGED", "CHANGED", "NOT_COMPARABLE", null]
+    },
+    "response_relationship": {
+      "type": ["string", "null"],
+      "enum": ["SAME", "DIFFERENT", null]
+    },
+    "left": {"$ref": "#/definitions/side"},
+    "right": {"$ref": "#/definitions/side"},
+    "claim_boundary_contract": {"const": "aelitium-claim-boundary-v1"},
+    "claim_boundaries": {
+      "const": [
+        "model_drift_not_established",
+        "regression_not_established",
+        "quality_degradation_not_established",
+        "semantic_equivalence_not_established",
+        "response_causation_not_established",
+        "provider_fault_not_established",
+        "provider_execution_not_established",
+        "complete_invocation_identity_not_established"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "UNCHANGED"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 0},
+          "comparability_result": {"const": "UNCHANGED"},
+          "response_relationship": {"const": "SAME"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "CHANGED"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 2},
+          "comparability_result": {"const": "CHANGED"},
+          "response_relationship": {"const": "DIFFERENT"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "NOT_COMPARABLE"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 1},
+          "comparability_result": {"const": "NOT_COMPARABLE"},
+          "response_relationship": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "INVALID_BUNDLE"}}},
+      "then": {
+        "properties": {
+          "rc": {"const": 2},
+          "comparison_basis": {"const": "NONE"},
+          "comparability_result": {"type": "null"},
+          "response_relationship": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "hash_or_null": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      ]
+    },
+    "relation": {"enum": ["SAME", "DIFFERENT", "UNAVAILABLE"]},
+    "assurance_state": {
+      "enum": ["VALID", "INVALID", "ABSENT", "UNESTABLISHED", "NOT_EVALUATED"]
+    },
+    "artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "expected_payload_schema",
+        "expected_manifest_schema",
+        "canonical_ref",
+        "manifest_ref",
+        "canonical_payload_digest"
+      ],
+      "properties": {
+        "artifact_type": {"const": "ai_evidence_bundle"},
+        "expected_payload_schema": {"const": "ai_output_v1"},
+        "expected_manifest_schema": {"const": "ai_pack_manifest_v1"},
+        "canonical_ref": {"const": "bundle:ai_canonical.json"},
+        "manifest_ref": {"const": "bundle:ai_manifest.json"},
+        "canonical_payload_digest": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["algorithm", "scope", "value"],
+              "properties": {
+                "algorithm": {"const": "sha256"},
+                "scope": {"const": "canonical_payload"},
+                "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "assurance_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payload_integrity",
+        "binding_field_consistency",
+        "invocation_identity_consistency",
+        "invocation_binding_consistency",
+        "signature_validity",
+        "trusted_signer_identity",
+        "freshness",
+        "authorization"
+      ],
+      "properties": {
+        "payload_integrity": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+        "binding_field_consistency": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+        "invocation_identity_consistency": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+        "invocation_binding_consistency": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+        "signature_validity": {"enum": ["VALID", "INVALID", "ABSENT", "NOT_EVALUATED"]},
+        "trusted_signer_identity": {"enum": ["VALID", "UNESTABLISHED"]},
+        "freshness": {"enum": ["VALID", "INVALID", "UNESTABLISHED", "NOT_EVALUATED"]},
+        "authorization": {"const": "NOT_EVALUATED"}
+      }
+    },
+    "side": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_ref", "verification"],
+      "properties": {
+        "evidence_ref": {"$ref": "#/definitions/artifact_ref"},
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reason", "assurance_states"],
+          "properties": {
+            "status": {"enum": ["VALID", "INVALID"]},
+            "reason": {"type": "string", "minLength": 1},
+            "assurance_states": {"$ref": "#/definitions/assurance_states"}
+          }
+        }
+      }
+    },
+    "claim_boundary": {
+      "enum": [
+        "authorization_not_established",
+        "capture_completeness_not_established",
+        "complete_invocation_identity_not_established",
+        "historical_non_modification_not_established",
+        "historical_occurrence_not_established",
+        "legal_compliance_not_established",
+        "model_drift_not_established",
+        "provider_execution_not_established",
+        "provider_fault_not_established",
+        "quality_degradation_not_established",
+        "regression_not_established",
+        "response_causation_not_established",
+        "semantic_equivalence_not_established",
+        "semantic_truth_not_established",
+        "trusted_historical_time_not_established",
+        "trusted_signer_identity_not_established_by_signature"
+      ]
+    }
+  }
+}

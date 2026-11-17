@@ -1,0 +1,2579 @@
+{
+  "case_count": 110,
+  "contract": "aelitium-verifier-contract-phase2-schema-vectors-v1",
+  "instance_recipe_contract": {
+    "REMOVE": "remove the existing value at path",
+    "SET": "deep-copy value to path, replacing an existing value or creating the final object member",
+    "contract": "AELITIUM-SCHEMA-INSTANCE-RECIPE-1",
+    "initial_value": "deep copy of the named top-level template",
+    "mutation_order": "array order, from first to last",
+    "pointer": "slash-separated object names or zero-based array indexes; ~0 denotes ~ and ~1 denotes /"
+  },
+  "scope": "SCHEMA",
+  "templates": {
+    "KEYRING_VALID": {
+      "keyring_format": "ed25519-v1",
+      "keys": [
+        {
+          "key_id": "key-1",
+          "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        }
+      ],
+      "signatures": [
+        {
+          "algorithm": "ed25519",
+          "key_id": "key-1",
+          "scope": "manifest.json",
+          "sig_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        }
+      ]
+    },
+    "MANIFEST_V1_VALID": {
+      "ai_hash_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "canonicalization": "json_sorted_keys_no_whitespace_utf8",
+      "input_schema": "ai_output_v1",
+      "schema": "ai_pack_manifest_v1",
+      "ts_utc": "2026-01-01T00:00:00Z"
+    },
+    "MANIFEST_V2_VALID": {
+      "ai_hash_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "canonicalization": "aelitium_jcs_profile_v2",
+      "input_schema": "ai_output_v1",
+      "schema": "ai_pack_manifest_v1",
+      "ts_utc": "2026-01-01T00:00:00Z"
+    },
+    "TRUST_EMPTY_VALID": {
+      "signers": [],
+      "trust_store_format": "aelitium-trust-v1"
+    },
+    "TRUST_ONE_VALID": {
+      "signers": [
+        {
+          "algorithm": "ed25519",
+          "label": "fixture signer",
+          "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        }
+      ],
+      "trust_store_format": "aelitium-trust-v1"
+    }
+  },
+  "vectors": [
+    {
+      "case_id": "manifest.schema.v1.missing_schema",
+      "expected": {
+        "first_missing_member": "schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/schema"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_ts_utc",
+      "expected": {
+        "first_missing_member": "ts_utc",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_input_schema",
+      "expected": {
+        "first_missing_member": "input_schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/input_schema"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_canonicalization",
+      "expected": {
+        "first_missing_member": "canonicalization",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/canonicalization"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_ai_hash_sha256",
+      "expected": {
+        "first_missing_member": "ai_hash_sha256",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ai_hash_sha256"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_schema_and_ts",
+      "expected": {
+        "first_missing_member": "schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "MULTIPLE_REQUIRED_MEMBERS",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/schema"
+          },
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.missing_ts_and_input_schema",
+      "expected": {
+        "first_missing_member": "ts_utc",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "MULTIPLE_REQUIRED_MEMBERS",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          },
+          {
+            "op": "REMOVE",
+            "path": "/input_schema"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.valid_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.valid_input_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "INPUT_SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.valid_route_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "CANONICALIZATION_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.bad_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_SCHEMA"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/schema",
+            "value": "bad"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.bad_input_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_INPUT_SCHEMA"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "INPUT_SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/input_schema",
+            "value": "bad"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.wrong_route_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_CANONICALIZATION"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "CANONICALIZATION_IDENTIFIER",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/canonicalization",
+            "value": "aelitium_jcs_profile_v2"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.valid_digest",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.digest_63",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.digest_65",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.digest_uppercase",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.digest_non_hex",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.digest_non_string",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": 0
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.unknown_field_open",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "SOURCE_PROFILE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "OPEN_OBJECT",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/extension",
+            "value": {
+              "valid": true
+            }
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.timestamp_string_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": "not-a-timestamp"
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.timestamp_object_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": {
+              "not": "a timestamp"
+            }
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v1.timestamp_null_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": null
+          }
+        ],
+        "template": "MANIFEST_V1_VALID"
+      },
+      "schema": "ai_manifest_v1.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_schema",
+      "expected": {
+        "first_missing_member": "schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/schema"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_ts_utc",
+      "expected": {
+        "first_missing_member": "ts_utc",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_input_schema",
+      "expected": {
+        "first_missing_member": "input_schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/input_schema"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_canonicalization",
+      "expected": {
+        "first_missing_member": "canonicalization",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/canonicalization"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_ai_hash_sha256",
+      "expected": {
+        "first_missing_member": "ai_hash_sha256",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ai_hash_sha256"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_schema_and_ts",
+      "expected": {
+        "first_missing_member": "schema",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "MULTIPLE_REQUIRED_MEMBERS",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/schema"
+          },
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.missing_ts_and_input_schema",
+      "expected": {
+        "first_missing_member": "ts_utc",
+        "procedural_requirement": "ORDERED_MANIFEST_PRESENCE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_MISSING_FIELD"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "MULTIPLE_REQUIRED_MEMBERS",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/ts_utc"
+          },
+          {
+            "op": "REMOVE",
+            "path": "/input_schema"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.valid_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.valid_input_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "INPUT_SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.valid_route_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "CANONICALIZATION_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.bad_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_SCHEMA"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/schema",
+            "value": "bad"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.bad_input_schema_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_INPUT_SCHEMA"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "INPUT_SCHEMA_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/input_schema",
+            "value": "bad"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.wrong_route_identifier",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_CANONICALIZATION"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "CANONICALIZATION_IDENTIFIER",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/canonicalization",
+            "value": "json_sorted_keys_no_whitespace_utf8"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.valid_digest",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.digest_63",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.digest_65",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.digest_uppercase",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.digest_non_hex",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.digest_non_string",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "MANIFEST_BAD_AI_HASH_SHA256"
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "AI_HASH_SHA256",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ai_hash_sha256",
+            "value": 0
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.unknown_field_open",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "SOURCE_PROFILE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "OPEN_OBJECT",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/extension",
+            "value": {
+              "valid": true
+            }
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.timestamp_string_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": "not-a-timestamp"
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.timestamp_object_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": {
+              "not": "a timestamp"
+            }
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "manifest.schema.v2.timestamp_null_schema_neutral",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "TIMESTAMP_OPTION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "MANIFEST_SCHEMA",
+      "focus": "TIMESTAMP_SCHEMA_NEUTRALITY",
+      "input_kind": "MANIFEST_V2",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/ts_utc",
+            "value": null
+          }
+        ],
+        "template": "MANIFEST_V2_VALID"
+      },
+      "schema": "ai_manifest_v2.json"
+    },
+    {
+      "case_id": "keyring.schema.valid_shape",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "STRUCTURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.missing_keyring_format",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/keyring_format"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.wrong_keyring_format",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "FORMAT_IDENTIFIER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keyring_format",
+            "value": "bad"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.keys_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys",
+            "value": {}
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.zero_keys",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys",
+            "value": []
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.two_keys",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys",
+            "value": [
+              {
+                "key_id": "key-1",
+                "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              {
+                "key_id": "key-1",
+                "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              }
+            ]
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.key_entry_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "ENTRY_TYPE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0",
+            "value": "key"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.missing_key_id",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/keys/0/key_id"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.empty_key_id",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "KEY_ID",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/key_id",
+            "value": ""
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.whitespace_only_key_id",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "KEY_ID_EQUALITY",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "KEY_ID",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/key_id",
+            "value": " "
+          },
+          {
+            "op": "SET",
+            "path": "/signatures/0/key_id",
+            "value": " "
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.missing_public_key_b64",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/keys/0/public_key_b64"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signatures_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures",
+            "value": {}
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.zero_signatures",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures",
+            "value": []
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.two_signatures",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "CARDINALITY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures",
+            "value": [
+              {
+                "algorithm": "ed25519",
+                "key_id": "key-1",
+                "scope": "manifest.json",
+                "sig_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+              },
+              {
+                "algorithm": "ed25519",
+                "key_id": "key-1",
+                "scope": "manifest.json",
+                "sig_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+              }
+            ]
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signature_entry_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "ENTRY_TYPE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0",
+            "value": "signature"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signature_missing_key_id",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signatures/0/key_id"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signature_missing_algorithm",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signatures/0/algorithm"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signature_missing_scope",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signatures/0/scope"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.signature_missing_sig_b64",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signatures/0/sig_b64"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.bad_algorithm",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "ALGORITHM",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/algorithm",
+            "value": "Ed25519"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.bad_scope",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "SCOPE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/scope",
+            "value": "ai_manifest.json"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.valid_lexical",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.missing_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.extra_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.url_character",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.whitespace",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.bad_length",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.nonzero_pad_bits_schema_valid",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_PAD_BITS",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.public_key_b64.decoded_length_confirmation_procedural",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_DECODED_LENGTH",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/keys/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.valid_lexical",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.missing_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.extra_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.url_character",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.whitespace",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.bad_length",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "SIGNATURE_INVALID"
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.nonzero_pad_bits_schema_valid",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_PAD_BITS",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.sig_b64.decoded_length_confirmation_procedural",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_DECODED_LENGTH",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "BASE64_SIGNATURE",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/sig_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.cross_entry_key_id_mismatch_schema_valid",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "KEY_ID_EQUALITY",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "KEY_ID",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signatures/0/key_id",
+            "value": "other"
+          }
+        ],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "keyring.schema.arbitrary_signature_math_procedural",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "ED25519_VERIFICATION",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "KEYRING_SCHEMA",
+      "focus": "SIGNATURE_MATHEMATICS",
+      "input_kind": "VERIFICATION_KEYS_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "KEYRING_VALID"
+      },
+      "schema": "verification_keys_v1.json"
+    },
+    {
+      "case_id": "trust.schema.valid_empty_signers",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "STRUCTURE",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.valid_one_signer",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "STRUCTURE",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.valid_multiple_structurally_distinct",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "FINGERPRINT_UNIQUENESS",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "STRUCTURE",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers",
+            "value": [
+              {
+                "algorithm": "ed25519",
+                "label": "fixture signer",
+                "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              {
+                "algorithm": "ed25519",
+                "label": "second",
+                "public_key_b64": "BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              }
+            ]
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.missing_trust_store_format",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/trust_store_format"
+          }
+        ],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.bad_trust_store_format",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "FORMAT_IDENTIFIER",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/trust_store_format",
+            "value": "bad"
+          }
+        ],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.missing_signers",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signers"
+          }
+        ],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.signers_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "ENTRY_TYPE",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers",
+            "value": {}
+          }
+        ],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.signer_wrong_type",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "ENTRY_TYPE",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0",
+            "value": "signer"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.missing_algorithm",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signers/0/algorithm"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.bad_algorithm",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "ALGORITHM",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/algorithm",
+            "value": "Ed25519"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.missing_public_key_b64",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "REQUIRED_MEMBER",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signers/0/public_key_b64"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.extra_root_member",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "SOURCE_COLLAPSE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "CLOSED_OBJECT",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/extra",
+            "value": true
+          }
+        ],
+        "template": "TRUST_EMPTY_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.extra_signer_member",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "SOURCE_COLLAPSE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "CLOSED_OBJECT",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/extra",
+            "value": true
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.label_absent",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "LABEL",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "REMOVE",
+            "path": "/signers/0/label"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.label_nonempty",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "LABEL",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/label",
+            "value": "display"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.label_whitespace_only",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "LABEL",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/label",
+            "value": " "
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.label_empty",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "LABEL",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/label",
+            "value": ""
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_valid_lexical",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_DECODED_LENGTH",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_bad_alphabet",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_whitespace",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_missing_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_extra_padding",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_bad_length",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "NONE",
+        "schema_decision": "INVALID",
+        "semantic_reason": "TRUST_STORE_INVALID"
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.public_key_nonzero_pad_bits_schema_valid",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "BASE64_PAD_BITS",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "BASE64_PUBLIC_KEY",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers/0/public_key_b64",
+            "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB="
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    },
+    {
+      "case_id": "trust.schema.structural_duplicate_signers_schema_valid",
+      "expected": {
+        "first_missing_member": null,
+        "procedural_requirement": "FINGERPRINT_UNIQUENESS",
+        "schema_decision": "VALID",
+        "semantic_reason": null
+      },
+      "family": "TRUST_SCHEMA",
+      "focus": "FINGERPRINT_UNIQUENESS",
+      "input_kind": "TRUST_STORE_V1",
+      "instance_recipe": {
+        "mutations": [
+          {
+            "op": "SET",
+            "path": "/signers",
+            "value": [
+              {
+                "algorithm": "ed25519",
+                "label": "fixture signer",
+                "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              {
+                "algorithm": "ed25519",
+                "label": "fixture signer",
+                "public_key_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              }
+            ]
+          }
+        ],
+        "template": "TRUST_ONE_VALID"
+      },
+      "schema": "trust_store_v1.json"
+    }
+  ]
+}

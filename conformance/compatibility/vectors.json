@@ -1,0 +1,118 @@
+{
+  "case_count": 4,
+  "category": "compatibility",
+  "corpus": "aelitium-contract-conformance-v1",
+  "status": "IMPLEMENTATION-ALIGNED",
+  "vectors": [
+    {
+      "case_id": "compatibility.legacy_bundle_valid",
+      "description": "A pre-invocation-style bundle remains readable and valid.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "ABSENT",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "complete_invocation_identity_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/legacy_a",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "compatibility.unsigned_default_valid",
+      "description": "Signature absence remains accepted by default.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "VALID",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "VALID",
+          "invocation_identity_consistency": "VALID",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "historical_occurrence_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/system_instruction_changed",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "compatibility.unbound_default_valid",
+      "description": "Original binding-field absence remains accepted by default.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "ABSENT",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "ABSENT",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "response_causation_not_established"
+        ],
+        "rc": 0,
+        "reason": "OK",
+        "status": "VALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/unbound",
+        "options": []
+      },
+      "operation": "verify"
+    },
+    {
+      "case_id": "compatibility.require_binding_rejects_absence",
+      "description": "The existing explicit binding requirement still rejects absence.",
+      "expected": {
+        "assurance_states": {
+          "authorization": "NOT_EVALUATED",
+          "binding_field_consistency": "ABSENT",
+          "freshness": "NOT_EVALUATED",
+          "invocation_binding_consistency": "ABSENT",
+          "invocation_identity_consistency": "ABSENT",
+          "payload_integrity": "VALID",
+          "signature_validity": "ABSENT",
+          "trusted_signer_identity": "UNESTABLISHED"
+        },
+        "expected_non_claims": [
+          "response_causation_not_established"
+        ],
+        "rc": 2,
+        "reason": "BINDING_REQUIRED",
+        "status": "INVALID"
+      },
+      "input": {
+        "bundle": "fixtures/bundles/unbound",
+        "options": [
+          "--require-binding"
+        ]
+      },
+      "operation": "verify"
+    }
+  ]
+}

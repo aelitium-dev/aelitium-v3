@@ -1,0 +1,3872 @@
+"""Parity and adversarial tests for the canonical AI verification kernel."""
+
+import ast
+import base64
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from engine.ai_verify import (
+    AIVerificationOptions,
+    AssuranceState,
+    verify_ai_bundle,
+)
+from engine.freshness import (
+    FRESHNESS_POLICY_INVALID,
+    FRESHNESS_STALE,
+    FRESHNESS_TIMESTAMP_IN_FUTURE,
+    FRESHNESS_TIMESTAMP_MALFORMED,
+)
+from engine.invocation import (
+    MODE_SYNC_NON_STREAMING,
+    SURFACE_OPENAI_CHAT_COMPLETIONS,
+    build_invocation_identity,
+)
+from engine.invocation_binding import build_invocation_binding
+from engine.signing import (
+    VerifiedManifestSignature,
+    build_verification_material,
+    verify_manifest_signature,
+)
+from engine.trust import TRUST_STORE_FORMAT
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = ROOT / "tests" / "fixtures" / "ai_output_min.json"
+CLI = [sys.executable, "-m", "engine.ai_cli"]
+STANDALONE = ROOT / "scripts" / "aelitium_verify_standalone.py"
+
+
+def _run_cli(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        CLI + list(args),
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+
+
+def _run_standalone(
+    bundle: Path,
+    *extra: str,
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(STANDALONE),
+            "--bundle",
+            str(bundle),
+            "--json",
+            *extra,
+        ],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+
+
+def _pack(bundle: Path) -> None:
+    result = _run_cli("pack", "--input", str(FIXTURE), "--out", str(bundle))
+    if result.returncode != 0:
+        raise AssertionError(result.stdout + result.stderr)
+
+
+def _rewrite_canonical(bundle: Path, canonical: dict) -> str:
+    canonical_text = json.dumps(
+        canonical,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    (bundle / "ai_canonical.json").write_text(
+        canonical_text + "\n",
+        encoding="utf-8",
+    )
+    return hashlib.sha256(canonical_text.encode("utf-8")).hexdigest()
+
+
+def _write_manifest(bundle: Path, manifest: dict) -> None:
+    (bundle / "ai_manifest.json").write_text(
+        json.dumps(manifest, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _rewrite_canonical_and_update_manifest_hash(
+    bundle: Path,
+    canonical: dict,
+) -> str:
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
+    return canonical_hash
+
+
+def _inject_invocation_identity(bundle: Path, stored_object: dict) -> None:
+    """Insert a stored invocation-identity object into an existing bundle's
+    canonical metadata and recompute the outer payload/manifest hash so
+    payload_integrity remains internally consistent -- independent of
+    whether `stored_object` itself is a well-formed invocation identity.
+    """
+    canonical_path = bundle / "ai_canonical.json"
+    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+    canonical.setdefault("metadata", {})["invocation_identity"] = stored_object
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
+
+
+def _inject_metadata_fields(bundle: Path, fields: dict) -> None:
+    """Merge arbitrary key/value pairs into an existing bundle's canonical
+    metadata and recompute the outer payload/manifest hash so
+    payload_integrity remains internally consistent -- independent of
+    whether the injected values themselves are well-formed.
+    """
+    canonical_path = bundle / "ai_canonical.json"
+    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+    canonical.setdefault("metadata", {}).update(fields)
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    _write_manifest(bundle, manifest)
+
+
+def _write_canonical_bytes_with_raw_hash(bundle: Path, raw: bytes) -> None:
+    """Write arbitrary parseable bytes and make the manifest hash those bytes."""
+
+    (bundle / "ai_canonical.json").write_bytes(raw)
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = hashlib.sha256(raw).hexdigest()
+    _write_manifest(bundle, manifest)
+
+
+def _make_bound_bundle(bundle: Path) -> None:
+    """Create a valid unsigned v1 bundle with existing capture hash fields."""
+    _pack(bundle)
+    canonical_path = bundle / "ai_canonical.json"
+    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+    request_hash = "1" * 64
+    response_hash = "2" * 64
+    binding_payload = json.dumps(
+        {"request_hash": request_hash, "response_hash": response_hash},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    binding_hash = hashlib.sha256(binding_payload.encode("utf-8")).hexdigest()
+    canonical.setdefault("metadata", {}).update(
+        {
+            "request_hash": request_hash,
+            "response_hash": response_hash,
+            "binding_hash": binding_hash,
+        }
+    )
+    canonical_hash = _rewrite_canonical(bundle, canonical)
+
+    manifest_path = bundle / "ai_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["ai_hash_sha256"] = canonical_hash
+    manifest["binding_hash"] = binding_hash
+    _write_manifest(bundle, manifest)
+
+
+def _make_valid_invocation_bundle(bundle: Path) -> None:
+    """Create a valid bound bundle with invocation identity and binding."""
+
+    _make_bound_bundle(bundle)
+    identity = build_invocation_identity(
+        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+        mode=MODE_SYNC_NON_STREAMING,
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "hi"}],
+    ).to_stored_object()
+    invocation_binding = build_invocation_binding(
+        invocation_hash=identity["hash_sha256"],
+        response_hash="2" * 64,
+    ).to_stored_object()
+    _inject_metadata_fields(
+        bundle,
+        {
+            "invocation_identity": identity,
+            "invocation_binding": invocation_binding,
+        },
+    )
+
+
+def _verification_material_for_key(
+    bundle: Path,
+    private_key: Ed25519PrivateKey,
+) -> dict:
+    private_key_b64 = base64.b64encode(private_key.private_bytes_raw()).decode()
+    old_key = os.environ.get("AEL_ED25519_PRIVKEY_B64")
+    os.environ["AEL_ED25519_PRIVKEY_B64"] = private_key_b64
+    try:
+        return build_verification_material(
+            (bundle / "ai_manifest.json").read_bytes()
+        )
+    finally:
+        if old_key is None:
+            os.environ.pop("AEL_ED25519_PRIVKEY_B64", None)
+        else:
+            os.environ["AEL_ED25519_PRIVKEY_B64"] = old_key
+
+
+def _sign_bundle(bundle: Path) -> None:
+    verification_material = _verification_material_for_key(
+        bundle,
+        Ed25519PrivateKey.generate(),
+    )
+    (bundle / "verification_keys.json").write_text(
+        json.dumps(verification_material, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _sign_bundle_with_key(bundle: Path, private_key: Ed25519PrivateKey) -> str:
+    """Sign `bundle` with `private_key` and return its public_key_b64."""
+
+    verification_material = _verification_material_for_key(bundle, private_key)
+    (bundle / "verification_keys.json").write_text(
+        json.dumps(verification_material, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return verification_material["keys"][0]["public_key_b64"]
+
+
+def _verification_material_for_key_with_id(
+    bundle: Path,
+    private_key: Ed25519PrivateKey,
+    key_id: str,
+) -> dict:
+    private_key_b64 = base64.b64encode(private_key.private_bytes_raw()).decode()
+    old_key = os.environ.get("AEL_ED25519_PRIVKEY_B64")
+    old_key_id = os.environ.get("AEL_ED25519_KEY_ID")
+    os.environ["AEL_ED25519_PRIVKEY_B64"] = private_key_b64
+    os.environ["AEL_ED25519_KEY_ID"] = key_id
+    try:
+        return build_verification_material(
+            (bundle / "ai_manifest.json").read_bytes()
+        )
+    finally:
+        if old_key is None:
+            os.environ.pop("AEL_ED25519_PRIVKEY_B64", None)
+        else:
+            os.environ["AEL_ED25519_PRIVKEY_B64"] = old_key
+        if old_key_id is None:
+            os.environ.pop("AEL_ED25519_KEY_ID", None)
+        else:
+            os.environ["AEL_ED25519_KEY_ID"] = old_key_id
+
+
+def _sign_bundle_with_key_id(
+    bundle: Path, private_key: Ed25519PrivateKey, key_id: str
+) -> str:
+    """Sign `bundle` with `private_key` under an explicit key_id label and
+    return the resulting public_key_b64."""
+
+    verification_material = _verification_material_for_key_with_id(
+        bundle, private_key, key_id
+    )
+    (bundle / "verification_keys.json").write_text(
+        json.dumps(verification_material, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return verification_material["keys"][0]["public_key_b64"]
+
+
+def _write_trust_store(
+    directory: Path,
+    public_key_b64_values: list[str],
+    filename: str = "trust_store.json",
+) -> Path:
+    path = directory / filename
+    path.write_text(
+        json.dumps(
+            {
+                "trust_store_format": TRUST_STORE_FORMAT,
+                "signers": [
+                    {"algorithm": "ed25519", "public_key_b64": value}
+                    for value in public_key_b64_values
+                ],
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _entrypoint_acceptance(bundle: Path) -> dict[str, bool]:
+    verify = _run_cli("verify", "--out", str(bundle))
+    verify_bundle = _run_cli("verify-bundle", str(bundle))
+    compare = _run_cli("compare", str(bundle), str(bundle))
+    standalone = _run_standalone(bundle)
+    return {
+        "kernel": verify_ai_bundle(bundle).valid,
+        "verify": verify.returncode == 0,
+        "verify-bundle": verify_bundle.returncode == 0,
+        "compare-prevalidation": "STATUS=INVALID_BUNDLE" not in compare.stdout,
+        "standalone": standalone.returncode == 0,
+    }
+
+
+def _public_verifier_outputs(
+    bundle: Path,
+    *extra: str,
+) -> dict[str, subprocess.CompletedProcess]:
+    return {
+        "verify": _run_cli(
+            "verify",
+            "--out",
+            str(bundle),
+            "--json",
+            *extra,
+        ),
+        "verify-bundle": _run_cli(
+            "verify-bundle",
+            str(bundle),
+            "--json",
+            *extra,
+        ),
+        "standalone": _run_standalone(bundle, *extra),
+    }
+
+
+class TestAIVerificationParity(unittest.TestCase):
+    def test_malformed_manifest_timestamp_is_rejected_by_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ts_utc"] = ""
+            _write_manifest(bundle, manifest)
+
+            kernel = verify_ai_bundle(bundle)
+            self.assertFalse(kernel.valid)
+            self.assertEqual(kernel.reason, "MANIFEST_BAD_TS_UTC")
+
+            verify = _run_cli("verify", "--out", str(bundle), "--json")
+            self.assertEqual(verify.returncode, 2, verify.stdout + verify.stderr)
+            self.assertIn("reason=MANIFEST_BAD_TS_UTC", verify.stdout)
+
+            verify_bundle = _run_cli(
+                "verify-bundle",
+                str(bundle),
+                "--json",
+            )
+            self.assertEqual(
+                verify_bundle.returncode,
+                2,
+                verify_bundle.stdout + verify_bundle.stderr,
+            )
+            self.assertIn(
+                "reason=MANIFEST_BAD_TS_UTC",
+                verify_bundle.stdout,
+            )
+
+            standalone = _run_standalone(bundle)
+            self.assertEqual(
+                standalone.returncode,
+                2,
+                standalone.stdout + standalone.stderr,
+            )
+            self.assertEqual(
+                json.loads(standalone.stdout)["reason"],
+                "MANIFEST_BAD_TS_UTC",
+            )
+
+    def test_valid_unsigned_bundle_is_accepted_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": True,
+                    "verify": True,
+                    "verify-bundle": True,
+                    "compare-prevalidation": True,
+                    "standalone": True,
+                },
+            )
+
+    def test_valid_signed_bundle_is_accepted_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": True,
+                    "verify": True,
+                    "verify-bundle": True,
+                    "compare-prevalidation": True,
+                    "standalone": True,
+                },
+            )
+
+    def test_canonical_payload_tamper_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "TAMPERED"
+            _rewrite_canonical(bundle, canonical)
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            self.assertEqual(verify_ai_bundle(bundle).reason, "HASH_MISMATCH")
+
+    def test_manifest_hash_tamper_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ai_hash_sha256"] = "a" * 64
+            _write_manifest(bundle, manifest)
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            self.assertEqual(verify_ai_bundle(bundle).reason, "HASH_MISMATCH")
+
+    def test_missing_files_are_rejected_by_every_entrypoint(self):
+        for filename, expected_reason in (
+            ("ai_canonical.json", "MISSING_CANONICAL"),
+            ("ai_manifest.json", "MISSING_MANIFEST"),
+        ):
+            with self.subTest(filename=filename):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    (bundle / filename).unlink()
+                    self.assertEqual(
+                        _entrypoint_acceptance(bundle),
+                        {
+                            "kernel": False,
+                            "verify": False,
+                            "verify-bundle": False,
+                            "compare-prevalidation": False,
+                            "standalone": False,
+                        },
+                    )
+                    self.assertEqual(
+                        verify_ai_bundle(bundle).reason,
+                        expected_reason,
+                    )
+                    standalone = _run_standalone(bundle)
+                    self.assertEqual(
+                        json.loads(standalone.stdout)["reason"],
+                        expected_reason,
+                    )
+
+
+class TestAIV1ManifestContract(unittest.TestCase):
+    def test_declared_manifest_identifiers_are_enforced(self):
+        cases = (
+            ("schema", "ai_pack_manifest_v2", "MANIFEST_BAD_SCHEMA"),
+            ("input_schema", "ai_output_v2", "MANIFEST_BAD_INPUT_SCHEMA"),
+            (
+                "canonicalization",
+                "some_other_canonicalization",
+                "MANIFEST_BAD_CANONICALIZATION",
+            ),
+        )
+        for field, value, reason in cases:
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _pack(bundle)
+                    manifest_path = bundle / "ai_manifest.json"
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding="utf-8")
+                    )
+                    manifest[field] = value
+                    _write_manifest(bundle, manifest)
+
+                    result = verify_ai_bundle(bundle)
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, reason)
+                    self.assertEqual(
+                        result.payload_integrity,
+                        AssuranceState.INVALID,
+                    )
+
+    def test_manifest_ai_hash_malformation_matrix_is_rejected(self):
+        malformed_values = (
+            ("non_hex", "g" * 64),
+            ("wrong_length", "a" * 63),
+            ("uppercase_hex", "A" * 64),
+        )
+        for case, value in malformed_values:
+            with self.subTest(case=case):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _pack(bundle)
+                    manifest_path = bundle / "ai_manifest.json"
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding="utf-8")
+                    )
+                    manifest["ai_hash_sha256"] = value
+                    _write_manifest(bundle, manifest)
+
+                    result = verify_ai_bundle(bundle)
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(
+                        result.reason,
+                        "MANIFEST_BAD_AI_HASH_SHA256",
+                    )
+
+    def test_binding_field_malformation_matrix_is_rejected(self):
+        locations = (
+            ("manifest.binding_hash", "manifest", "binding_hash"),
+            (
+                "canonical.metadata.request_hash",
+                "metadata",
+                "request_hash",
+            ),
+            (
+                "canonical.metadata.response_hash",
+                "metadata",
+                "response_hash",
+            ),
+            (
+                "canonical.metadata.binding_hash",
+                "metadata",
+                "binding_hash",
+            ),
+        )
+        malformed_values = (
+            ("non_hex", "g" * 64),
+            ("wrong_length", "a" * 63),
+            ("uppercase_hex", "A" * 64),
+        )
+        for location, container, field in locations:
+            for case, value in malformed_values:
+                with self.subTest(location=location, case=case):
+                    with tempfile.TemporaryDirectory() as directory:
+                        bundle = Path(directory)
+                        _make_bound_bundle(bundle)
+                        manifest_path = bundle / "ai_manifest.json"
+                        manifest = json.loads(
+                            manifest_path.read_text(encoding="utf-8")
+                        )
+
+                        if container == "manifest":
+                            manifest[field] = value
+                        else:
+                            canonical_path = bundle / "ai_canonical.json"
+                            canonical = json.loads(
+                                canonical_path.read_text(encoding="utf-8")
+                            )
+                            canonical["metadata"][field] = value
+                            manifest["ai_hash_sha256"] = _rewrite_canonical(
+                                bundle,
+                                canonical,
+                            )
+                        _write_manifest(bundle, manifest)
+
+                        result = verify_ai_bundle(bundle)
+
+                        self.assertFalse(result.valid)
+                        self.assertEqual(
+                            result.reason,
+                            "BINDING_FIELD_MALFORMED",
+                        )
+                        self.assertEqual(result.detail, location)
+
+    def test_unknown_manifest_metadata_is_accepted_without_semantics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["extension_metadata"] = {
+                "canonicalization": "ignored",
+                "input_schema": "ignored",
+            }
+            _write_manifest(bundle, manifest)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid, result)
+            self.assertNotIn("extension_metadata", result.assurance_dict())
+
+
+class TestAIV1CanonicalBytes(unittest.TestCase):
+    def test_exact_canonical_bytes_without_terminal_lf_are_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = canonical_path.read_bytes().removesuffix(b"\n")
+            canonical_path.write_bytes(canonical)
+
+            self.assertTrue(verify_ai_bundle(bundle).valid)
+
+    def test_exact_canonical_bytes_with_one_terminal_lf_are_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self.assertTrue(verify_ai_bundle(bundle).valid)
+            self.assertTrue(
+                (bundle / "ai_canonical.json").read_bytes().endswith(b"\n")
+            )
+
+    def test_noncanonical_byte_representations_are_rejected(self):
+        variants = {
+            "two_terminal_lfs": lambda canonical, obj: canonical + b"\n\n",
+            "crlf": lambda canonical, obj: canonical + b"\r\n",
+            "leading_space": lambda canonical, obj: b" " + canonical,
+            "trailing_space": lambda canonical, obj: canonical + b" ",
+            "pretty_printed": lambda canonical, obj: json.dumps(
+                obj,
+                indent=2,
+                ensure_ascii=False,
+            ).encode("utf-8"),
+        }
+        for name, make_raw in variants.items():
+            with self.subTest(name=name):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _pack(bundle)
+                    canonical_path = bundle / "ai_canonical.json"
+                    canonical = canonical_path.read_bytes().removesuffix(b"\n")
+                    obj = json.loads(canonical.decode("utf-8"))
+                    raw = make_raw(canonical, obj)
+                    _write_canonical_bytes_with_raw_hash(bundle, raw)
+
+                    result = verify_ai_bundle(bundle)
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, "CANONICAL_BYTES_MISMATCH")
+
+    def test_alternate_key_order_with_matching_raw_hash_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = canonical_path.read_bytes().removesuffix(b"\n")
+            obj = json.loads(canonical.decode("utf-8"))
+            reversed_obj = {key: obj[key] for key in reversed(obj)}
+            alternate = json.dumps(
+                reversed_obj,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            self.assertNotEqual(alternate, canonical)
+            _write_canonical_bytes_with_raw_hash(bundle, alternate)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_BYTES_MISMATCH")
+
+    def test_schema_invalid_canonical_with_matching_hash_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            obj = json.loads(canonical_path.read_text(encoding="utf-8"))
+            obj.pop("model")
+            raw = json.dumps(
+                obj,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            _write_canonical_bytes_with_raw_hash(bundle, raw)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_SCHEMA_INVALID")
+
+    def test_unsupported_canonical_schema_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(
+                canonical_path.read_text(encoding="utf-8")
+            )
+            canonical["schema_version"] = "ai_output_v2"
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_SCHEMA_INVALID")
+
+
+class TestAIAssuranceResults(unittest.TestCase):
+    def test_default_unsigned_unbound_bundle_exposes_absence(self):
+        expected = {
+            "payload_integrity": "VALID",
+            "binding_field_consistency": "ABSENT",
+            "invocation_identity_consistency": "ABSENT",
+            "invocation_binding_consistency": "ABSENT",
+            "signature_validity": "ABSENT",
+            "trusted_signer_identity": "UNESTABLISHED",
+            "freshness": "NOT_EVALUATED",
+            "authorization": "NOT_EVALUATED",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = verify_ai_bundle(bundle)
+            self.assertTrue(result.valid)
+            self.assertEqual(result.assurance_dict(), expected)
+            self.assertEqual(result.signature, "NONE")
+            self.assertEqual(result.binding_hash, "NONE")
+
+            outputs = (
+                _run_cli("verify", "--out", str(bundle), "--json"),
+                _run_cli("verify-bundle", str(bundle), "--json"),
+                _run_standalone(bundle),
+            )
+            for output in outputs:
+                with self.subTest(args=output.args):
+                    self.assertEqual(output.returncode, 0, output.stdout)
+                    payload = json.loads(output.stdout)
+                    for name, state in expected.items():
+                        self.assertEqual(payload[name], state)
+
+    def test_valid_signed_bound_bundle_establishes_no_signer_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.binding_field_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+            outputs = (
+                _run_cli(
+                    "verify",
+                    "--out",
+                    str(bundle),
+                    "--require-signature",
+                    "--require-binding",
+                ),
+                _run_cli(
+                    "verify-bundle",
+                    str(bundle),
+                    "--require-signature",
+                    "--require-binding",
+                ),
+                _run_standalone(
+                    bundle,
+                    "--require-signature",
+                    "--require-binding",
+                ),
+            )
+            for output in outputs:
+                with self.subTest(args=output.args):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+
+    def test_require_signature_rejects_unsigned_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_signature=True),
+            )
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_REQUIRED")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+
+            outputs = (
+                _run_cli(
+                    "verify",
+                    "--out",
+                    str(bundle),
+                    "--require-signature",
+                ),
+                _run_cli(
+                    "verify-bundle",
+                    str(bundle),
+                    "--require-signature",
+                ),
+                _run_standalone(bundle, "--require-signature"),
+            )
+            for output in outputs:
+                with self.subTest(args=output.args):
+                    self.assertEqual(output.returncode, 2)
+                    self.assertIn("SIGNATURE_REQUIRED", output.stdout)
+                    self.assertIn("signature_validity", output.stdout.lower())
+
+    def test_require_binding_rejects_unbound_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_binding=True),
+            )
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "BINDING_REQUIRED")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+
+            outputs = (
+                _run_cli(
+                    "verify",
+                    "--out",
+                    str(bundle),
+                    "--require-binding",
+                ),
+                _run_cli(
+                    "verify-bundle",
+                    str(bundle),
+                    "--require-binding",
+                ),
+                _run_standalone(bundle, "--require-binding"),
+            )
+            for output in outputs:
+                with self.subTest(args=output.args):
+                    self.assertEqual(output.returncode, 2)
+                    self.assertIn("BINDING_REQUIRED", output.stdout)
+                    self.assertIn(
+                        "binding_field_consistency",
+                        output.stdout.lower(),
+                    )
+
+    def test_each_missing_binding_field_is_rejected_by_every_entrypoint(self):
+        fields = (
+            ("manifest.binding_hash", "manifest", "binding_hash"),
+            ("canonical.metadata.request_hash", "metadata", "request_hash"),
+            ("canonical.metadata.response_hash", "metadata", "response_hash"),
+            ("canonical.metadata.binding_hash", "metadata", "binding_hash"),
+        )
+        for location, container, field in fields:
+            with self.subTest(location=location):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    manifest_path = bundle / "ai_manifest.json"
+                    manifest = json.loads(
+                        manifest_path.read_text(encoding="utf-8")
+                    )
+
+                    if container == "manifest":
+                        manifest.pop(field)
+                    else:
+                        canonical_path = bundle / "ai_canonical.json"
+                        canonical = json.loads(
+                            canonical_path.read_text(encoding="utf-8")
+                        )
+                        canonical["metadata"].pop(field)
+                        manifest["ai_hash_sha256"] = _rewrite_canonical(
+                            bundle,
+                            canonical,
+                        )
+                    _write_manifest(bundle, manifest)
+
+                    self.assertEqual(
+                        _entrypoint_acceptance(bundle),
+                        {
+                            "kernel": False,
+                            "verify": False,
+                            "verify-bundle": False,
+                            "compare-prevalidation": False,
+                            "standalone": False,
+                        },
+                    )
+                    result = verify_ai_bundle(bundle)
+                    self.assertEqual(result.reason, "BINDING_FIELDS_INCOMPLETE")
+                    self.assertIn(location, result.detail)
+                    self.assertEqual(
+                        result.binding_field_consistency,
+                        AssuranceState.INVALID,
+                    )
+
+    def test_malformed_binding_field_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["metadata"]["request_hash"] = "not-a-sha256"
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            result = verify_ai_bundle(bundle)
+            self.assertEqual(result.reason, "BINDING_FIELD_MALFORMED")
+            self.assertEqual(
+                result.binding_field_consistency,
+                AssuranceState.INVALID,
+            )
+
+    def test_assurance_fields_are_exposed_when_payload_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "TAMPERED"
+            _rewrite_canonical(bundle, canonical)
+
+            result = verify_ai_bundle(bundle)
+            self.assertFalse(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.INVALID)
+            self.assertEqual(
+                set(result.assurance_dict()),
+                {
+                    "payload_integrity",
+                    "binding_field_consistency",
+                    "invocation_identity_consistency",
+                    "invocation_binding_consistency",
+                    "signature_validity",
+                    "trusted_signer_identity",
+                    "freshness",
+                    "authorization",
+                },
+            )
+
+            output = _run_cli("verify", "--out", str(bundle))
+            self.assertEqual(output.returncode, 2)
+            for name in result.assurance_dict():
+                self.assertIn(name.upper(), output.stdout)
+
+
+class TestAIFreshnessAssurance(unittest.TestCase):
+    """P1.3c kernel integration for declared-time freshness assurance."""
+
+    _RECENT_REFERENCE = "2026-03-04T00:00:30Z"
+    _BOUNDARY_REFERENCE = "2026-03-04T00:01:00Z"
+    _STALE_REFERENCE = "2026-03-04T00:01:01Z"
+    _FUTURE_REFERENCE = "2026-03-03T23:59:59Z"
+
+    def _options(
+        self,
+        *,
+        reference_time: object = _BOUNDARY_REFERENCE,
+        maximum_age: object = 60,
+        **kwargs,
+    ) -> AIVerificationOptions:
+        return AIVerificationOptions(
+            freshness_max_age_seconds=maximum_age,
+            freshness_reference_time_utc=reference_time,
+            **kwargs,
+        )
+
+    def _verify(
+        self,
+        bundle: Path,
+        options: AIVerificationOptions | None = None,
+    ):
+        result = verify_ai_bundle(bundle, options=options)
+        self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+        return result
+
+    def test_no_freshness_options_preserve_existing_valid_result(self):
+        options = AIVerificationOptions()
+        self.assertIsNone(options.freshness_max_age_seconds)
+        self.assertIsNone(options.freshness_reference_time_utc)
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            implicit = self._verify(bundle)
+            explicit = self._verify(bundle, options)
+
+            self.assertEqual(implicit, explicit)
+            self.assertTrue(implicit.valid)
+            self.assertEqual(implicit.reason, "OK")
+            self.assertEqual(implicit.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_recent_canonical_timestamp_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
+    def test_exact_maximum_age_boundary_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
+    def test_legacy_inner_freshness_domain_is_not_narrowed_by_outer_transport(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(maximum_age=9_007_199_254_740_992),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+
+    def test_one_second_stale_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._STALE_REFERENCE),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_STALE)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_one_second_future_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._FUTURE_REFERENCE),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_TIMESTAMP_IN_FUTURE)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_malformed_canonical_timestamp_only_fails_active_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "not-a-strict-utc-timestamp"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            compatibility_result = self._verify(bundle)
+            active_result = self._verify(bundle, self._options())
+
+            self.assertTrue(compatibility_result.valid)
+            self.assertEqual(
+                compatibility_result.freshness,
+                AssuranceState.NOT_EVALUATED,
+            )
+            self.assertFalse(active_result.valid)
+            self.assertEqual(
+                active_result.reason,
+                FRESHNESS_TIMESTAMP_MALFORMED,
+            )
+            self.assertEqual(active_result.freshness, AssuranceState.INVALID)
+
+    def test_missing_canonical_timestamp_preserves_schema_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical.pop("ts_utc")
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "CANONICAL_SCHEMA_INVALID")
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_malformed_reference_time_is_policy_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time="not-a-reference-time"),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+            self.assertEqual(result.freshness, AssuranceState.UNESTABLISHED)
+
+    def test_partial_policy_pairs_are_policy_invalid(self):
+        options = (
+            AIVerificationOptions(freshness_max_age_seconds=60),
+            AIVerificationOptions(
+                freshness_reference_time_utc=self._BOUNDARY_REFERENCE
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for selected in options:
+                with self.subTest(options=selected):
+                    result = self._verify(bundle, selected)
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+
+    def test_invalid_maximum_age_matrix_is_policy_invalid(self):
+        invalid_values = (-1, False, True, 60.0, "60", [], {})
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for value in invalid_values:
+                with self.subTest(value=repr(value)):
+                    result = self._verify(
+                        bundle,
+                        self._options(maximum_age=value),
+                    )
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+
+    def test_invalid_policy_is_rejected_before_bundle_processing(self):
+        invalid_options = (
+            AIVerificationOptions(freshness_max_age_seconds=60),
+            AIVerificationOptions(
+                freshness_reference_time_utc=self._BOUNDARY_REFERENCE
+            ),
+            self._options(reference_time="not-a-reference-time"),
+            self._options(maximum_age=-1),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            missing_bundle = Path(directory) / "missing"
+
+            for selected in invalid_options:
+                with self.subTest(options=selected):
+                    result = self._verify(missing_bundle, selected)
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, FRESHNESS_POLICY_INVALID)
+                    self.assertEqual(
+                        result.freshness,
+                        AssuranceState.UNESTABLISHED,
+                    )
+                    self.assertEqual(
+                        result.payload_integrity,
+                        AssuranceState.NOT_EVALUATED,
+                    )
+
+    def test_repeated_verification_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            options = self._options(reference_time=self._RECENT_REFERENCE)
+
+            first = self._verify(bundle, options)
+            second = self._verify(bundle, options)
+
+            self.assertEqual(first, second)
+
+    def test_changing_only_reference_time_crosses_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            boundary = self._verify(bundle, self._options())
+            stale = self._verify(
+                bundle,
+                self._options(reference_time=self._STALE_REFERENCE),
+            )
+
+            self.assertEqual(boundary.freshness, AssuranceState.VALID)
+            self.assertEqual(stale.freshness, AssuranceState.INVALID)
+            self.assertEqual(stale.reason, FRESHNESS_STALE)
+
+    def test_unsigned_self_consistent_rewrite_can_be_recent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "SELF-CONSISTENT UNSIGNED REWRITE"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+    def test_trusted_signer_with_stale_timestamp_keeps_trust_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = self._verify(
+                bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_STALE)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_trusted_signer_with_future_timestamp_keeps_trust_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = self._verify(
+                bundle,
+                self._options(
+                    reference_time=self._FUTURE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, FRESHNESS_TIMESTAMP_IN_FUTURE)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_recent_freshness_is_independent_of_signature_and_trust(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            unsigned_bundle = root / "unsigned"
+            trusted_bundle = root / "trusted"
+            unknown_bundle = root / "unknown"
+            for bundle in (unsigned_bundle, trusted_bundle, unknown_bundle):
+                _pack(bundle)
+
+            trusted_key = Ed25519PrivateKey.generate()
+            trusted_public_key_b64 = _sign_bundle_with_key(
+                trusted_bundle,
+                trusted_key,
+            )
+            _sign_bundle_with_key(
+                unknown_bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            trust_store_path = _write_trust_store(
+                root,
+                [trusted_public_key_b64],
+            )
+
+            unsigned = self._verify(
+                unsigned_bundle,
+                self._options(reference_time=self._RECENT_REFERENCE),
+            )
+            trusted = self._verify(
+                trusted_bundle,
+                self._options(
+                    reference_time=self._RECENT_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+            unknown = self._verify(
+                unknown_bundle,
+                self._options(
+                    reference_time=self._RECENT_REFERENCE,
+                    trust_store_path=trust_store_path,
+                ),
+            )
+
+            self.assertEqual(
+                {unsigned.freshness, trusted.freshness, unknown.freshness},
+                {AssuranceState.VALID},
+            )
+            self.assertEqual(unsigned.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(trusted.signature_validity, AssuranceState.VALID)
+            self.assertEqual(unknown.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                unsigned.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(
+                trusted.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                unknown.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+    def test_timestamp_tamper_without_hash_update_preserves_hash_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:01Z"
+            _rewrite_canonical(bundle, canonical)
+
+            result = self._verify(bundle, self._options())
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "HASH_MISMATCH")
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+
+    def test_signature_invalid_precedes_stale_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _sign_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:01Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = self._verify(
+                bundle,
+                self._options(reference_time="2026-03-04T00:02:00Z"),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_INVALID")
+            self.assertEqual(result.signature_validity, AssuranceState.INVALID)
+            self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_valid_invocation_dimensions_are_unchanged_with_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_valid_invocation_bundle(bundle)
+
+            baseline = self._verify(bundle)
+            active = self._verify(bundle, self._options())
+
+            dimensions = (
+                "payload_integrity",
+                "binding_field_consistency",
+                "invocation_identity_consistency",
+                "invocation_binding_consistency",
+                "signature_validity",
+                "trusted_signer_identity",
+            )
+            for dimension in dimensions:
+                with self.subTest(dimension=dimension):
+                    self.assertEqual(
+                        getattr(active, dimension),
+                        getattr(baseline, dimension),
+                    )
+            self.assertTrue(active.valid)
+            self.assertEqual(active.freshness, AssuranceState.VALID)
+            self.assertEqual(
+                active.invocation_identity_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                active.invocation_binding_consistency,
+                AssuranceState.VALID,
+            )
+
+    def test_invocation_root_precedes_stale_and_future_freshness(self):
+        references = (self._STALE_REFERENCE, self._FUTURE_REFERENCE)
+        for reference_time in references:
+            with self.subTest(reference_time=reference_time):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    identity = build_invocation_identity(
+                        surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+                        mode=MODE_SYNC_NON_STREAMING,
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": "hi"}],
+                    ).to_stored_object()
+                    invocation_binding = build_invocation_binding(
+                        invocation_hash=identity["hash_sha256"],
+                        response_hash="2" * 64,
+                    ).to_stored_object()
+                    identity["request"]["model"] = "tampered-model"
+                    _inject_metadata_fields(
+                        bundle,
+                        {
+                            "invocation_identity": identity,
+                            "invocation_binding": invocation_binding,
+                        },
+                    )
+
+                    result = self._verify(
+                        bundle,
+                        self._options(reference_time=reference_time),
+                    )
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+                    self.assertEqual(
+                        result.invocation_identity_consistency,
+                        AssuranceState.INVALID,
+                    )
+                    self.assertEqual(
+                        result.invocation_binding_consistency,
+                        AssuranceState.INVALID,
+                    )
+                    self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+    def test_existing_requirement_roots_precede_stale_freshness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+
+            signature_bundle = root / "signature"
+            _pack(signature_bundle)
+            signature_result = self._verify(
+                signature_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    require_signature=True,
+                ),
+            )
+
+            binding_bundle = root / "binding"
+            _pack(binding_bundle)
+            binding_result = self._verify(
+                binding_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    require_binding=True,
+                ),
+            )
+
+            trust_bundle = root / "trust"
+            _pack(trust_bundle)
+            _sign_bundle_with_key(
+                trust_bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(
+                root,
+                [other_public_key_b64],
+            )
+            trust_result = self._verify(
+                trust_bundle,
+                self._options(
+                    reference_time=self._STALE_REFERENCE,
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            expected = (
+                (signature_result, "SIGNATURE_REQUIRED"),
+                (binding_result, "BINDING_REQUIRED"),
+                (trust_result, "TRUSTED_SIGNER_NOT_FOUND"),
+            )
+            for result, reason in expected:
+                with self.subTest(reason=reason):
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, reason)
+                    self.assertEqual(result.freshness, AssuranceState.INVALID)
+
+
+class TestAIFreshnessAssuranceAdversarial(unittest.TestCase):
+    """P1.3e: adversarial demonstrations of the Freshness claim boundary."""
+
+    _REFERENCE_TIME = "2026-03-04T00:01:00Z"
+    _MAXIMUM_AGE_SECONDS = 60
+
+    def _options(self, **kwargs) -> AIVerificationOptions:
+        return AIVerificationOptions(
+            freshness_max_age_seconds=self._MAXIMUM_AGE_SECONDS,
+            freshness_reference_time_utc=self._REFERENCE_TIME,
+            **kwargs,
+        )
+
+    def test_self_consistent_declared_timestamp_rewrite_can_remain_freshness_valid(
+        self,
+    ):
+        """A self-consistent declared timestamp rewrite can remain Freshness
+        VALID. This demonstrates verifier semantics and the absence of
+        historical-time authentication; it does not prove that the rewritten
+        timestamp historically occurred.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            original_timestamp = canonical["ts_utc"]
+            canonical["ts_utc"] = "2026-03-04T00:00:30Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            result = verify_ai_bundle(bundle, options=self._options())
+
+            self.assertNotEqual(original_timestamp, canonical["ts_utc"])
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_trusted_resigned_timestamp_does_not_establish_timestamp_truth(self):
+        """Trusted signer identity does not establish timestamp truth.
+
+        A valid signature authenticates the rewritten manifest bytes under the
+        existing signature semantics; it does not make the declared canonical
+        timestamp a trusted historical-time assertion.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "2026-03-04T00:00:45Z"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=self._options(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_freshness_valid_with_invocation_consistency_proves_no_execution_or_causation(
+        self,
+    ):
+        """Freshness plus invocation consistency remains stored-evidence
+        assurance; the combination does not establish provider execution or
+        response causation.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_valid_invocation_bundle(bundle)
+
+            result = verify_ai_bundle(bundle, options=self._options())
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency,
+                AssuranceState.VALID,
+            )
+            self.assertEqual(result.freshness, AssuranceState.VALID)
+            self.assertEqual(result.authorization, AssuranceState.NOT_EVALUATED)
+
+    def test_trust_boundary_doc_contains_required_freshness_claims(self):
+        """Positive contract for load-bearing P1.3e claim-boundary concepts."""
+
+        doc_path = ROOT / "docs" / "TRUST_BOUNDARY.md"
+        text = doc_path.read_text(encoding="utf-8")
+        lowered = text.lower()
+
+        for phrase in (
+            "ai_canonical.json.ts_utc",
+            "freshness_reference_time_utc",
+            "freshness_max_age_seconds",
+            "[reference_time - maximum_age, reference_time]",
+            "declared-time recency",
+            "trusted historical time",
+            "implicit system clock",
+            "authorization = not_evaluated",
+            "historical occurrence",
+            "provider execution",
+            "response causation",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+
+class TestAIFreshnessPublicSurfaces(unittest.TestCase):
+    """P1.3d: CLI and standalone forwarding/rendering parity."""
+
+    _BOUNDARY_REFERENCE = "2026-03-04T00:01:00Z"
+    _STALE_REFERENCE = "2026-03-04T00:01:01Z"
+    _FUTURE_REFERENCE = "2026-03-03T23:59:59Z"
+
+    def _policy_args(
+        self,
+        *,
+        reference_time: str = _BOUNDARY_REFERENCE,
+        maximum_age: str = "60",
+    ) -> tuple[str, ...]:
+        return (
+            "--freshness-max-age-seconds",
+            maximum_age,
+            "--freshness-reference-time-utc",
+            reference_time,
+        )
+
+    def _text_outputs(
+        self,
+        bundle: Path,
+        *extra: str,
+    ) -> dict[str, subprocess.CompletedProcess]:
+        return {
+            "verify": _run_cli("verify", "--out", str(bundle), *extra),
+            "verify-bundle": _run_cli(
+                "verify-bundle",
+                str(bundle),
+                *extra,
+            ),
+            "standalone": subprocess.run(
+                [
+                    sys.executable,
+                    str(STANDALONE),
+                    "--bundle",
+                    str(bundle),
+                    *extra,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            ),
+        }
+
+    def _assert_outputs(
+        self,
+        outputs: dict[str, subprocess.CompletedProcess],
+        *,
+        returncode: int,
+        freshness: str,
+        reason: str | None = None,
+    ) -> None:
+        for surface, output in outputs.items():
+            with self.subTest(surface=surface, args=output.args):
+                self.assertEqual(
+                    output.returncode,
+                    returncode,
+                    output.stdout + output.stderr,
+                )
+                if output.stdout.lstrip().startswith("{"):
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["freshness"], freshness)
+                    self.assertEqual(
+                        payload["authorization"],
+                        "NOT_EVALUATED",
+                    )
+                    if reason is not None:
+                        self.assertEqual(
+                            payload["reason"].split(":", 1)[0],
+                            reason,
+                        )
+                else:
+                    rendered = output.stdout.upper()
+                    self.assertIn(f"FRESHNESS={freshness}", rendered)
+                    self.assertIn(
+                        "AUTHORIZATION=NOT_EVALUATED",
+                        rendered,
+                    )
+                    if reason is not None:
+                        self.assertIn(f"REASON={reason}", rendered)
+
+    def test_no_policy_preserves_all_public_surfaces_in_both_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle),
+                returncode=0,
+                freshness="NOT_EVALUATED",
+            )
+
+    def test_exact_boundary_policy_is_valid_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args()
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=0,
+                freshness="VALID",
+            )
+
+    def test_stale_policy_fails_across_surfaces_and_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            policy = self._policy_args(reference_time=self._STALE_REFERENCE)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+            self._assert_outputs(
+                self._text_outputs(bundle, *policy),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_STALE,
+            )
+
+    def test_future_policy_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=self._FUTURE_REFERENCE),
+                ),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_IN_FUTURE,
+            )
+
+    def test_malformed_evidence_fails_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["ts_utc"] = "not-an-evidence-time"
+            _rewrite_canonical_and_update_manifest_hash(bundle, canonical)
+
+            self._assert_outputs(
+                _public_verifier_outputs(bundle, *self._policy_args()),
+                returncode=2,
+                freshness="INVALID",
+                reason=FRESHNESS_TIMESTAMP_MALFORMED,
+            )
+
+    def test_invalid_partial_and_negative_policies_use_kernel_failure(self):
+        policies = (
+            (
+                "malformed-reference",
+                self._policy_args(reference_time="not-a-reference-time"),
+            ),
+            ("only-max-age", ("--freshness-max-age-seconds", "60")),
+            (
+                "only-reference",
+                (
+                    "--freshness-reference-time-utc",
+                    self._BOUNDARY_REFERENCE,
+                ),
+            ),
+            ("negative-max-age", self._policy_args(maximum_age="-1")),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            for case, policy in policies:
+                with self.subTest(case=case):
+                    self._assert_outputs(
+                        _public_verifier_outputs(bundle, *policy),
+                        returncode=2,
+                        freshness="UNESTABLISHED",
+                        reason=FRESHNESS_POLICY_INVALID,
+                    )
+
+    def test_reference_string_is_forwarded_without_normalization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            reference_with_space = self._BOUNDARY_REFERENCE + " "
+
+            self._assert_outputs(
+                _public_verifier_outputs(
+                    bundle,
+                    *self._policy_args(reference_time=reference_with_space),
+                ),
+                returncode=2,
+                freshness="UNESTABLISHED",
+                reason=FRESHNESS_POLICY_INVALID,
+            )
+
+    def test_active_policy_preserves_existing_assurance_dimensions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = build_invocation_identity(
+                surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+                mode=MODE_SYNC_NON_STREAMING,
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "hi"}],
+            ).to_stored_object()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="2" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+            options = (
+                *self._policy_args(),
+                "--require-signature",
+                "--require-binding",
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            )
+
+            outputs = _public_verifier_outputs(bundle, *options)
+            self._assert_outputs(
+                outputs,
+                returncode=0,
+                freshness="VALID",
+            )
+            expected = {
+                "payload_integrity": "VALID",
+                "binding_field_consistency": "VALID",
+                "invocation_identity_consistency": "VALID",
+                "invocation_binding_consistency": "VALID",
+                "signature_validity": "VALID",
+                "trusted_signer_identity": "VALID",
+                "authorization": "NOT_EVALUATED",
+            }
+            for surface, output in outputs.items():
+                with self.subTest(surface=surface):
+                    payload = json.loads(output.stdout)
+                    for dimension, state in expected.items():
+                        self.assertEqual(payload[dimension], state)
+
+    def test_public_surfaces_have_no_clock_or_freshness_calculation(self):
+        forbidden_calls = {
+            "datetime.now",
+            "datetime.utcnow",
+            "time.time",
+            "datetime.fromisoformat",
+            "datetime.strptime",
+        }
+        forbidden_fragments = (
+            "evaluate_freshness",
+            "FreshnessOutcome",
+        )
+        for relative_path in (
+            "engine/ai_cli.py",
+            "scripts/aelitium_verify_standalone.py",
+        ):
+            with self.subTest(path=relative_path):
+                source = (ROOT / relative_path).read_text(encoding="utf-8")
+                tree = ast.parse(source)
+                calls = set()
+                identifiers = set()
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Name):
+                        identifiers.add(node.id)
+                    elif isinstance(node, ast.Attribute):
+                        identifiers.add(node.attr)
+                    elif isinstance(node, ast.arg):
+                        identifiers.add(node.arg)
+                    if not isinstance(node, ast.Call):
+                        continue
+                    if isinstance(node.func, ast.Name):
+                        calls.add(node.func.id)
+                    elif (
+                        isinstance(node.func, ast.Attribute)
+                        and isinstance(node.func.value, ast.Name)
+                    ):
+                        calls.add(f"{node.func.value.id}.{node.func.attr}")
+                self.assertTrue(forbidden_calls.isdisjoint(calls), calls)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        self.assertTrue(
+                            {alias.name for alias in node.names}.isdisjoint(
+                                {"datetime", "time"}
+                            )
+                        )
+                    elif isinstance(node, ast.ImportFrom):
+                        self.assertNotIn(
+                            node.module,
+                            {
+                                "datetime",
+                                "time",
+                                "freshness",
+                                "engine.freshness",
+                            },
+                        )
+                self.assertNotIn("age_seconds", identifiers)
+                for fragment in forbidden_fragments:
+                    self.assertNotIn(fragment, source)
+
+
+class TestAIVerificationDowngradeControls(unittest.TestCase):
+    """Evidence that is present cannot be ignored by an entrypoint."""
+
+    def test_signature_stripping_requires_caller_declared_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            signed = verify_ai_bundle(bundle)
+            self.assertTrue(signed.valid)
+            self.assertEqual(
+                signed.signature_validity,
+                AssuranceState.VALID,
+            )
+
+            (bundle / "verification_keys.json").unlink()
+
+            default = verify_ai_bundle(bundle)
+            self.assertTrue(default.valid)
+            self.assertEqual(
+                default.signature_validity,
+                AssuranceState.ABSENT,
+            )
+            self.assertEqual(
+                default.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            for name, output in _public_verifier_outputs(bundle).items():
+                with self.subTest(surface=name, mode="default"):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["signature_validity"], "ABSENT")
+                    self.assertEqual(
+                        payload["trusted_signer_identity"],
+                        "UNESTABLISHED",
+                    )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_signature=True),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "SIGNATURE_REQUIRED")
+            self.assertEqual(
+                required.signature_validity,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-signature",
+            ).items():
+                with self.subTest(surface=name, mode="required"):
+                    self.assertEqual(output.returncode, 2)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"],
+                            "SIGNATURE_REQUIRED",
+                        )
+                        self.assertEqual(
+                            payload["signature_validity"],
+                            "ABSENT",
+                        )
+                    else:
+                        self.assertIn("reason=SIGNATURE_REQUIRED", output.stdout)
+                        self.assertIn(
+                            "SIGNATURE_VALIDITY=ABSENT",
+                            output.stdout,
+                        )
+
+    def test_binding_stripping_requires_caller_declared_protection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            bound = verify_ai_bundle(bundle)
+            self.assertTrue(bound.valid)
+            self.assertEqual(
+                bound.binding_field_consistency,
+                AssuranceState.VALID,
+            )
+
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(
+                canonical_path.read_text(encoding="utf-8")
+            )
+            for field in ("request_hash", "response_hash", "binding_hash"):
+                canonical["metadata"].pop(field)
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            manifest.pop("binding_hash")
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            default = verify_ai_bundle(bundle)
+            self.assertTrue(default.valid)
+            self.assertEqual(
+                default.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(bundle).items():
+                with self.subTest(surface=name, mode="default"):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["binding_field_consistency"],
+                        "ABSENT",
+                    )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_binding=True),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "BINDING_REQUIRED")
+            self.assertEqual(
+                required.binding_field_consistency,
+                AssuranceState.ABSENT,
+            )
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-binding",
+            ).items():
+                with self.subTest(surface=name, mode="required"):
+                    self.assertEqual(output.returncode, 2)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"],
+                            "BINDING_REQUIRED",
+                        )
+                        self.assertEqual(
+                            payload["binding_field_consistency"],
+                            "ABSENT",
+                        )
+                    else:
+                        self.assertIn("reason=BINDING_REQUIRED", output.stdout)
+                        self.assertIn(
+                            "BINDING_FIELD_CONSISTENCY=ABSENT",
+                            output.stdout,
+                        )
+
+    def test_valid_signer_substitution_establishes_no_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            verification_path = bundle / "verification_keys.json"
+            original = json.loads(
+                verification_path.read_text(encoding="utf-8")
+            )
+
+            attacker_material = _verification_material_for_key(
+                bundle,
+                Ed25519PrivateKey.generate(),
+            )
+            self.assertNotEqual(
+                attacker_material["keys"][0]["public_key_b64"],
+                original["keys"][0]["public_key_b64"],
+            )
+            verification_path.write_text(
+                json.dumps(attacker_material, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            result = verify_ai_bundle(bundle)
+            self.assertTrue(result.valid)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+            self.assertEqual(result.freshness, AssuranceState.NOT_EVALUATED)
+            self.assertEqual(
+                result.authorization,
+                AssuranceState.NOT_EVALUATED,
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--require-signature",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode,
+                        0,
+                        output.stdout + output.stderr,
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(payload["signature_validity"], "VALID")
+                    self.assertEqual(
+                        payload["trusted_signer_identity"],
+                        "UNESTABLISHED",
+                    )
+                    self.assertEqual(payload["freshness"], "NOT_EVALUATED")
+                    self.assertEqual(
+                        payload["authorization"],
+                        "NOT_EVALUATED",
+                    )
+
+    def test_unsupported_signing_contract_values_are_rejected(self):
+        cases = (
+            ("keyring_format", "BAD_KEYRING_FORMAT"),
+            ("signature_algorithm", "BAD_SIGNATURE_ALGORITHM"),
+        )
+        for case, expected_detail in cases:
+            with self.subTest(case=case):
+                with tempfile.TemporaryDirectory() as directory:
+                    bundle = Path(directory)
+                    _make_bound_bundle(bundle)
+                    _sign_bundle(bundle)
+                    verification_path = bundle / "verification_keys.json"
+                    verification = json.loads(
+                        verification_path.read_text(encoding="utf-8")
+                    )
+                    if case == "keyring_format":
+                        verification["keyring_format"] = "ed25519-v2"
+                    else:
+                        verification["signatures"][0]["algorithm"] = "ed448"
+                    verification_path.write_text(
+                        json.dumps(verification, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+
+                    result = verify_ai_bundle(bundle)
+
+                    self.assertFalse(result.valid)
+                    self.assertEqual(result.reason, "SIGNATURE_INVALID")
+                    self.assertEqual(result.detail, expected_detail)
+                    self.assertEqual(
+                        result.signature_validity,
+                        AssuranceState.INVALID,
+                    )
+
+    def test_malformed_signature_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            verification_path = bundle / "verification_keys.json"
+            verification = json.loads(
+                verification_path.read_text(encoding="utf-8")
+            )
+            verification["signatures"] = "malformed"
+            verification_path.write_text(
+                json.dumps(verification, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            result = verify_ai_bundle(bundle)
+            self.assertEqual(result.reason, "SIGNATURE_INVALID")
+            self.assertEqual(result.signature_validity, AssuranceState.INVALID)
+
+    def test_manifest_binding_mismatch_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["binding_hash"] = "b" * 64
+            _write_manifest(bundle, manifest)
+
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            self.assertEqual(
+                verify_ai_bundle(bundle).reason,
+                "BINDING_HASH_MISMATCH",
+            )
+
+    def test_request_hash_mismatch_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["metadata"]["request_hash"] = "c" * 64
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            self.assertEqual(
+                verify_ai_bundle(bundle).reason,
+                "BINDING_HASH_MISMATCH",
+            )
+
+    def test_metadata_binding_mismatch_is_rejected_by_every_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["metadata"]["binding_hash"] = "d" * 64
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ai_hash_sha256"] = canonical_hash
+            _write_manifest(bundle, manifest)
+
+            self.assertEqual(
+                _entrypoint_acceptance(bundle),
+                {
+                    "kernel": False,
+                    "verify": False,
+                    "verify-bundle": False,
+                    "compare-prevalidation": False,
+                    "standalone": False,
+                },
+            )
+            result = verify_ai_bundle(bundle)
+            self.assertEqual(result.reason, "BINDING_HASH_MISMATCH")
+            self.assertEqual(
+                result.binding_field_consistency,
+                AssuranceState.INVALID,
+            )
+
+
+class TestAITrustedSignerIdentity(unittest.TestCase):
+    """P1.1b: trust-store-backed trusted_signer_identity evaluation."""
+
+    def test_verify_manifest_signature_returns_verified_public_key_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+
+            vk = json.loads(
+                (bundle / "verification_keys.json").read_text(encoding="utf-8")
+            )
+            manifest_bytes = (bundle / "ai_manifest.json").read_bytes()
+
+            result = verify_manifest_signature(manifest_bytes, vk)
+
+            self.assertIsInstance(result, VerifiedManifestSignature)
+            self.assertEqual(
+                result.public_key_bytes,
+                base64.b64decode(public_key_b64),
+            )
+            self.assertEqual(
+                result.public_key_bytes,
+                private_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                ),
+            )
+
+    def test_no_trust_input_preserves_current_behavior(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(result.trusted_signer_reason, "")
+
+    def test_trust_store_with_signer_key_establishes_valid_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_reason, "")
+
+    def test_trust_store_without_signer_key_stays_unestablished(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(
+                result.trusted_signer_reason, "TRUSTED_SIGNER_NOT_FOUND"
+            )
+
+    def test_require_trusted_signer_with_trusted_key_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
+
+    def test_require_trusted_signer_with_unknown_key_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUSTED_SIGNER_NOT_FOUND")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_require_trusted_signer_without_trust_store_path_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(require_trusted_signer=True),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_INPUT_NOT_PROVIDED")
+
+    def test_malformed_trust_store_is_invalid_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            trust_store_path = bundle / "trust_store.json"
+            trust_store_path.write_text("{not valid json", encoding="utf-8")
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_STORE_INVALID")
+            self.assertEqual(result.detail, "TRUST_STORE_NOT_JSON")
+
+    def test_missing_trust_store_path_is_invalid_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            missing_path = bundle / "does_not_exist_trust_store.json"
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=missing_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUST_STORE_INVALID")
+            self.assertEqual(result.detail, "TRUST_STORE_IO_ERROR")
+
+    def test_unsigned_bundle_with_trust_store_no_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.signature_validity, AssuranceState.ABSENT)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_unsigned_bundle_with_trust_store_and_requirement_is_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            other_key = Ed25519PrivateKey.generate()
+            other_public_key_b64 = base64.b64encode(
+                other_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(bundle, [other_public_key_b64])
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_REQUIRED")
+
+    def test_invalid_signature_from_trusted_key_does_not_establish_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            verification_path = bundle / "verification_keys.json"
+            verification = json.loads(
+                verification_path.read_text(encoding="utf-8")
+            )
+            sig_bytes = bytearray(
+                base64.b64decode(verification["signatures"][0]["sig_b64"])
+            )
+            sig_bytes[0] ^= 0xFF
+            verification["signatures"][0]["sig_b64"] = base64.b64encode(
+                bytes(sig_bytes)
+            ).decode("ascii")
+            verification_path.write_text(
+                json.dumps(verification, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "SIGNATURE_INVALID")
+            self.assertEqual(result.signature_validity, AssuranceState.INVALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_attacker_key_substitution_unestablished_without_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = _sign_bundle_with_key(bundle, legit_key)
+            trust_store_path = _write_trust_store(bundle, [legit_public_key_b64])
+
+            attacker_key = Ed25519PrivateKey.generate()
+            attacker_public_key_b64 = _sign_bundle_with_key(bundle, attacker_key)
+            self.assertNotEqual(attacker_public_key_b64, legit_public_key_b64)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+
+    def test_attacker_key_substitution_rejected_with_requirement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = _sign_bundle_with_key(bundle, legit_key)
+            trust_store_path = _write_trust_store(bundle, [legit_public_key_b64])
+
+            attacker_key = Ed25519PrivateKey.generate()
+            _sign_bundle_with_key(bundle, attacker_key)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "TRUSTED_SIGNER_NOT_FOUND")
+
+    def test_trusted_identity_independent_of_binding_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["binding_hash"] = "b" * 64
+            _write_manifest(bundle, manifest)
+            # Re-sign over the mutated manifest bytes so signature_validity
+            # itself stays VALID and only binding consistency is broken.
+            _sign_bundle_with_key(bundle, private_key)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(trust_store_path=trust_store_path),
+            )
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "BINDING_HASH_MISMATCH")
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(result.trusted_signer_identity, AssuranceState.VALID)
+
+
+class TestAITrustedSignerPublicSurfaces(unittest.TestCase):
+    """P1.1c: CLI/standalone plumbing parity for trust-store options."""
+
+    def _other_public_key_b64(self) -> str:
+        other_key = Ed25519PrivateKey.generate()
+        return base64.b64encode(
+            other_key.public_key().public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw,
+            )
+        ).decode("ascii")
+
+    def test_standalone_help_describes_trust_options(self):
+        result = subprocess.run(
+            [sys.executable, str(STANDALONE), "--help"],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        help_text = " ".join(result.stdout.split())
+        self.assertIn(
+            "--trust-store PATH Use an explicit local trusted-signer store "
+            "for signer identity evaluation",
+            help_text,
+        )
+        self.assertIn(
+            "--require-trusted-signer Reject unless the valid bundle "
+            "signature corresponds to a key trusted by the supplied trust "
+            "store",
+            help_text,
+        )
+
+    def test_trusted_signer_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            private_key = Ed25519PrivateKey.generate()
+            public_key_b64 = _sign_bundle_with_key(bundle, private_key)
+            trust_store_path = _write_trust_store(bundle, [public_key_b64])
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(trust_store_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 0, output.stdout + output.stderr
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["trusted_signer_identity"], "VALID"
+                    )
+
+    def test_unknown_signer_optional_trust_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(trust_store_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 0, output.stdout + output.stderr
+                    )
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["trusted_signer_identity"], "UNESTABLISHED"
+                    )
+
+    def test_unknown_signer_required_trust_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle_with_key(bundle, Ed25519PrivateKey.generate())
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(
+                            payload["reason"], "TRUSTED_SIGNER_NOT_FOUND"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=TRUSTED_SIGNER_NOT_FOUND", output.stdout
+                        )
+
+    def test_require_trusted_signer_without_trust_store_across_all_surfaces(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--require-trusted-signer"
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn(
+                            "TRUST_INPUT_NOT_PROVIDED", payload["reason"]
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_INPUT_NOT_PROVIDED", output.stdout
+                        )
+
+    def test_malformed_trust_store_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            bad_path = bundle / "bad.json"
+            bad_path.write_text("{not valid json", encoding="utf-8")
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(bad_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn("TRUST_STORE_INVALID", payload["reason"])
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_STORE_INVALID", output.stdout
+                        )
+
+    def test_missing_trust_store_path_rejected_across_all_surfaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            _sign_bundle(bundle)
+            missing_path = bundle / "does_not_exist_trust_store.json"
+
+            for name, output in _public_verifier_outputs(
+                bundle, "--trust-store", str(missing_path)
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertIn("TRUST_STORE_INVALID", payload["reason"])
+                    else:
+                        self.assertIn(
+                            "reason=TRUST_STORE_INVALID", output.stdout
+                        )
+
+    def test_unsigned_bundle_with_trust_store_and_requirement_across_all_surfaces(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            trust_store_path = _write_trust_store(
+                bundle, [self._other_public_key_b64()]
+            )
+
+            for name, output in _public_verifier_outputs(
+                bundle,
+                "--trust-store",
+                str(trust_store_path),
+                "--require-trusted-signer",
+            ).items():
+                with self.subTest(surface=name):
+                    self.assertEqual(
+                        output.returncode, 2, output.stdout + output.stderr
+                    )
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertEqual(payload["reason"], "SIGNATURE_REQUIRED")
+                    else:
+                        self.assertIn("reason=SIGNATURE_REQUIRED", output.stdout)
+
+
+class TestAITrustedSignerAdversarial(unittest.TestCase):
+    """P1.1d: adversarial contract tests stronger than key substitution."""
+
+    def test_full_self_consistent_rewrite_by_attacker_key(self):
+        """A fully rewritten, self-consistent, validly-signed artifact still
+        cannot establish trusted signer identity against a trust store that
+        does not contain the attacker's key. This proves P1.1 does not
+        provide a historical external payload anchor: payload_integrity and
+        signature_validity can both be VALID for content an attacker fully
+        controls and re-signed with their own key.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            # 1. trust store contains LEGITIMATE key A only
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = base64.b64encode(
+                legit_key.public_key().public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+            ).decode("ascii")
+            trust_store_path = _write_trust_store(
+                bundle, [legit_public_key_b64]
+            )
+
+            # 2-6. attacker rewrites the canonical payload and recomputes
+            # every stored v1 consistency field so the bundle remains
+            # internally valid.
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "ATTACKER REWRITTEN OUTPUT"
+            request_hash = "3" * 64
+            response_hash = "4" * 64
+            binding_payload = json.dumps(
+                {
+                    "request_hash": request_hash,
+                    "response_hash": response_hash,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
+            binding_hash = hashlib.sha256(
+                binding_payload.encode("utf-8")
+            ).hexdigest()
+            canonical["metadata"].update(
+                {
+                    "request_hash": request_hash,
+                    "response_hash": response_hash,
+                    "binding_hash": binding_hash,
+                }
+            )
+            canonical_hash = _rewrite_canonical(bundle, canonical)
+
+            manifest_path = bundle / "ai_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ai_hash_sha256"] = canonical_hash
+            manifest["binding_hash"] = binding_hash
+            _write_manifest(bundle, manifest)
+
+            # 7-8. attacker signs the resulting manifest with key B; bundle
+            # verification material contains key B.
+            attacker_key = Ed25519PrivateKey.generate()
+            _sign_bundle_with_key(bundle, attacker_key)
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path
+                ),
+            )
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.binding_field_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(
+                result.trusted_signer_reason, "TRUSTED_SIGNER_NOT_FOUND"
+            )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "TRUSTED_SIGNER_NOT_FOUND")
+            self.assertEqual(
+                required.payload_integrity, AssuranceState.VALID
+            )
+            self.assertEqual(
+                required.signature_validity, AssuranceState.VALID
+            )
+            self.assertEqual(
+                required.trusted_signer_identity,
+                AssuranceState.UNESTABLISHED,
+            )
+
+    def test_key_id_spoofing_does_not_establish_trust(self):
+        """Bundle-controlled key_id is non-authoritative: an attacker who
+        copies a trusted-looking key_id string onto their own key still
+        cannot establish trusted signer identity. Trust depends only on the
+        externally trusted cryptographic public-key fingerprint.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            shared_key_id = "trusted-release-key"
+
+            legit_key = Ed25519PrivateKey.generate()
+            legit_public_key_b64 = _sign_bundle_with_key_id(
+                bundle, legit_key, shared_key_id
+            )
+            trust_store_path = _write_trust_store(
+                bundle, [legit_public_key_b64]
+            )
+
+            attacker_key = Ed25519PrivateKey.generate()
+            attacker_public_key_b64 = _sign_bundle_with_key_id(
+                bundle, attacker_key, shared_key_id
+            )
+            self.assertNotEqual(
+                attacker_public_key_b64, legit_public_key_b64
+            )
+
+            verification = json.loads(
+                (bundle / "verification_keys.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(
+                verification["keys"][0]["key_id"], shared_key_id
+            )
+            self.assertEqual(
+                verification["signatures"][0]["key_id"], shared_key_id
+            )
+
+            result = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path
+                ),
+            )
+            self.assertTrue(result.valid)
+            self.assertEqual(result.signature_validity, AssuranceState.VALID)
+            self.assertEqual(
+                result.trusted_signer_identity, AssuranceState.UNESTABLISHED
+            )
+            self.assertEqual(
+                result.trusted_signer_reason, "TRUSTED_SIGNER_NOT_FOUND"
+            )
+
+            required = verify_ai_bundle(
+                bundle,
+                options=AIVerificationOptions(
+                    trust_store_path=trust_store_path,
+                    require_trusted_signer=True,
+                ),
+            )
+            self.assertFalse(required.valid)
+            self.assertEqual(required.reason, "TRUSTED_SIGNER_NOT_FOUND")
+
+
+class TestAIInvocationIdentityConsistency(unittest.TestCase):
+    """P1.2c: invocation_identity_consistency assurance dimension.
+
+    This dimension proves only that a stored invocation-identity object is
+    structurally valid under its declared versioned format and that its
+    stored hash matches recomputation from its stored semantic fields. It
+    does not prove provider receipt/execution, provider identity, response
+    causation, authorization, freshness, or historical occurrence.
+    """
+
+    def _build_openai_identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def test_legacy_bundle_without_invocation_identity_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+
+    def test_valid_stored_invocation_identity_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _inject_invocation_identity(bundle, self._build_openai_identity())
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+
+    def test_invocation_hash_mismatch_is_rejected_independent_of_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            # Tamper one stored semantic field WITHOUT recomputing the
+            # invocation identity's own internal hash_sha256. This proves
+            # invocation consistency is independent of outer payload
+            # integrity: the outer canonical/manifest hash is recomputed
+            # below so payload_integrity stays VALID.
+            identity["request"]["model"] = "gpt-4o-tampered"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_malformed_invocation_hash_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["hash_sha256"] = identity["hash_sha256"].upper()
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_HASH")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_bad_format_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["format"] = "aelitium-invocation-v2"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_FORMAT")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_unsupported_surface_structural_error_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["surface"] = "cohere.chat"
+            _inject_invocation_identity(bundle, identity)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_SURFACE")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+
+    def test_outer_payload_tamper_leaves_invocation_not_evaluated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            _inject_invocation_identity(bundle, self._build_openai_identity())
+
+            # Tamper the canonical payload WITHOUT updating the manifest --
+            # payload_integrity fails before invocation identity is ever
+            # evaluated.
+            canonical_path = bundle / "ai_canonical.json"
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            canonical["output"] = "TAMPERED"
+            _rewrite_canonical(bundle, canonical)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency,
+                AssuranceState.NOT_EVALUATED,
+            )
+
+    def test_invalid_invocation_identity_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            identity["hash_sha256"] = "0" * 64
+            _inject_invocation_identity(bundle, identity)
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 2, output.stdout)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertTrue(
+                            payload["reason"].startswith(
+                                "INVOCATION_HASH_MISMATCH"
+                            )
+                        )
+                        self.assertEqual(
+                            payload["invocation_identity_consistency"], "INVALID"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=INVOCATION_HASH_MISMATCH", output.stdout
+                        )
+                        self.assertIn(
+                            "INVOCATION_IDENTITY_CONSISTENCY=INVALID",
+                            output.stdout,
+                        )
+
+
+class TestAIInvocationBindingConsistency(unittest.TestCase):
+    """P1.2d2: invocation_binding_consistency assurance dimension.
+
+    This dimension proves only that the stored invocation-binding object is
+    internally consistent under its declared versioned format AND that its
+    invocation_hash/response_hash fields match this same bundle's stored,
+    already-VALID invocation identity and response hash. It does not prove
+    provider receipt/execution, provider identity, response causation,
+    authorization, freshness, or historical occurrence. A binding can never
+    be VALID unless the invocation identity it references is itself VALID.
+    """
+
+    # Matches _make_bound_bundle's hardcoded metadata.response_hash.
+    _RESPONSE_HASH = "2" * 64
+
+    def _build_openai_identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def _valid_binding_bundle(self, bundle: Path) -> dict:
+        """Build a bundle with a valid v1 binding, a valid invocation
+        identity, and a valid invocation binding referencing it. Returns
+        the stored invocation_binding object for further tampering."""
+        _make_bound_bundle(bundle)
+        identity = self._build_openai_identity()
+        binding = build_invocation_binding(
+            invocation_hash=identity["hash_sha256"],
+            response_hash=self._RESPONSE_HASH,
+        ).to_stored_object()
+        _inject_metadata_fields(
+            bundle,
+            {"invocation_identity": identity, "invocation_binding": binding},
+        )
+        return binding
+
+    def test_no_invocation_binding_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            _inject_metadata_fields(bundle, {"invocation_identity": identity})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.ABSENT
+            )
+
+    def test_valid_invocation_binding_is_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            self._valid_binding_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.VALID
+            )
+
+    def test_binding_present_but_identity_absent_is_input_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            binding = build_invocation_binding(
+                invocation_hash="a" * 64,
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(bundle, {"invocation_binding": binding})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISSING")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_present_but_response_hash_missing_is_input_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _pack(bundle)
+            identity = self._build_openai_identity()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="f" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISSING")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_identity_invalid_makes_binding_invalid_but_reason_is_root_cause(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            # Tamper identity's semantic field without recomputing its own
+            # hash_sha256 -- makes invocation_identity_consistency INVALID.
+            identity["request"]["model"] = "gpt-4o-tampered"
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            # Root cause reason takes precedence over the derived binding
+            # diagnostic -- the overall failure reason must point at the
+            # invocation identity itself, never be masked by
+            # INVOCATION_BINDING_INPUT_INVALID.
+            self.assertEqual(result.reason, "INVOCATION_HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_invocation_hash_mismatch_against_stored_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            other_identity = self._build_openai_identity(
+                messages=[{"role": "user", "content": "different"}]
+            )
+            invocation_binding = build_invocation_binding(
+                invocation_hash=other_identity["hash_sha256"],
+                response_hash=self._RESPONSE_HASH,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_response_hash_mismatch_against_stored_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+            identity = self._build_openai_identity()
+            invocation_binding = build_invocation_binding(
+                invocation_hash=identity["hash_sha256"],
+                response_hash="d" * 64,
+            ).to_stored_object()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_own_hash_mismatch_is_rejected_by_primitive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            # Retamper the already-injected, otherwise-valid binding: change
+            # its own stored invocation_hash without recomputing hash_sha256
+            # -- must be rejected by the primitive itself
+            # (INVOCATION_BINDING_HASH_MISMATCH), before any bundle-level
+            # cross-field comparison is even reached.
+            tampered = dict(binding)
+            tampered["invocation_hash"] = "c" * 64
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_HASH_MISMATCH")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_binding_bad_format_is_rejected_by_primitive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            tampered = dict(binding)
+            tampered["format"] = "aelitium-invocation-binding-v2"
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_BAD_FORMAT")
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_valid_invocation_binding_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            self._valid_binding_bundle(bundle)
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 0, output.stdout)
+                    payload = json.loads(output.stdout)
+                    self.assertEqual(
+                        payload["invocation_binding_consistency"], "VALID"
+                    )
+
+    def test_invalid_invocation_binding_reported_via_public_verifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            binding = self._valid_binding_bundle(bundle)
+            tampered = dict(binding)
+            tampered["invocation_hash"] = "c" * 64
+            _inject_metadata_fields(bundle, {"invocation_binding": tampered})
+
+            outputs = _public_verifier_outputs(bundle)
+            for name, output in outputs.items():
+                with self.subTest(surface=name):
+                    self.assertEqual(output.returncode, 2, output.stdout)
+                    if name == "standalone":
+                        payload = json.loads(output.stdout)
+                        self.assertTrue(
+                            payload["reason"].startswith(
+                                "INVOCATION_BINDING_HASH_MISMATCH"
+                            )
+                        )
+                        self.assertEqual(
+                            payload["invocation_binding_consistency"], "INVALID"
+                        )
+                    else:
+                        self.assertIn(
+                            "reason=INVOCATION_BINDING_HASH_MISMATCH",
+                            output.stdout,
+                        )
+                        self.assertIn(
+                            "INVOCATION_BINDING_CONSISTENCY=INVALID",
+                            output.stdout,
+                        )
+
+
+class TestAIInvocationAssuranceAdversarial(unittest.TestCase):
+    """P1.2e: adversarial demonstrations of what invocation identity/binding
+    consistency does and does not prove.
+
+    Every scenario here operates on unsigned bundles using only the
+    authoritative primitives (`build_invocation_identity`,
+    `build_invocation_binding`) and existing test helpers -- no production
+    hashing/grammar logic is duplicated. See docs/INVOCATION_ASSURANCE.md
+    for the normative claim-boundary writeup this class enforces the
+    presence of.
+
+    Deliberately NOT implemented here (see P1.2e RETURN report): a
+    response-side self-consistent rewrite. Reconstructing a valid
+    response_hash for changed output content would require duplicating the
+    capture adapters' own response_hash formula
+    (sha256_hash(canonical_json({"content": ..., "model": ...}))) inside
+    test code, or adding a new production helper solely for test
+    convenience -- both are out of scope for this slice.
+    """
+
+    # Matches _make_bound_bundle's hardcoded metadata.response_hash.
+    _RESPONSE_HASH = "2" * 64
+
+    def _identity(self, **overrides) -> dict:
+        kwargs = dict(
+            surface=SURFACE_OPENAI_CHAT_COMPLETIONS,
+            mode=MODE_SYNC_NON_STREAMING,
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+        )
+        kwargs.update(overrides)
+        return build_invocation_identity(**kwargs).to_stored_object()
+
+    def _binding(self, identity: dict, response_hash: str) -> dict:
+        return build_invocation_binding(
+            invocation_hash=identity["hash_sha256"],
+            response_hash=response_hash,
+        ).to_stored_object()
+
+    def test_full_self_consistent_rewrite_remains_internally_valid(self):
+        """LOAD-BEARING (P1.2e section 5).
+
+        An attacker with write access to an unsigned bundle can rewrite the
+        semantic invocation identity, then use the SAME authoritative
+        primitives a legitimate adapter would use to recompute the
+        invocation identity hash, the invocation binding, and the outer
+        canonical/manifest hash -- producing a brand-new bundle that is
+        indistinguishable, under every deterministic consistency dimension
+        this system currently offers, from a bundle that was legitimately
+        captured.
+
+        This demonstrates that internal consistency does NOT establish
+        historical occurrence, provider receipt/execution, or response
+        causation. Detecting this class of rewrite requires a signature
+        over the manifest (see TestVerifyBundleSigned-style coverage and
+        docs/INVOCATION_ASSURANCE.md's "Signatures and Trust" section) --
+        it is explicitly out of scope for the consistency dimensions alone.
+
+        Do NOT alter production code to make this test fail: the result
+        below (valid=True) is the correct, intended behavior of P1.2's
+        claim boundary, not a bug.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            original_identity = self._identity(model="gpt-4o")
+            original_binding = self._binding(original_identity, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": original_identity,
+                    "invocation_binding": original_binding,
+                },
+            )
+            baseline = verify_ai_bundle(bundle)
+            self.assertTrue(baseline.valid)
+            self.assertEqual(
+                baseline.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                baseline.invocation_binding_consistency, AssuranceState.VALID
+            )
+
+            # --- Attacker rewrite: substitute the semantic model, then
+            # recompute every derived field using the authoritative
+            # primitives, exactly as a legitimate adapter would.
+            rewritten_identity = self._identity(model="gpt-4o-attacker-substituted")
+            rewritten_binding = self._binding(rewritten_identity, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": rewritten_identity,
+                    "invocation_binding": rewritten_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(result.payload_integrity, AssuranceState.VALID)
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.VALID
+            )
+            # Existing v1 binding fields are untouched by this rewrite and
+            # remain internally valid -- not a bug: v1 binding_hash only
+            # commits request_hash/response_hash, neither of which this
+            # rewrite touched.
+            self.assertEqual(
+                result.binding_field_consistency, AssuranceState.VALID
+            )
+
+    def test_cross_bundle_binding_swap_is_rejected(self):
+        """P1.2e section 7.
+
+        A fully internally-valid invocation_binding object legitimately
+        captured for one bundle's invocation identity cannot be
+        transplanted into a different bundle and pass as consistent --
+        binding validity is bundle-local, not merely object-local. This is
+        a genuine two-bundle variant of the single-bundle mismatch already
+        covered by TestAIInvocationBindingConsistency
+        .test_binding_invocation_hash_mismatch_against_stored_identity: here
+        both `invocation_binding` objects are real, independently captured,
+        internally-valid objects -- not hand-assembled in-memory mismatches.
+        """
+        with tempfile.TemporaryDirectory() as dir_a, tempfile.TemporaryDirectory() as dir_b:
+            bundle_a = Path(dir_a)
+            bundle_b = Path(dir_b)
+
+            identity_a = self._identity(model="gpt-4o")
+            identity_b = self._identity(
+                messages=[{"role": "user", "content": "a completely different prompt"}]
+            )
+
+            _make_bound_bundle(bundle_a)
+            binding_a = self._binding(identity_a, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle_a,
+                {"invocation_identity": identity_a, "invocation_binding": binding_a},
+            )
+
+            _make_bound_bundle(bundle_b)
+            binding_b = self._binding(identity_b, self._RESPONSE_HASH)
+            _inject_metadata_fields(
+                bundle_b,
+                {"invocation_identity": identity_b, "invocation_binding": binding_b},
+            )
+
+            self.assertTrue(verify_ai_bundle(bundle_a).valid)
+            self.assertTrue(verify_ai_bundle(bundle_b).valid)
+
+            # Swap: transplant bundle B's real, internally-valid
+            # invocation_binding into bundle A, which still stores identity
+            # A and A's own response_hash.
+            _inject_metadata_fields(bundle_a, {"invocation_binding": binding_b})
+
+            result = verify_ai_bundle(bundle_a)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BINDING_INPUT_MISMATCH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.VALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_root_cause_precedence_holds_for_non_hash_identity_failure(self):
+        """P1.2e section 9 adversarial variation.
+
+        The existing P1.2d2 root-cause-precedence test
+        (TestAIInvocationBindingConsistency
+        .test_identity_invalid_makes_binding_invalid_but_reason_is_root_cause)
+        already proves the rule for an INVOCATION_HASH_MISMATCH identity
+        failure. This proves the SAME precedence rule generalizes to a
+        different InvocationIdentityError reason family --
+        INVOCATION_BAD_HASH (a malformed stored hash format, not a stored
+        semantic-field/hash mismatch) -- so the overall reason is never
+        replaced by the derived INVOCATION_BINDING_INPUT_INVALID diagnostic
+        regardless of *why* the identity is invalid.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            identity = self._identity()
+            # Binding built against the identity's ORIGINAL, correctly
+            # formatted hash -- the binding object itself is internally
+            # valid. The identity's own stored hash is tampered afterward,
+            # simulating an attacker corrupting the identity in place
+            # without touching the already-computed binding.
+            invocation_binding = self._binding(identity, self._RESPONSE_HASH)
+            identity["hash_sha256"] = identity["hash_sha256"].upper()
+            _inject_metadata_fields(
+                bundle,
+                {
+                    "invocation_identity": identity,
+                    "invocation_binding": invocation_binding,
+                },
+            )
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertFalse(result.valid)
+            self.assertEqual(result.reason, "INVOCATION_BAD_HASH")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.INVALID
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.INVALID
+            )
+
+    def test_both_absent_on_otherwise_valid_bound_bundle_is_backward_compatible(
+        self,
+    ):
+        """P1.2e section 10.B.
+
+        A bundle with fully valid v1 binding fields but no P1.2 invocation
+        identity/binding at all remains fully valid. This is
+        backward-compatible ABSENCE -- it is NOT proof that no invocation
+        evidence was ever captured or could have been captured for this
+        call; it only means none is present in THIS bundle. No requirement
+        flag is added in response to this behavior.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            _make_bound_bundle(bundle)
+
+            result = verify_ai_bundle(bundle)
+
+            self.assertTrue(result.valid)
+            self.assertEqual(result.reason, "OK")
+            self.assertEqual(
+                result.invocation_identity_consistency, AssuranceState.ABSENT
+            )
+            self.assertEqual(
+                result.invocation_binding_consistency, AssuranceState.ABSENT
+            )
+
+    def test_invocation_assurance_doc_contains_required_boundary_concepts(self):
+        """P1.2e section 15: positive documentation contract.
+
+        Asserts presence of required claim-boundary concepts and stable
+        identifiers in docs/INVOCATION_ASSURANCE.md -- not a prose linter.
+        This guards against the claim-boundary section being accidentally
+        deleted or the document being renamed, not against wording choices.
+        """
+        doc_path = ROOT / "docs" / "INVOCATION_ASSURANCE.md"
+        text = doc_path.read_text(encoding="utf-8")
+        lowered = text.lower()
+
+        for phrase in (
+            "consistency",
+            "historical occurrence",
+            "provider",
+            "execution",
+            "causation",
+            "freshness",
+            "authorization",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+        for identifier in (
+            "invocation_identity_consistency",
+            "invocation_binding_consistency",
+            "aelitium-invocation-v1",
+            "aelitium-invocation-binding-v1",
+        ):
+            with self.subTest(identifier=identifier):
+                self.assertIn(identifier, text)
+
+
+if __name__ == "__main__":
+    unittest.main()

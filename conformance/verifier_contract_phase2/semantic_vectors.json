@@ -1,0 +1,1414 @@
+{
+  "case_count": 48,
+  "claim_boundary": [
+    "signature_validity=VALID establishes only mathematical validity for the exact raw manifest message under the bundled public key.",
+    "Signature validity does not establish trusted organizational identity, authorization, provider execution, historical occurrence, response causation, semantic truth, or legal compliance.",
+    "trusted_signer_identity=VALID establishes only exact decoded-key membership in the explicit trust input."
+  ],
+  "contract": "aelitium-verifier-contract-phase2-semantic-vectors-v1",
+  "ed25519_portable_profile": {
+    "applies_to_signature_evaluation_in_all_families": true,
+    "equation": "UNCOFACTORED_S_B_EQUALS_R_PLUS_K_A",
+    "fallback": "NONE",
+    "hash_policy": "SHA512_R_ENCODED_A_ENCODED_RAW_MESSAGE_LITTLE_ENDIAN_MOD_L",
+    "point_decoding": "RFC8032_5_1_3_CANONICAL_Y_X0_SIGN_STRICT",
+    "profile": "ED25519_PORTABLE_STRICT_1",
+    "public_key_policy": "NON_IDENTITY_PRIME_ORDER_SUBGROUP",
+    "r_policy": "PRIME_ORDER_SUBGROUP_IDENTITY_PERMITTED",
+    "scalar_policy": "LITTLE_ENDIAN_0_LE_S_LT_L",
+    "selection": "REQUESTED_EFFECTIVE_EXPLICIT_EQUAL_NO_FALLBACK"
+  },
+  "family_counts": {
+    "ED25519_STRICT_SEMANTIC": 12,
+    "SIGNATURE_SEMANTIC": 17,
+    "TRUST_SEMANTIC": 19
+  },
+  "fixture_hashes": {
+    "semantic_ai_canonical.json": "46c14bbd7c469eb289656b4773c3aada879438f7e273c2761283ec5afa029e48",
+    "semantic_keyring_key_id_mismatch.json": "94e8f2b20f747e831997229d83ae7300dbe7728443f09993c91e090073cce360",
+    "semantic_keyring_modified_signature.json": "30cf7d59f6cfbce2a4f5c297ee1d319e74f715ee451b5c3a25c8f3c03f5b5cf8",
+    "semantic_keyring_other_message_signature.json": "e265c4aece9b04bbe206a48e7848b8678e4e7c44a61b03b5c5b04f8d5ce24cbd",
+    "semantic_keyring_public_key_alias.json": "cc91243f09a2155f23049176889d1dcf3ff5ce8e1d3119be8ae26e3ef987a77e",
+    "semantic_keyring_signature_alias.json": "36e546455df209704cdddfaebb529b47bbe9642540c02e46b49ac6243b37fcd1",
+    "semantic_keyring_valid.json": "e753d4c0ddb9f0561c24a0797f48d9741dd35d9efa55f159dae0b9cc0fa0beaf",
+    "semantic_keyring_wrong_public_key.json": "34f1d66c4555081df3bf2fe8d876395314a8cc41ea60b1c09bc9aaf29c49898a",
+    "semantic_manifest_escape_spelling.json": "9b7d6204d247811129e53e31e65cdde5313715b98ef13c0672b219c77b77c38e",
+    "semantic_manifest_leading_whitespace.json": "136768efdff4bc6a79781d531f486c41f4c78e4661bbf5e04661f2ce0bfcf2e2",
+    "semantic_manifest_member_order.json": "0728b36cfa6e5689194fcee6f4deaf199b11419d81bb22e5d603499420eb5650",
+    "semantic_manifest_terminal_newline.json": "c29cd703a98b4b52e26e81146ff5a6d952134066b1188fc70705baffb4e070c8",
+    "semantic_manifest_valid.json": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+    "semantic_trust_duplicate_alias.json": "bec5248993d505604ac3b114ae61a6128dbadb55c317f8beacb77b3faf332a07",
+    "semantic_trust_duplicate_exact.json": "37c1d9a351894dea39c6e9aedb69140f2ca15b95988f4d3cb9655064986c2a80",
+    "semantic_trust_duplicate_label.json": "9b2e6b0868d7313a876fc25d9e37d6511aba22317021093b0cf92c3928057739",
+    "semantic_trust_empty.json": "01c2b5a0fd78e058d15d58dc3d9a76451e66a217b5918ce393d6a09dd98d3378",
+    "semantic_trust_malformed.json": "82cd0976a390ca08406c3ab8897473c3ebfd04149ac00fc07e97649ac7328281",
+    "semantic_trust_matching.json": "5dc893d12ff3ecb8f2fc377b751da813d9c5ab6f4f602e685a06756e1e3285d7",
+    "semantic_trust_nonmatching.json": "bde50c769cf15d83962891e8b4b7fe26949b70feecc37a193f29aaf08dcf9d06",
+    "semantic_trust_two_distinct.json": "ac198d222263e01a53131f12c2c7993bd0019850182521e132ea6e1f6cda2347"
+  },
+  "materials": {
+    "primary_key": {
+      "fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+      "prefixed_bytes_sha256_not_fingerprint": "3f9a85ee4d87b9d9abced4dc329e524636bf11d2dff0c5dd67906508a305209c",
+      "private_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "public_key_b64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "public_key_pad_bit_alias_b64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbh=",
+      "raw_key_sha256": "56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c"
+    },
+    "primary_manifest_signature": {
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "signature_b64": "nkrPoeFVlo+pZIn0Wh80YaKLRs3IfKNuCzekWzjfJ8iFJ/yDREd7rHY7hqdiv1yMnHlc5YryLDyVvVQxLJloCg==",
+      "signature_hex": "9e4acfa1e155968fa96489f45a1f3461a28b46cdc87ca36e0b37a45b38df27c88527fc8344477bac763b86a762bf5c8c9c795ce58af22c3c95bd54312c99680a",
+      "signature_pad_bit_alias_b64": "nkrPoeFVlo+pZIn0Wh80YaKLRs3IfKNuCzekWzjfJ8iFJ/yDREd7rHY7hqdiv1yMnHlc5YryLDyVvVQxLJloCh=="
+    },
+    "secondary_key": {
+      "fingerprint": "ed25519:sha256:24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28",
+      "private_seed_hex": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+      "public_key_b64": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=",
+      "public_key_hex": "29acbae141bccaf0b22e1a94d34d0bc7361e526d0bfe12c89794bc9322966dd7",
+      "raw_key_sha256": "24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28"
+    }
+  },
+  "scope": "SIGNATURE_TRUST_AND_ED25519_PORTABLE_PROFILE_SEMANTICS",
+  "state_vocabulary": {
+    "cryptographic_signature_decision": [
+      "INVALID",
+      "NOT_EVALUATED",
+      "VALID"
+    ],
+    "signature_validity": [
+      "ABSENT",
+      "INVALID",
+      "NOT_EVALUATED",
+      "VALID"
+    ],
+    "top_level_reason": [
+      null,
+      "SIGNATURE_INVALID",
+      "SIGNATURE_REQUIRED",
+      "TRUST_INPUT_NOT_PROVIDED",
+      "TRUST_STORE_INVALID",
+      "TRUSTED_SIGNER_NOT_FOUND"
+    ],
+    "trust_membership_decision": [
+      "MATCH",
+      "NOT_EVALUATED",
+      "NO_MATCH",
+      "NO_STORE"
+    ],
+    "trust_store_validation": [
+      "ABSENT",
+      "INVALID",
+      "NOT_EVALUATED",
+      "VALID"
+    ],
+    "trusted_signer_identity": [
+      "NOT_EVALUATED",
+      "UNESTABLISHED",
+      "VALID"
+    ]
+  },
+  "test_material_notice": "PUBLIC TEST-ONLY deterministic Ed25519 seeds for conformance reproduction; not production secrets and not secure key-generation guidance.",
+  "vectors": [
+    {
+      "case_id": "signature.semantic.valid_exact_raw_message",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.raw_leading_whitespace",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_leading_whitespace.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "136768efdff4bc6a79781d531f486c41f4c78e4661bbf5e04661f2ce0bfcf2e2",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.raw_member_order",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_member_order.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "0728b36cfa6e5689194fcee6f4deaf199b11419d81bb22e5d603499420eb5650",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.raw_escape_spelling",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_escape_spelling.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "9b7d6204d247811129e53e31e65cdde5313715b98ef13c0672b219c77b77c38e",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.raw_terminal_newline",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_terminal_newline.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "c29cd703a98b4b52e26e81146ff5a6d952134066b1188fc70705baffb4e070c8",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.wrong_public_key",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_wrong_public_key.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.modified_signature_byte",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_modified_signature.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.signature_from_other_message",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_other_message_signature.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.matching_key_id",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.mismatched_decoded_key_id",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_key_id_mismatch.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.canonical_public_key_spelling",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.public_key_nonzero_pad_bits",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_public_key_alias.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.canonical_signature_spelling",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.signature_nonzero_pad_bits",
+      "compatibility": "ALREADY_RELEASED_BEHAVIOR",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_signature_alias.json"
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.keyring_absent_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "ABSENT",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": null
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.keyring_absent_signature_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "ABSENT",
+        "top_level_reason": "SIGNATURE_REQUIRED",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": null
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": true,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.semantic.keyring_absent_membership_required_with_store",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "ABSENT",
+        "top_level_reason": "SIGNATURE_REQUIRED",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "SIGNATURE_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": null
+      },
+      "operation": "VERIFY_SIGNATURE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.fingerprint_primary_key",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "NOT_EVALUATED",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": "PRIMARY",
+        "manifest": null,
+        "trust_store": null,
+        "verification_keys": null
+      },
+      "operation": "DERIVE_FINGERPRINT",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.fingerprint_secondary_key",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": "ed25519:sha256:24f6ed6acbfe1009c030d7ca567c33ca4830911498236b5561a6c82abec5de28",
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "NOT_EVALUATED",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": "SECONDARY",
+        "manifest": null,
+        "trust_store": null,
+        "verification_keys": null
+      },
+      "operation": "DERIVE_FINGERPRINT",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.one_signer_valid",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": null,
+        "manifest": null,
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": null
+      },
+      "operation": "VALIDATE_TRUST_STORE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.two_distinct_signers_valid",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": null,
+        "manifest": null,
+        "trust_store": "semantic_trust_two_distinct.json",
+        "verification_keys": null
+      },
+      "operation": "VALIDATE_TRUST_STORE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.duplicate_decoded_key_exact",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_STORE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "INVALID",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": null,
+        "manifest": null,
+        "trust_store": "semantic_trust_duplicate_exact.json",
+        "verification_keys": null
+      },
+      "operation": "VALIDATE_TRUST_STORE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.duplicate_decoded_key_different_label",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_STORE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "INVALID",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": null,
+        "manifest": null,
+        "trust_store": "semantic_trust_duplicate_label.json",
+        "verification_keys": null
+      },
+      "operation": "VALIDATE_TRUST_STORE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.duplicate_decoded_key_pad_bit_alias",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_STORE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "INVALID",
+        "trusted_signer_identity": "NOT_EVALUATED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": null,
+        "key_material": null,
+        "manifest": null,
+        "trust_store": "semantic_trust_duplicate_alias.json",
+        "verification_keys": null
+      },
+      "operation": "VALIDATE_TRUST_STORE",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.valid_signature_matching_store",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "MATCH",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "VALID"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.valid_signature_nonmatching_store_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_MATCH",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_nonmatching.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.valid_signature_nonmatching_store_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "VALID",
+        "top_level_reason": "TRUSTED_SIGNER_NOT_FOUND",
+        "trust_membership_decision": "NO_MATCH",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_nonmatching.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.empty_store_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_MATCH",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_empty.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.empty_store_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": "ed25519:sha256:56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+        "signature_validity": "VALID",
+        "top_level_reason": "TRUSTED_SIGNER_NOT_FOUND",
+        "trust_membership_decision": "NO_MATCH",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_empty.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.no_store_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "VALID",
+        "expected_fingerprint": null,
+        "signature_validity": "VALID",
+        "top_level_reason": null,
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.no_store_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_INPUT_NOT_PROVIDED",
+        "trust_membership_decision": "NO_STORE",
+        "trust_store_validation": "ABSENT",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": null,
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.malformed_acquired_store_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_STORE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "INVALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_malformed.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.malformed_acquired_store_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "NOT_EVALUATED",
+        "top_level_reason": "TRUST_STORE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "INVALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_malformed.json",
+        "verification_keys": "semantic_keyring_valid.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.store_present_unsigned_optional",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "ABSENT",
+        "top_level_reason": null,
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": null
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "trust.semantic.store_present_unsigned_required",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "NOT_EVALUATED",
+        "expected_fingerprint": null,
+        "signature_validity": "ABSENT",
+        "top_level_reason": "SIGNATURE_REQUIRED",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": null
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": null,
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": true
+      }
+    },
+    {
+      "case_id": "trust.semantic.store_present_invalid_signature",
+      "compatibility": "SAFE_CLARIFICATION",
+      "expected": {
+        "cryptographic_signature_decision": "INVALID",
+        "expected_fingerprint": null,
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID",
+        "trust_membership_decision": "NOT_EVALUATED",
+        "trust_store_validation": "VALID",
+        "trusted_signer_identity": "UNESTABLISHED"
+      },
+      "family": "TRUST_SEMANTIC",
+      "inputs": {
+        "canonical_payload": "semantic_ai_canonical.json",
+        "key_material": null,
+        "manifest": "semantic_manifest_valid.json",
+        "trust_store": "semantic_trust_matching.json",
+        "verification_keys": "semantic_keyring_modified_signature.json"
+      },
+      "operation": "EVALUATE_MEMBERSHIP",
+      "raw_manifest_message_sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da",
+      "verifier_options": {
+        "require_signature": false,
+        "require_trusted_signer": false
+      }
+    },
+    {
+      "case_id": "signature.strict.canonical_valid",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "PASS",
+        "cryptographic_signature_decision": "VALID",
+        "equation_decision": "PASS",
+        "failure_stage": "NONE",
+        "r_decoding": "PASS",
+        "r_subgroup": "PASS",
+        "scalar_decision": "IN_RANGE",
+        "signature_validity": "VALID",
+        "top_level_reason": null
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "kind": "FIXTURE",
+        "path": "fixtures/semantic_manifest_valid.json",
+        "sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "Ordinary canonical Ed25519 material remains valid under the portable profile.",
+      "signature_hex": "9e4acfa1e155968fa96489f45a1f3461a28b46cdc87ca36e0b37a45b38df27c88527fc8344477bac763b86a762bf5c8c9c795ce58af22c3c95bd54312c99680a"
+    },
+    {
+      "case_id": "signature.strict.cofactored_only_domain_rejected",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": {
+        "cofactored_equation": "PASS",
+        "uncofactored_equation": "FAIL"
+      },
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "A_IDENTITY",
+        "r_decoding": "PASS",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "0100000000000000000000000000000000000000000000000000000000000000",
+      "purpose": "The historical cofactored-versus-uncofactored discriminator is outside the strict public/subgroup domain and cannot enter a broader cofactored-only acceptance path.",
+      "signature_hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.public_key_x_zero_sign_one",
+      "compatibility": "OBSERVED_LEGACY_BACKEND_DIVERGENCE",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "FAIL",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "A_DECODE",
+        "r_decoding": "NOT_REACHED",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "0100000000000000000000000000000000000000000000000000000000000080",
+      "purpose": "An x=0 public-key encoding with sign bit one is rejected by strict point decoding.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.public_key_y_p_plus_one",
+      "compatibility": "OBSERVED_LEGACY_BACKEND_DIVERGENCE",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "FAIL",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "A_DECODE",
+        "r_decoding": "NOT_REACHED",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "purpose": "A non-canonical public-key encoding with y=p+1 is rejected before group operations.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.identity_public_key",
+      "compatibility": "OBSERVED_LEGACY_BACKEND_DIVERGENCE",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "A_IDENTITY",
+        "r_decoding": "PASS",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "0100000000000000000000000000000000000000000000000000000000000000",
+      "purpose": "A canonical identity public key is rejected explicitly.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.nonidentity_small_order_public_key",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "FAIL",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "A_SUBGROUP",
+        "r_decoding": "PASS",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "purpose": "The canonical non-identity order-two public key is outside the prime-order subgroup.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.nonidentity_small_order_r",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "PASS",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "R_SUBGROUP",
+        "r_decoding": "PASS",
+        "r_subgroup": "FAIL",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "A canonical non-identity order-two R is outside the prime-order subgroup.",
+      "signature_hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.noncanonical_r_x_zero_sign_one",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "R_DECODE",
+        "r_decoding": "FAIL",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "An x=0 R encoding with sign bit one is rejected during strict point decoding.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.noncanonical_r_y_p_plus_one",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "NOT_REACHED",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "R_DECODE",
+        "r_decoding": "FAIL",
+        "r_subgroup": "NOT_REACHED",
+        "scalar_decision": "NOT_REACHED",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "A non-canonical R encoding with y=p+1 is rejected before group operations.",
+      "signature_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "case_id": "signature.strict.scalar_l_rejected",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "PASS",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "NOT_REACHED",
+        "failure_stage": "S_RANGE",
+        "r_decoding": "PASS",
+        "r_subgroup": "PASS",
+        "scalar_decision": "OUT_OF_RANGE",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "kind": "FIXTURE",
+        "path": "fixtures/semantic_manifest_valid.json",
+        "sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "S=L is rejected before the verification equation.",
+      "signature_hex": "9e4acfa1e155968fa96489f45a1f3461a28b46cdc87ca36e0b37a45b38df27c8edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010"
+    },
+    {
+      "case_id": "signature.strict.scalar_l_minus_one_reaches_equation",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "PASS",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "FAIL",
+        "failure_stage": "EQUATION",
+        "r_decoding": "PASS",
+        "r_subgroup": "PASS",
+        "scalar_decision": "IN_RANGE",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "kind": "FIXTURE",
+        "path": "fixtures/semantic_manifest_valid.json",
+        "sha256": "272f733b92560e7213318c0f0dfbee361a4e0b7ba38aef45fa814629deeda6da"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "S=L-1 passes the scalar stage but this constructed signature fails the equation.",
+      "signature_hex": "9e4acfa1e155968fa96489f45a1f3461a28b46cdc87ca36e0b37a45b38df27c8ecd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010"
+    },
+    {
+      "case_id": "signature.strict.identity_r_reaches_equation",
+      "compatibility": "SAFE_CLARIFICATION",
+      "distinguishing_equations": null,
+      "expected": {
+        "a_decoding": "PASS",
+        "a_subgroup": "PASS",
+        "cryptographic_signature_decision": "INVALID",
+        "equation_decision": "FAIL",
+        "failure_stage": "EQUATION",
+        "r_decoding": "PASS",
+        "r_subgroup": "PASS",
+        "scalar_decision": "IN_RANGE",
+        "signature_validity": "INVALID",
+        "top_level_reason": "SIGNATURE_INVALID"
+      },
+      "family": "ED25519_STRICT_SEMANTIC",
+      "message": {
+        "hex": "",
+        "kind": "INLINE_HEX",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "profile": "ED25519_PORTABLE_STRICT_1",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "purpose": "Identity R is not rejected solely for identity; it reaches and fails the uncofactored equation.",
+      "signature_hex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

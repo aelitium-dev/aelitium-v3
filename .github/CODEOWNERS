@@ -1,0 +1,24 @@
+# AELITIUM — Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all files
+* @aelitium-dev
+
+# Core engine (canonicalization, pack, verify, signing)
+engine/ @aelitium-dev
+
+# AI integrity layer
+engine/ai_canonical.py @aelitium-dev
+engine/ai_pack.py @aelitium-dev
+engine/ai_cli.py @aelitium-dev
+engine/schemas/ @aelitium-dev
+
+# Tests — contract changes require review
+tests/ @aelitium-dev
+
+# Governance and release process
+governance/ @aelitium-dev
+scripts/ @aelitium-dev
+
+# Documentation
+docs/ @aelitium-dev
