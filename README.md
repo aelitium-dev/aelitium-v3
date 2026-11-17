@@ -1,683 +1,102 @@
+[English](README.md) | [Français](README.fr.md)
+
 # AELITIUM
 
-> Git-style verification for LLM outputs.
+AELITIUM is a Python library and command-line tool for packaging recorded AI
+interactions into evidence bundles, checking their consistency offline and
+comparing records. Each bundle contains recorded data and a manifest that
+describes the checks.
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![python](https://img.shields.io/badge/python-3.10%2B-blue)
+Teams can review a bundle supplied by another team or vendor without access to
+the production environment. Verification checks the supplied records, not whether
+the interaction actually occurred.
 
-> AELITIUM is a library/CLI for producing and verifying internally consistent,
-> offline-verifiable evidence bundles for recorded LLM interactions under
-> deterministic canonicalization.
+This README covers **0.4.0**. According to the repository release record,
+`v0.4.0` is the current published GitHub and PyPI release.
 
-> **Release status:** `v0.4.0` is the current published GitHub and PyPI release.
-> `pip install aelitium` installs AELITIUM 0.4.0.
+## Features
 
-LLM outputs can change silently. AELITIUM currently enforces fail-closed
-verification semantics on the validated surface and checks the internal consistency
-of recorded AI evidence under the v1 schema and canonicalization contract.
+- Capture supported OpenAI, Anthropic and LiteLLM call paths with optional adapters.
+- Pack a recorded interaction into a local evidence bundle.
+- Verify supplied evidence offline against its recorded hashes and schema.
+- Compare supported bundles with an explicit comparison basis and outcome.
+- Find supported large language model (LLM) call patterns through static analysis
+  of Python source.
 
-## Demo
+See the [0.4.0 feature matrix](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/FEATURE_MATRIX.md)
+for supported paths and their limits. Capture and scanning do not cover every LLM call.
 
-[![asciicast](https://asciinema.org/a/OFLJN0nM5QDk2acz.svg)](https://asciinema.org/a/OFLJN0nM5QDk2acz)
+## Install
 
-## Quickstart
-
-Find uncaptured LLM call sites:
-
-```bash
-aelitium scan .
-```
-
-Capture evidence:
-
-```python
-from aelitium import enable_litellm
-enable_litellm()
-```
-
-Verify a bundle offline:
+Python 3.10 or newer is required. Core dependencies are `cryptography>=41` and
+`jsonschema>=4.18`. Provider SDKs are optional. In a new working directory:
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install "aelitium==0.4.0"
+```
+
+These commands use Bash. Installation may download dependencies.
+Once installed, the example below works offline.
+
+## Example
+
+Create a synthetic recording. No model or provider API is called.
+The same recording is used in both language versions.
+
+```bash
+cat > recording.json <<'JSON'
+{
+  "schema_version": "ai_output_v1",
+  "ts_utc": "2026-01-01T00:00:00Z",
+  "model": "synthetic-example",
+  "prompt": "What is the capital of France?",
+  "output": "Paris."
+}
+JSON
+
+aelitium pack --input recording.json --out bundle
 aelitium verify-bundle ./bundle
 ```
 
-## What current v1 verification establishes
+A successful verification reports `STATUS=VALID rc=0`.
+The example is unsigned and has no recorded request/response binding;
+the default verification options allow both.
 
-- Stored v1 request and response hashes can be joined by a deterministic binding commitment
-- Modifications inconsistent with the bundle's recorded contract and hashes are detectable
-- Verification can be performed offline on the validated surface
-- An explicitly activated Freshness policy can evaluate declared-time recency
-  of the canonical timestamp
+Use a fresh output directory and one writer per destination.
+Bundle files are written sequentially. A failure can leave partial output.
+Keep partial output out of reader workflows after a failure.
 
-## What it does not establish
+## Limits
 
-- That the model actually executed
-- That the provider was honest
-- That the response is correct or truthful
-- That capture was complete
-- Complete provider invocation identity
-- Trusted signer identity, unless an external trust store is explicitly
-  supplied for evaluation (see [Trust boundary](#trust-boundary))
-- Trusted historical time or authorization
-- That semantic equivalence implies hash equivalence
+`VALID` means the supplied evidence passed the selected checks.
+It does not prove that an interaction occurred, that a provider ran the request,
+or that an answer is true, correct or safe. It does not establish complete capture,
+what caused the response, the complete identity of the actual call, a trustworthy
+historical timestamp, authorization or legal or regulatory compliance.
 
----
+Comparison does not establish causation, model drift or provider fault.
 
-## The problem
+An internally consistent replacement can also verify.
+Keep an independently trusted hash or key when checking an expected record.
+Signatures are optional. A public key inside a bundle is not an independent trust anchor.
 
-You run the same prompt text in production. One week later, the output is different.
-
-The recorded response changed — but your logs just show two JSON blobs. It is hard
-to check their schema and hash consistency against a separately retained expected
-record.
-
----
-
-## Try it offline
-
-```bash
-git clone https://github.com/aelitium-dev/aelitium-v3
-cd aelitium-v3 && pip install -e .
-bash examples/drift_demo/run_demo.sh  # no API key required
-```
-
-The frozen demo bundles predate invocation evidence, so v0.4.0 output
-reports `COMPARISON_BASIS=REQUEST_HASH_V1_FALLBACK`. Their selected v1 request
-hashes match and their selected response hashes differ.
-
-```bash
-# Scan your codebase for unprotected LLM calls:
-aelitium scan ./src
-# LLM call sites detected: 4
-# Missing evidence capture:
-#   ⚠ openai — worker.py:42
-#   ⚠ anthropic — agent.py:17
-# Coverage: 2/4 (50%)
-# STATUS=INCOMPLETE rc=2
-```
-
-Commands expose parseable key/value output, and supported successful command paths
-offer `--json`. Successful `verify` and `verify-bundle` calls emit JSON when
-requested; invalid results currently retain key/value compatibility output. The
-standalone verifier emits JSON for invalid verification results.
-
-## Unreleased implementation surfaces
-
-The current `[Unreleased]` branch work adds an explicit opt-in result contract
-without changing the published v0.4.0 text or legacy JSON surfaces:
-
-```bash
-aelitium verify-bundle ./bundle --contract-json
-```
-
-This emits `aelitium-verification-result-v1` for valid and invalid operations,
-including an embedded `aelitium-assurance-result-v1`, explicit input references,
-and `aelitium-claim-boundary-v1` non-claim codes. Existing `compare --json`
-retains its `aelitium-compare-v1` identity and old keys while adding per-side
-verification summaries, explicit comparability and response relationships, and
-claim boundaries.
-
-The current unreleased branch also provides an opt-in `--operation-json`
-verification path with requested/effective capability reporting, pre-I/O
-capability selection, immutable no-follow snapshots, explicit trust-input
-acquisition, and separate semantic and operational outcomes. Semantic `VALID`
-and `INVALID` results use rc 0 and rc 2; operational outcomes use rc 3; malformed
-operation requests use rc 64. Its deterministic RFC 8785 plus LF outer result
-is portable by construction, and its nine-phase registry includes
-`SEMANTIC_EVALUATION`. The strict signature capability
-`ED25519_PORTABLE_STRICT_1` has no fallback. These are working-tree features,
-not claims about the published v0.4.0 release or an independent verifier.
-
-The same unreleased branch also implements the separately identified portable
-canonicalization profile `aelitium_jcs_profile_v2`. It uses strict UTF-8 JSON,
-rejects duplicate names and invalid/noncharacter Unicode recursively, bounds
-all native numbers to finite binary64 values of magnitude at most `2^53 - 1`,
-and emits exact RFC 8785 / JCS bytes. The released identifier
-`json_sorted_keys_no_whitespace_utf8` and all v0.4.0 behavior remain unchanged.
-V2 is selected only by the final top-level manifest selector after a
-non-converting lexical dispatch scan.
-
-Producer CLI calls remain v1 by default. An explicit unreleased v2 build uses:
-
-```bash
-aelitium pack --input ai_output.json --out ./bundle \
-  --canonicalization aelitium_jcs_profile_v2
-```
-
-A valid v1 bundle and a valid v2 bundle are not comparable under any current
-basis: comparison reports `NOT_COMPARABLE`, basis `NONE`, reason
-`CANONICALIZATION_IDENTIFIER_MISMATCH`, and a null response relationship.
-
-The public deterministic corpus contains 44 adversarial vectors, and the
-contract demo writes separate verification, assurance, `CHANGED`, and
-`NOT_COMPARABLE` results without an API call:
-
-```bash
-python3 conformance/run.py
-python3 conformance/run_canonicalization.py
-python3 conformance/run_canonicalization_v2.py
-python3 conformance/run_legacy_v1_operational_policy.py
-python3 conformance/run_verifier_contract_phase2.py
-python3 examples/contract_demo/run_demo.py \
-  --output-dir /tmp/aelitium-contract-demo
-```
-
-The supplemental canonicalization runner checks 30 frozen source-byte vectors
-for the existing `json_sorted_keys_no_whitespace_utf8` identifier. It does not
-rename or replace that identifier. The cross-language-safe restricted subset
-requires Unicode-scalar strings throughout a bundle and excludes preserved
-non-finite legacy tokens and integer magnitudes above 640 digits. The unreleased
-Phase 2 capability policy closes the latter boundary: the restricted-portable
-and frozen-compatibility profiles refuse magnitudes above 640 digits
-operationally, while an exact named-runtime profile follows its declared
-bounded or unlimited integer-conversion rule. File, snapshot, traversal, and
-runtime resource limits still apply. This does not change the published v0.4.0
-package. Legacy acceptance of an escaped surrogate in an ignored manifest
-extension is documented outside the subset, and no complete clean-room verifier
-is claimed.
-
-The separate portable-v2 runner checks 114 frozen cases spanning RFC 8785
-serialization, the AELITIUM value profile, exact storage and hash inputs,
-manifest dispatch, legacy CPython integer-limit isolation, unknown extensions,
-and v1/v2 comparison refusal. The operational-policy and Phase 2 runners cover
-99 and 281 cases respectively, including strict signature behavior, trust
-precedence, and the nine-phase authored registry. Separate branch regressions
-cover executable v2 depth through 1024 and outer-result portability. Expected
-data are committed independently of the production decision path. No Go, Rust, or other second verifier is
-implemented or claimed.
-
-See [Verification result v1](docs/VERIFICATION_RESULT_V1.md),
-[assurance result v1](docs/ASSURANCE_RESULT_V1.md),
-[claim boundaries v1](docs/CLAIM_BOUNDARIES_V1.md), and
-[compare result v1](docs/COMPARE_RESULT_V1.md). These additions remain
-unreleased until a separately approved release process occurs.
-
----
-
-## How it works
-
-```
-API call (OpenAI / Anthropic / LiteLLM)
-      ↓
-capture adapter   ← records request_hash + response_hash in-process
-      ↓
-evidence bundle   ← canonical JSON + ai_manifest.json + binding_hash
-      ↓
-aelitium verify-bundle   ← STATUS=VALID / STATUS=INVALID
-aelitium compare         ← invocation-first comparison with visible basis
-```
-
-Each bundle contains a deterministic SHA-256 hash of its complete canonical
-payload and a manifest with timestamp and schema information. Capture bundles can
-also contain a `binding_hash`: a cryptographic commitment over the stored v1
-`request_hash` and `response_hash` pair. Anyone with the bundle can evaluate its
-internal consistency offline.
-
-Current binding construction:
-
-```text
-binding_hash = SHA256(
-  canonical({
-    "request_hash": request_hash,
-    "response_hash": response_hash
-  })
-)
-```
-
-Current binding verification checks consistency among stored v1 hash fields. It
-does not reconstruct source request or response material or establish that a
-real-world provider invocation produced a particular response.
-
-Verification reports exactly eight separate assurance dimensions:
-
-| Dimension | Reachable states in v0.4.0 |
-|---|---|
-| `payload_integrity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
-| `binding_field_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
-| `invocation_identity_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
-| `invocation_binding_consistency` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
-| `signature_validity` | `VALID`, `INVALID`, `ABSENT`, `NOT_EVALUATED` |
-| `trusted_signer_identity` | `VALID`, `UNESTABLISHED` |
-| `freshness` | `VALID`, `INVALID`, `UNESTABLISHED`, `NOT_EVALUATED` |
-| `authorization` | `NOT_EVALUATED` only |
-
-Unsigned and unbound bundles remain valid by default; `--require-signature` and
-`--require-binding` reject the corresponding absence. Bundled key material alone
-does not establish trusted signer identity — mathematical signature validity is a
-separate property. `trusted_signer_identity` remains `UNESTABLISHED` by default,
-and becomes `VALID` only when the caller explicitly supplies a local trust store
-(`--trust-store PATH`) containing the verified signing key's fingerprint.
-Authorization is not implemented in v0.4.0 and remains `NOT_EVALUATED` in every
-case.
-
-Freshness is `NOT_EVALUATED` by default. Activate it on `verify` or
-`verify-bundle` only by supplying both policy options:
-
-```bash
-aelitium verify-bundle ./evidence \
-  --freshness-max-age-seconds 300 \
-  --freshness-reference-time-utc 2026-03-04T00:05:00Z
-```
-
-The source is `ai_canonical.json.ts_utc`. `freshness = VALID` means only
-that this declared strict UTC whole-second timestamp lies within the
-inclusive verifier-supplied window. It is declared-time recency, not trusted
-historical time, provider execution, response causation, authorization, or
-legal/regulatory compliance. Invalid or incomplete policy gives
-`freshness = UNESTABLISHED`; stale, future, or malformed selected evidence
-time gives `freshness = INVALID`. See the normative
-[Freshness trust boundary](docs/TRUST_BOUNDARY.md#freshness-declared-time-recency).
-
----
-
-## Capture adapter (OpenAI / Anthropic / LiteLLM)
-
-No manual JSON. The capture adapter intercepts the API call and writes the bundle automatically.
-
-```python
-from openai import OpenAI
-from aelitium import capture_openai
-
-client = OpenAI()
-result = capture_openai(
-    client, "gpt-4o",
-    [{"role": "user", "content": "What is the capital of France?"}],
-    out_dir="./evidence",
-)
-print(result.ai_hash_sha256)  # hash of the complete validated canonical object
-```
-
-```bash
-aelitium verify-bundle ./evidence
-# STATUS=VALID rc=0
-# AI_HASH_SHA256=...
-# BINDING_HASH=...   ← commitment over the stored request/response hash pair
-```
-
-LiteLLM capture records calls at the LiteLLM boundary using the same v1 evidence
-contract. Repository tests cover the adapter boundary, not every provider route
-supported by LiteLLM:
-
-```python
-from aelitium import capture_litellm
-
-result = capture_litellm(
-    model="openai/gpt-4o",           # or "anthropic/...", "bedrock/...", etc.
-    messages=[{"role": "user", "content": "What is the capital of France?"}],
-    out_dir="./evidence",
-)
-print(result.ai_hash_sha256)
-```
-
-See [Capture layer](docs/INTEGRATION_CAPTURE.md) for Anthropic, LiteLLM, streaming, and signing.
-
-### Invocation assurance
-
-Capture bundles also store a versioned **invocation identity**
-(`aelitium-invocation-v1`) — the semantic model/messages/parameters emitted
-at the provider/SDK call boundary — and an **invocation binding**
-(`aelitium-invocation-binding-v1`) linking that identity's hash to the
-stored `response_hash`. The verifier reports both as separate,
-deterministic consistency dimensions: `invocation_identity_consistency` and
-`invocation_binding_consistency`.
-
-These are consistency assurances only — they establish that the stored
-fields are internally consistent with each other, not that a provider
-received or executed the invocation, nor that the response was historically
-caused by it. See [Invocation assurance](docs/INVOCATION_ASSURANCE.md) for
-the full claim boundary.
-
-`invocation_identity` is a separate, broader recorded identity when present.
-Historical v0.3.x `compare` does not use `invocation_identity` or
-`invocation_binding` as its comparison basis. The v0.4.0 contract uses a
-validated invocation identity only when validated invocation binding evidence
-is also present in both bundles.
-
----
-
-## Zero-config with LiteLLM
-
-Add one line. Keep using LiteLLM normally.
-
-```python
-from aelitium import enable_litellm
-import litellm
-
-enable_litellm(out_dir="./aelitium/bundles", verbose=True)
-
-response = litellm.completion(
-    model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Hello"}],
-)
-
-print(response.choices[0].message.content)
-# AELITIUM: bundle → ./aelitium/bundles/<binding_hash>  binding_hash=<hash>
-```
-
-Each successfully captured supported non-streaming call writes a bundle
-automatically. The LLM response is unchanged.
-
-**What you get:**
-
-- `request_hash` — v1 selected-field identity over recorded model/messages
-- `response_hash` — selected-field hash over recorded response content/model
-- `binding_hash` — commitment over the two stored hashes
-
-**Failure modes:**
-
-| Mode | Capture fails | Streaming |
-|---|---|---|
-| `strict=False` (default) | warning, response returned | pass-through |
-| `strict=True` | raises | raises |
-
-```python
-enable_litellm(strict=True)  # capture failure raises instead of warning
-```
-
-**Notes:**
-- Streaming calls (`stream=True`) are not captured — they pass through unchanged
-
-See [`examples/litellm_enable.py`](examples/litellm_enable.py) for a runnable example.
-
----
-
-## Compare validated recorded evidence
-
-```bash
-aelitium compare ./bundle_last_week ./bundle_today
-# STATUS=CHANGED rc=2
-# COMPARISON_CONTRACT=aelitium-compare-v1
-# COMPARISON_MODE=INVOCATION_FIRST
-# COMPARISON_BASIS=INVOCATION_IDENTITY_V1
-# COMPARISON_REASON=RESPONSE_HASH_DIFFERENT
-# INVOCATION_IDENTITY_HASH=SAME  a=62a1d3c4... b=62a1d3c4...
-# REQUEST_HASH=SAME    a=3f4a8c1d... b=3f4a8c1d...
-# RESPONSE_HASH=DIFFERENT  a=9b2e7f1a... b=c41d8e3b...
-```
-
-**Comparison basis in v0.3.x: `request_hash` v1.**
-
-That remains the historical v0.3.x contract. It can be selected explicitly in
-v0.4.0 with `--legacy-request-hash-v1`.
-
-**Comparison contract in v0.4.0: `aelitium-compare-v1`.** The default
-mode is `INVOCATION_FIRST`:
-
-- When both bundles have `invocation_identity_consistency=VALID` and
-  `invocation_binding_consistency=VALID`, the basis is
-  `INVOCATION_IDENTITY_V1`. Different invocation-identity hashes produce
-  `NOT_COMPARABLE`; matching hashes allow the selected response hashes to be
-  compared.
-- When one or both valid bundles lack that usable invocation evidence, the basis
-  is visibly downgraded to `REQUEST_HASH_V1_FALLBACK`, including asymmetric and
-  legacy-bundle comparisons.
-- `--require-invocation-evidence` selects `STRICT_INVOCATION` and disables the
-  fallback. Missing usable evidence produces `NOT_COMPARABLE`, basis `NONE`, and
-  required basis `INVOCATION_IDENTITY_V1`.
-- `--legacy-request-hash-v1` selects `LEGACY_REQUEST_HASH_V1` and basis
-  `REQUEST_HASH_V1_LEGACY`, reproducing the v0.3.x request-hash decisions.
-
-Every result exposes its comparison basis and reason. `UNCHANGED` means that,
-under the reported basis, the selected comparison identity hashes and selected
-response hashes match. `CHANGED` means the selected comparison identity hashes
-match and the selected response hashes differ. `NOT_COMPARABLE` makes no
-response-change conclusion because the selected identities differ or required
-evidence is unavailable. Invalid inputs report `INVALID_BUNDLE` before basis
-selection.
-
-`request_hash` is not a complete invocation identity. Its equality does not
-establish equality of every invocation parameter, mode, provider route, client
-configuration, or execution context. `CHANGED` does not by itself establish
-model drift or explain causation, and `UNCHANGED` does not establish that the
-full invocation configuration or model behavior was unchanged. Equality of
-validated `aelitium-invocation-v1` hashes applies only to the fields selected by
-that recorded identity format; it does not establish a complete real-world
-invocation. The displayed request and legacy binding hashes are diagnostic when
-the basis is `INVOCATION_IDENTITY_V1`; invocation-binding hashes are never the
-comparison identity.
-
-AELITIUM establishes internal consistency of recorded evidence on the validated
-surface. It does not establish provider execution, causation, full invocation
-completeness, model drift, output truth, authorization, or legal compliance.
-
-Run offline (no API key):
-
-```bash
-bash examples/drift_demo/run_demo.sh
-```
-
-Or with a real OpenAI key:
-
-```bash
-python examples/model_drift_detector.py
-```
-
----
-
-## Scan for unprotected LLM calls
-
-Find every LLM call in your codebase that isn't wrapped in a capture adapter:
-
-```bash
-aelitium scan ./src
-
-# LLM call sites detected: 12
-# Instrumented with capture adapter: 9
-#   ✓ openai — api/worker.py:14
-#   ✓ openai — api/worker.py:38
-# Missing evidence capture: 3
-#   ⚠ openai — jobs/batch.py:22
-#   ⚠ anthropic — agents/classifier.py:11
-#   ⚠ litellm — utils/fallback.py:7
-# Coverage: 9/12 (75%)
-# STATUS=INCOMPLETE rc=2
-```
-
-Add to CI/CD to enforce evidence coverage:
-
-```yaml
-- name: Check LLM evidence coverage
-  run: aelitium scan ./src
-```
-
-For CI-friendly key=value output:
-
-```bash
-aelitium scan ./src --ci
-# AELITIUM_SCAN_STATUS=INCOMPLETE
-# AELITIUM_SCAN_TOTAL=12
-# AELITIUM_SCAN_INSTRUMENTED=9
-# AELITIUM_SCAN_MISSING=3
-# AELITIUM_SCAN_COVERAGE=75
-```
-
----
-
-## Reproducibility
-
-The same complete validated input object produces the same hash in validated
-configurations:
-
-```bash
-bash scripts/verify_repro.sh
-# === RESULT: PASS ===
-# AI_HASH_SHA256=8b647717...
-```
-
-Validated on two independent machines (A + B) with identical hashes.
-
----
-
-## Why logs are not enough
-
-Tools like Langfuse or Helicone help you **debug LLM calls**.
-
-AELITIUM helps you **verify the internal consistency of recorded evidence** and,
-when compared with an independently trusted anchor, detect inconsistent changes.
-
-Logs can be edited. Changes inconsistent with a bundle's governed evidence are
-detectable; a self-consistent replacement requires an independently trusted anchor
-to distinguish it from the expected artifact.
-
-| Tool | What it does |
-|------|-------------|
-| Langfuse, Helicone, LangSmith | observability — traces, metrics, dashboards |
-| AELITIUM | verification — governed schema, canonicalization, and evidence consistency checks |
-
-These are complementary, not competing. AELITIUM adds governed evidence-consistency
-checks and can provide tamper evidence when expected hashes or signer identities
-are independently trusted.
-
----
-
-## When teams use AELITIUM
-
-- Compare selected response hashes across bundles with the same selected v1 request hash
-- Detect changes inconsistent with the recorded evidence contract and a trusted external anchor
-- Investigate incidents involving AI agents ("what recorded evidence is available for this interaction?")
-- Support Article 12-oriented record mapping and other audit evidence workflows;
-  AELITIUM does not determine legal or regulatory compliance
-- Enforce evidence coverage in CI/CD (`aelitium scan` exits 2 if LLM calls are uninstrumented)
-
----
-
-## CLI reference
-
-### `aelitium`
-
-| Command | Description |
-|---------|-------------|
-| `scan <path>` | Scan Python files for uninstrumented LLM call sites |
-| `compare <bundle_a> <bundle_b>` | Compare validated recorded hashes using an explicit invocation-first, fallback, strict, or legacy basis |
-| `verify-bundle <dir>` | Verify the eight-dimension assurance result, including invocation consistency and optional declared-time Freshness evaluation |
-| `pack --input <file> --out <dir>` | Generate canonical JSON + manifest; defaults to released v1 and accepts an explicit unreleased `--canonicalization` identifier |
-| `verify` with `--out=<dir>` | Verify the same eight-dimension assurance result for a pack output directory |
-| `validate --input <file>` | Validate against `ai_output_v1` schema |
-| `canonicalize --input <file>` | Print a deterministic hash; defaults to released v1 and accepts an explicit unreleased `--canonicalization` identifier |
-| `verify-receipt --receipt <file> --pubkey <file>` | Verify Ed25519 authority receipt offline |
-| `export --bundle <dir>` | Export a project-defined Article 12-oriented record mapping |
-
-Exit codes are command-specific: verification uses `0` for valid and `2` for
-invalid; comparison also uses `1` for not comparable. The CLI is designed for
-CI/CD pipelines.
-
----
-
-
-## Policy
-
-See [Messaging guardrails](docs/MESSAGING_GUARDRAILS.md) and the normative
-[Trust boundary](docs/TRUST_BOUNDARY.md) for the public-claim policy.
+Bundles retain their recorded content. Review prompts, outputs and metadata
+before sharing them. Hashes do not anonymize data.
 
 ## Documentation
 
-- [Verification result v1](docs/VERIFICATION_RESULT_V1.md) — implementation-aligned machine-readable bundle-verification operation
-- [Assurance result v1](docs/ASSURANCE_RESULT_V1.md) — exact eight dimensions, reachable states, bases, and invariants
-- [Claim boundaries v1](docs/CLAIM_BOUNDARIES_V1.md) — closed machine-readable non-claim vocabulary
-- [Compare result v1](docs/COMPARE_RESULT_V1.md) — hardened additive JSON representation of `aelitium-compare-v1`
-- [Contract demo](docs/CONTRACT_DEMO.md) — deterministic verification, assurance, `CHANGED`, and `NOT_COMPARABLE` walkthrough
-- [Independent verifier requirements](docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md) — research gate for a later clean-room implementation
-- [Canonicalization specification](docs/CANONICALIZATION_SPEC.md) — released-v1 preservation and the separately identified unreleased portable-v2 rules
-- [Cross-language canonicalization corpus](conformance/canonicalization/README.md) — 30 frozen positive and negative byte vectors
-- [Portable-v2 canonicalization corpus](conformance/canonicalization_v2/README.md) — 114 frozen serialization, profile, dispatch, integration, and compatibility vectors
-- [SCITT AI-Agent Action Receipt 01 mapping](docs/interop/SCITT_AI_AGENT_RECEIPT_01.md) — experimental exact-version analysis and implementation blocker
-- [External validation guide](docs/EXTERNAL_VALIDATION.md) — install v0.4.0 and exercise frozen evidence offline in about 10 minutes
-- [Interoperability landscape](docs/INTEROP_LANDSCAPE.md) — non-normative positioning across telemetry, receipts, protocols, frameworks, and policy
-- [Research candidates](docs/RESEARCH_CANDIDATES.md) — non-roadmap questions for possible future investigation
-- [Why AELITIUM](docs/WHY_AELITIUM.md) — problem statement, positioning, and what this is for
-- [Architecture](docs/ARCHITECTURE.md) — canonicalization pipeline, evidence bundle, module map
-- [Security model](docs/SECURITY_MODEL.md) — threats addressed, guarantees, limitations
-- [Trust boundary](docs/TRUST_BOUNDARY.md) — what AELITIUM establishes and what it does not
-- [5-minute demo](docs/AI_INTEGRITY_DEMO.md) — full walkthrough with expected output
-- [Python integration](docs/INTEGRATION_PYTHON.md) — drop-in helper + FastAPI example
-- [Capture layer](docs/INTEGRATION_CAPTURE.md) — OpenAI adapter, auto-packing, and same-process boundary guidance
-- [Invocation assurance](docs/INVOCATION_ASSURANCE.md) — versioned invocation identity/binding, their consistency dimensions, and explicit claim boundaries
-- [Engine contract](docs/ENGINE_CONTRACT.md) — legacy generic bundle compatibility contract
-- [Evidence Bundle Spec](docs/EVIDENCE_BUNDLE_SPEC.md) — conceptual, non-normative draft; it is not the current AI v1 runtime contract, and AELITIUM does not currently claim conformance or reference-implementation status
-- [Evidence Model](docs/EVIDENCE_MODEL.md) — conceptual model, emergent properties, and cross-layer positioning
-- [AAR evidenceRef mapping](docs/AAR_EVIDENCE_REF_MAPPING.md) — experimental, non-normative analysis of an unresolved AAR/AELITIUM reference mapping
-- [AAR interop](docs/interop/AAR_EVIDENCE_REF.md) — proposed `evidenceRef` shape and current encoding/artifact-hash gaps
+- [Documentation for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/tree/v0.4.0/docs)
+- [Capture adapters for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/INTEGRATION_CAPTURE.md)
+- [Comparison rules for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/CANONICAL_REQUEST.md)
+- [Contributing](CONTRIBUTING.md)
 
----
+This checkout also contains unpublished work. See the [changelog](CHANGELOG.md)
+and [repository documentation](docs/INDEX.md) for its history and version-specific guides.
 
-## Design principles
+## License and security
 
-- **Deterministic** — the same complete validated input object produces the same hash in validated configurations
-- **Offline-first** — verification never requires network access
-- **Fail-closed** — any verification error returns `rc=2`; no silent failures
-- **Auditable** — every pack includes a manifest with schema, timestamp, and hash
-- **Pipeline-friendly** — key/value output is parseable; supported successful paths also offer `--json`
-
----
-
-## Trust boundary
-
-AELITIUM v1 establishes **internal evidence consistency**, not truth or historical
-origin guarantees.
-
-**What current verification can establish:**
-- the payload satisfies `ai_output_v1` and the governed canonical byte contract
-- manifest identifiers and `ai_hash_sha256` are consistent with the canonical payload
-- stored v1 binding fields are consistent when present
-- stored invocation identity fields and their versioned hash are consistent when
-  present
-- stored invocation binding fields consistently link the invocation identity hash
-  to the recorded response hash when present
-- bundled Ed25519 material is mathematically valid when present
-- a verified signing key's fingerprint against an explicitly supplied
-  external trust store, when one is provided
-- declared-time recency of `ai_canonical.json.ts_utc` under an explicitly
-  supplied maximum age and UTC reference time
-
-**What current verification does not establish by itself:**
-- complete provider invocation identity or independent source reconstruction
-- provider execution or response causation from invocation consistency
-- historical non-modification without an independently trusted external anchor
-- trusted signer identity beyond an explicitly supplied external trust store
-- trusted historical time or authorization
-- that the output is correct, safe, or actually produced by a claimed model
-
-An explicit trust store makes `trusted_signer_identity` observable instead of
-always `UNESTABLISHED`. A caller cannot obtain `trusted_signer_identity=VALID`
-without supplying one, and cannot enforce membership without also passing
-`--require-trusted-signer`:
-
-```bash
-aelitium verify --out ./bundle --trust-store ./trust-store
-aelitium verify --out ./bundle \
-    --trust-store ./trust-store \
-    --require-trusted-signer
-```
-
-**Integrity ≠ completeness.** Internal consistency does not guarantee that all
-events were captured. Capture completeness depends on the integration layer — SDK
-wrapper, proxy, or observer. See [TRUST_BOUNDARY.md](docs/TRUST_BOUNDARY.md) for
-the full analysis.
-
-Stronger provenance — signing authorities, hardware-backed keys — is the direction of [P3](docs/RELEASE_AUTHORITY_SERVICE.md).
-
----
-
-## Record and audit workflow alignment
-
-AELITIUM provides technical evidence artifacts that can support record and audit
-workflows when used with appropriate external controls:
-
-| Framework | Requirement | How AELITIUM helps |
-|-----------|-------------|-------------------|
-| **EU AI Act — Article 12** | Record-keeping workflows | A project-defined Article 12-oriented mapping exposes selected bundle fields for downstream record workflows |
-| **SOC 2 — CC7** | System monitoring and integrity controls | Offline consistency checks can support controls when expected hashes or keys are independently trusted |
-| **ISO 42001** | AI management system auditability | Canonical bundles with schema versioning support third-party audits without infrastructure access |
-| **NIST AI RMF — MG 2.2** | Traceability of AI decisions and outputs | Each bundle records a validated payload, hash, timestamp fields, and optional signature material within the documented v1 scope |
-
-AELITIUM does not replace logging infrastructure. It adds **cryptographic
-evidence-consistency checks** to an existing pipeline — offline, without a server
-or blockchain. Its export is not an official regulatory format, a complete
-real-world record, a conformity assessment, certification, or a legal compliance
-determination.
-
----
-
-## License
-
-Apache-2.0. See [LICENSE](LICENSE).
+The published 0.4.0 package is distributed under [Apache-2.0](LICENSE).
+Retain the [notices](NOTICE). Report vulnerabilities through the [security policy](SECURITY.md).
+Any new distribution remains subject to provenance, ownership and release review.

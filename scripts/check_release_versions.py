@@ -81,7 +81,11 @@ def check_release_versions(root: Path) -> str:
     expected_literals = {
         "README.md": (
             f"`v{project_version}` is the current published GitHub and PyPI release",
-            f"`pip install aelitium` installs AELITIUM {project_version}",
+            f'python -m pip install "aelitium=={project_version}"',
+        ),
+        "README.fr.md": (
+            f"`v{project_version}` est la version actuellement publiée sur GitHub et PyPI",
+            f'python -m pip install "aelitium=={project_version}"',
         ),
         "CHANGELOG.md": (
             "## [Unreleased]",

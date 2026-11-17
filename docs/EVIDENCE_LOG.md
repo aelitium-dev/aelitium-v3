@@ -1,5 +1,14 @@
 # EVIDENCE LOG — AELITIUM
 
+> Public reading copy. Personal working-directory paths are replaced with
+> `<repository-root>`. Original SHA-256: 86a35b7ddd21c9aac095dc7fb394fa814f887b62a7b9afdf35ba1dcc89152a4a.
+> The original bytes are preserved in private evidence. These are historical
+> outputs, not a new execution record.
+>
+> The terminal recording `demo_35s.cast` is also a redacted reading copy.
+> Its original SHA-256 is `cd0b111719fec70432f55c11e74f3d378e6d0bf60768e47eda7fd27dcd7b064e`.
+> Its header, event timestamps and event order are unchanged.
+
 Scope: recorded outputs from executing the operational test matrix.
 Rule: only observed results are recorded. No inferred claims.
 
@@ -14,7 +23,7 @@ invocation identity or causation; see
 ## Environment
 
 - Machine: AELITIUM-DEV
-- Repo path: /home/catarina-aelitium/aelitium-v3
+- Repo path: <repository-root>
 - Commit: 164d4b22ba3392c59a24bef98d59b654d5e3aea0
 - Python version: Python 3.12.3
 - Date: 2026-03-18T21:52:16Z
@@ -324,7 +333,7 @@ Does not prove anything beyond signature failure.
 
 ### Machine A
 - Host: AELITIUM-DEV
-- Repo path: /home/catarina-aelitium/aelitium-v3-clean-a
+- Repo path: <repository-root>-clean-a
 - Commit: b2d80a1cf32470da2976a8a0075369b76376caf7
 - Python version: Python 3.12.3
 - Date (UTC): 2026-03-19T01:13:27Z

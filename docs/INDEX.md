@@ -1,59 +1,35 @@
-# AELITIUM — Index
+# AELITIUM documentation
 
-<!-- "v3" in the repo name denotes the third-generation product codebase,
-     not a package semantic-version major. Current published package: 0.4.0. -->
+Start with the [English README](../README.md) or the
+[French README](../README.fr.md) for installation, a synthetic offline example
+and the limits of verification.
 
-## Entry
-- docs/ENTRYPOINT.md
+## Published 0.4.0
 
-## Threat / Trust
-- docs/SYSTEM_MAP.md
+Use the documentation for the version you run. The links below point to the
+published 0.4.0 tag.
 
-## Documentation boundary
-- docs/DOCS_SYSTEM.md
+- [Documentation for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/tree/v0.4.0/docs)
+- [Supported features and limits](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/FEATURE_MATRIX.md)
+- [Capture adapters](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/INTEGRATION_CAPTURE.md)
+- [Comparison rules](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/CANONICAL_REQUEST.md)
 
-## External validation and interoperability
-- [External validation](EXTERNAL_VALIDATION.md)
-- [Interoperability landscape](INTEROP_LANDSCAPE.md)
-- [Research candidates](RESEARCH_CANDIDATES.md)
-- [Experimental SCITT AI-Agent Action Receipt 01 mapping](interop/SCITT_AI_AGENT_RECEIPT_01.md)
+## Project information
 
-## Verification, assurance, and comparison contracts
+- [Security reporting](../SECURITY.md)
+- [License](../LICENSE) and [notices](../NOTICE)
+- [Contributing](../CONTRIBUTING.md)
+- [Changelog](../CHANGELOG.md)
 
-- [Verifier protocol v1](VERIFIER_PROTOCOL_V1.md)
-- [Legacy v1 compatibility and operational policy v1](LEGACY_V1_COMPATIBILITY_AND_OPERATIONAL_POLICY_V1.md)
-- [Verifier tool-result v1 schema](../engine/schemas/verifier_tool_result_v1.json)
-- [Verification result v1](VERIFICATION_RESULT_V1.md)
-- [Assurance result v1](ASSURANCE_RESULT_V1.md)
-- [Claim boundaries v1](CLAIM_BOUNDARIES_V1.md)
-- [Compare result v1](COMPARE_RESULT_V1.md)
-- [Contract demo](CONTRACT_DEMO.md)
-- [Independent verifier requirements](INDEPENDENT_VERIFIER_REQUIREMENTS.md)
-- [Public conformance corpus](../conformance/README.md)
-- [Released-v1 cross-language canonicalization corpus](../conformance/canonicalization/README.md)
-- [Unreleased portable-v2 canonicalization corpus](../conformance/canonicalization_v2/README.md)
-- [Legacy-v1 capability and operational-policy corpus](../conformance/legacy_v1_operational_policy/README.md)
-- [Canonicalization specification](CANONICALIZATION_SPEC.md)
-- [Cross-language canonicalization audit](internal/CROSS_LANGUAGE_CANONICALIZATION_AUDIT.md)
-- [Approved portable-v2 design](internal/CANONICALIZATION_V2_PORTABLE_DESIGN.md)
+The checkout also contains work added after the release. Its presence does not
+make it part of the published package. Technical references retain their stated
+source baselines and status.
 
-## Offline verification
-- docs/OFFLINE_VERIFIER.md
-- scripts/offline_verify.sh
-- scripts/verify_release_zip.sh
+## Historical evidence
 
-## Authority / Release
-- docs/RELEASE_PROCESS.md (current release authority)
-- scripts/authority_status.sh
-- scripts/gate_release.sh
-- scripts/release_rc.sh
-- scripts/make_release_zip.sh
+The [evidence log](EVIDENCE_LOG.md) records historical validation. It is not a
+first-run recipe or approval to distribute operational data.
 
-## Engine
-- engine/cli.py (pack, verify, repro)
-- engine/pack.py
-- engine/verify.py (if present)
-- engine/repro.py (if present)
-
-## Governance evidence
-- docs/EVIDENCE_LOG.md
+Design and experimental records are outside this public navigation pending a
+distribution decision under D-066 HOLD. Removing links does not make tracked
+files private or remove earlier public copies.

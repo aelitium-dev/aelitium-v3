@@ -14,6 +14,7 @@ CHECKED_FILES = (
     "aelitium/__init__.py",
     ".github/workflows/publish-pypi.yml",
     "README.md",
+    "README.fr.md",
     "CHANGELOG.md",
     "SECURITY.md",
     "docs/ONE_PAGER.md",
@@ -104,6 +105,43 @@ class ReleaseVersionConsistencyTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 1)
         self.assertIn("docs/ONE_PAGER.md is missing", result.stderr)
+
+
+    def test_both_readmes_require_the_published_install_pin(self) -> None:
+        for relative_path in ("README.md", "README.fr.md"):
+            with self.subTest(path=relative_path), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_checked_files(root)
+                path = root / relative_path
+                text = path.read_text(encoding="utf-8")
+                original = f'python -m pip install "aelitium=={PROJECT_VERSION}"'
+                self.assertEqual(text.count(original), 1)
+                path.write_text(text.replace(original, "python -m pip install aelitium"),
+                                encoding="utf-8")
+                result = self._run_check(root)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(f"{relative_path} is missing release-version text", result.stderr)
+
+    def test_french_release_version_mismatch_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_checked_files(root)
+            path = root / "README.fr.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(text.replace(f"`v{PROJECT_VERSION}`", f"`v{MISMATCH_VERSION}`"),
+                            encoding="utf-8")
+            result = self._run_check(root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("README.fr.md is missing release-version text", result.stderr)
+
+    def test_missing_french_readme_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_checked_files(root)
+            (root / "README.fr.md").unlink()
+            result = self._run_check(root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("cannot read README.fr.md", result.stderr)
 
 
 if __name__ == "__main__":

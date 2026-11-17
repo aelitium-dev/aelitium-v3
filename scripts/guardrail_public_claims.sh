@@ -57,8 +57,10 @@ forbid_literal() {
   fi
 }
 
+# The short READMEs point to version-pinned documentation. Detailed contract
+# checks belong to existing technical references, not to installation prose.
 contract_docs=(
-  "README.md"
+  "docs/ASSURANCE_RESULT_V1.md"
   "docs/ONE_PAGER.md"
   "docs/TRUST_BOUNDARY.md"
   "docs/MESSAGING_GUARDRAILS.md"
@@ -89,8 +91,8 @@ for dimension in "${assurance_dimensions[@]}"; do
   require_literal "docs/AI_INTEGRITY_DEMO.md" "${dimension^^}="
 done
 
-require_literal "README.md" "--freshness-max-age-seconds"
-require_literal "README.md" "--freshness-reference-time-utc"
+require_literal "docs/TRUST_BOUNDARY.md" "--freshness-max-age-seconds"
+require_literal "docs/TRUST_BOUNDARY.md" "--freshness-reference-time-utc"
 for file in docs/TRUST_BOUNDARY.md docs/MESSAGING_GUARDRAILS.md; do
   require_literal "$file" "freshness_max_age_seconds"
   require_literal "$file" "freshness_reference_time_utc"
@@ -130,6 +132,20 @@ require_literal "docs/RELEASE_CHECKLIST_v0.2.0.md" "historical record, not curre
 require_literal "CHANGELOG.md" '**Release status.** The repository and package baseline is `0.3.0`, released'
 require_literal "FEATURE_MATRIX.md" "inventory of the released 0.4.0 surface"
 require_literal "README.md" '`v0.4.0` is the current published GitHub and PyPI release'
+for file in README.md README.fr.md; do
+  require_literal "$file" '[English](README.md) | [Français](README.fr.md)'
+  require_literal "$file" 'python -m pip install "aelitium==0.4.0"'
+  require_literal "$file" 'STATUS=VALID rc=0'
+  require_literal "$file" '(SECURITY.md)'
+  require_literal "$file" '(LICENSE)'
+  require_literal "$file" '(NOTICE)'
+done
+require_literal "README.md" 'It does not prove that an interaction occurred'
+require_literal "README.md" 'Hashes do not anonymize data.'
+require_literal "README.fr.md" '`v0.4.0` est la version actuellement publiée sur GitHub et PyPI'
+require_literal "README.fr.md" 'Ce résultat ne prouve ni que l’interaction a eu lieu'
+require_literal "README.fr.md" 'Les empreintes n’anonymisent pas les données.'
+
 require_literal "docs/ONE_PAGER.md" "Current published release: **v0.4.0**"
 require_literal "docs/RELEASE_PROCESS.md" 'current published release is `v0.4.0`'
 require_literal "SECURITY.md" '`v0.4.0` is the current'
@@ -143,7 +159,6 @@ forbid_literal "docs/ONE_PAGER.md" "development version: **0.4.0** (unreleased)"
 forbid_literal "CHANGELOG.md" "This remains unreleased"
 
 compare_contract_docs=(
-  "README.md"
   "docs/MODEL_BEHAVIOR_CHANGE.md"
   "docs/CANONICAL_REQUEST.md"
   "docs/INVOCATION_ASSURANCE.md"
@@ -159,7 +174,7 @@ done
 require_literal "docs/MESSAGING_GUARDRAILS.md" 'does not use `invocation_identity`'
 require_literal "CHANGELOG.md" "## [Unreleased]"
 require_literal "FEATURE_MATRIX.md" 'Comparison contract in v0.4.0: `aelitium-compare-v1`'
-for file in README.md docs/ONE_PAGER.md docs/TRUST_BOUNDARY.md docs/MESSAGING_GUARDRAILS.md; do
+for file in docs/ONE_PAGER.md docs/TRUST_BOUNDARY.md docs/MESSAGING_GUARDRAILS.md; do
   require_literal "$file" "Reachable states in v0.4.0"
 done
 require_literal "engine/ai_cli.py" 'COMPARISON_CONTRACT = "aelitium-compare-v1"'
@@ -168,7 +183,7 @@ require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_REQUEST_HASH_V1_FALLBACK = 
 require_literal "engine/ai_cli.py" 'COMPARISON_BASIS_REQUEST_HASH_V1_LEGACY = "REQUEST_HASH_V1_LEGACY"'
 require_literal "engine/ai_cli.py" '"--require-invocation-evidence"'
 require_literal "engine/ai_cli.py" '"--legacy-request-hash-v1"'
-for file in README.md docs/MODEL_BEHAVIOR_CHANGE.md docs/MESSAGING_GUARDRAILS.md docs/ONE_PAGER.md; do
+for file in docs/MODEL_BEHAVIOR_CHANGE.md docs/MESSAGING_GUARDRAILS.md docs/ONE_PAGER.md; do
   require_literal "$file" "AELITIUM establishes internal consistency of recorded"
 done
 forbid_literal "examples/drift_demo/generate_bundles.py" "simulates model drift"
@@ -225,10 +240,12 @@ require_literal "docs/CANONICALIZATION_SPEC.md" \
   "rather than narrowing v1"
 require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
   "aelitium_jcs_profile_v2"
-require_literal "README.md" \
-  '`json_sorted_keys_no_whitespace_utf8` and all v0.4.0 behavior remain unchanged.'
-require_literal "README.md" \
-  "No Go, Rust, or other second verifier is"
+require_literal "docs/CANONICALIZATION_SPEC.md" \
+  "The released v1 parser behavior remains unchanged."
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
+  "It changes no released v0.4.0 package bytes, evidence"
+require_literal "docs/INDEPENDENT_VERIFIER_REQUIREMENTS.md" \
+  "No second verifier is implemented on this branch."
 require_literal "FEATURE_MATRIX.md" \
   "Portable canonicalization v2 — UNRELEASED"
 require_literal "conformance/canonicalization_v2/README.md" \
@@ -395,6 +412,7 @@ while IFS= read -r file; do
 done < <(
   {
     [ -f README.md ] && printf '%s\n' README.md
+    [ -f README.fr.md ] && printf '%s\n' README.fr.md
     [ -f conformance/README.md ] && printf '%s\n' conformance/README.md
     [ -f conformance/manifest.json ] && printf '%s\n' conformance/manifest.json
     find conformance -mindepth 2 -maxdepth 2 -type f -name '*.json' \
