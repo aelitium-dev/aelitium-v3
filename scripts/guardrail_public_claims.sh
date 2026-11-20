@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Keep publication-state and version checks shared with the release audit.
+# A passing version check is required before the independent claims checks.
+python3 scripts/check_release_versions.py
+
 quarantine_files=(
   "docs/EVIDENCE_BUNDLE_SPEC.md"
   "docs/EVIDENCE_MODEL.md"
@@ -57,7 +61,7 @@ forbid_literal() {
   fi
 }
 
-# The short READMEs point to version-pinned documentation. Detailed contract
+# The short READMEs point to repository documentation. Detailed contract
 # checks belong to existing technical references, not to installation prose.
 contract_docs=(
   "docs/ASSURANCE_RESULT_V1.md"
@@ -131,7 +135,6 @@ forbid_literal "docs/RELEASE_PROCESS.md" 'an ambiguously named “merge SHA.”'
 require_literal "docs/RELEASE_CHECKLIST_v0.2.0.md" "historical record, not current release instructions"
 require_literal "CHANGELOG.md" '**Release status.** The repository and package baseline is `0.3.0`, released'
 require_literal "FEATURE_MATRIX.md" "inventory of the released 0.4.0 surface"
-require_literal "README.md" '`v0.4.0` is the current published GitHub and PyPI release'
 for file in README.md README.fr.md; do
   require_literal "$file" '[English](README.md) | [Français](README.fr.md)'
   require_literal "$file" 'python -m pip install "aelitium==0.4.0"'
@@ -142,13 +145,9 @@ for file in README.md README.fr.md; do
 done
 require_literal "README.md" 'It does not prove that an interaction occurred'
 require_literal "README.md" 'Hashes do not anonymize data.'
-require_literal "README.fr.md" '`v0.4.0` est la version actuellement publiée sur GitHub et PyPI'
 require_literal "README.fr.md" 'Ce résultat ne prouve ni que l’interaction a eu lieu'
 require_literal "README.fr.md" 'Les empreintes n’anonymisent pas les données.'
 
-require_literal "docs/ONE_PAGER.md" "Current published release: **v0.4.0**"
-require_literal "docs/RELEASE_PROCESS.md" 'current published release is `v0.4.0`'
-require_literal "SECURITY.md" '`v0.4.0` is the current'
 require_literal "SECURITY.md" '| 0.3.x   | Superseded (latest release: `v0.3.0`) | ❌ |'
 require_literal "CHANGELOG.md" "## [0.4.0] — 2026-09-03"
 require_literal "CHANGELOG.md" "### Breaking / Compatibility"

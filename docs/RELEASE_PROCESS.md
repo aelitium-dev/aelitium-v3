@@ -6,26 +6,29 @@ created manually. `.github/workflows/publish-pypi.yml` handles the separately
 authorized PyPI publication for a published, non-draft, non-prerelease `v0.4.0`
 GitHub Release.
 
-The source/package version is `0.4.0`. The current published release is `v0.4.0`,
-available through an annotated tag, a GitHub Release, and PyPI. The preceding
-current-line release is `v0.3.0`. The historical `0.2.4` upload used Twine.
+The source/package version is `0.4.0`. Version `0.4.0` is available on PyPI.
+There is no current GitHub release. Historical GitHub tags and releases have
+been removed. The preceding published current-line version was `0.3.0`.
+The historical `0.2.4` upload used Twine.
 
 ---
 
 ## Current release line and tag authority
 
-The current release line uses explicit `v0.x` tags. The latest published version
-is `v0.4.0`.
+The current release line uses explicit `v0.x` tags for separately authorized
+GitHub releases. The latest PyPI version is `0.4.0`; the historical GitHub
+release tags are no longer present.
 
 **Do not determine the current AELITIUM release using version-sorted tags.**
 
-The repository also contains a `v3.0.0-rc1` … `v3.0.0-rc11` namespace. Those tags
-pre-date the version-line reset and are *older* than every `v0.x` tag, but they
-sort **above** all of them under `git tag --sort=-v:refname`. Any tool or command
-that picks "the highest version tag" will therefore resolve to `v3.0.0-rc11`,
-which is not a release of the current line.
+The repository previously contained a `v3.0.0-rc1` … `v3.0.0-rc11` namespace.
+Those legacy tags pre-dated the version-line reset and were *older* than every
+`v0.x` tag, but sorted **above** them under `git tag --sort=-v:refname`.
+Choosing "the highest version tag" would therefore have selected
+`v3.0.0-rc11`, which was not a release of the current line.
 
-Use one of these instead:
+For a future separately authorized tagged release, inspect the intended line
+explicitly instead. These commands require available tags:
 
 ```bash
 git describe --tags                                    # nearest tag on this history
