@@ -25,7 +25,7 @@ GitHub release.
   of Python source.
 
 See the [feature matrix on main](https://github.com/aelitium-dev/aelitium-v3/blob/main/FEATURE_MATRIX.md),
-sections 1–13, for 0.4.0 support and limits. Later sections cover unpublished work.
+sections 1-13, for 0.4.0 support and limits. Later sections cover unpublished work.
 Capture and scanning do not cover every LLM call.
 
 ## Install
