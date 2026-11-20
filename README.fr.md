@@ -25,7 +25,7 @@ n’est actuellement disponible.
   statique du code Python.
 
 La [liste des fonctionnalités sur main](https://github.com/aelitium-dev/aelitium-v3/blob/main/FEATURE_MATRIX.md),
-sections 1–13, précise les chemins pris en charge et les limites de la version 0.4.0.
+sections 1-13, précise les chemins pris en charge et les limites de la version 0.4.0.
 Les sections suivantes décrivent des travaux non publiés. La capture et l’analyse
 statique ne couvrent pas tous les appels LLM.
 
