@@ -11,8 +11,9 @@ Teams can review a bundle supplied by another team or vendor without access to
 the production environment. Verification checks the supplied records, not whether
 the interaction actually occurred.
 
-This README covers **0.4.0**. According to the repository release record,
-`v0.4.0` is the current published GitHub and PyPI release.
+This README covers **0.4.0**, available on [PyPI](https://pypi.org/project/aelitium/0.4.0/).
+The historical GitHub tags and releases have been removed; there is no current
+GitHub release.
 
 ## Features
 
@@ -23,8 +24,9 @@ This README covers **0.4.0**. According to the repository release record,
 - Find supported large language model (LLM) call patterns through static analysis
   of Python source.
 
-See the [0.4.0 feature matrix](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/FEATURE_MATRIX.md)
-for supported paths and their limits. Capture and scanning do not cover every LLM call.
+See the [feature matrix on main](https://github.com/aelitium-dev/aelitium-v3/blob/main/FEATURE_MATRIX.md),
+sections 1-13, for 0.4.0 support and limits. Later sections cover unpublished work.
+Capture and scanning do not cover every LLM call.
 
 ## Install
 
@@ -87,9 +89,12 @@ before sharing them. Hashes do not anonymize data.
 
 ## Documentation
 
-- [Documentation for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/tree/v0.4.0/docs)
-- [Capture adapters for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/INTEGRATION_CAPTURE.md)
-- [Comparison rules for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/CANONICAL_REQUEST.md)
+The links below follow the current `main` branch. Consult each document's stated
+version and status when using the PyPI 0.4.0 package.
+
+- [Repository documentation (main)](https://github.com/aelitium-dev/aelitium-v3/tree/main/docs)
+- [Capture adapters (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/INTEGRATION_CAPTURE.md)
+- [Comparison rules for 0.4.0 (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/CANONICAL_REQUEST.md#impact-on-compare)
 - [Contributing](CONTRIBUTING.md)
 
 This checkout also contains unpublished work. See the [changelog](CHANGELOG.md)

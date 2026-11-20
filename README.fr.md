@@ -11,8 +11,9 @@ Une équipe peut examiner le bundle d’une autre équipe ou d’un fournisseur 
 accéder à son environnement de production. La vérification porte sur les
 enregistrements fournis. Elle ne prouve pas que l’interaction a eu lieu.
 
-Ce README présente la version **0.4.0**. D’après le registre des versions du dépôt,
-`v0.4.0` est la version actuellement publiée sur GitHub et PyPI.
+Ce README présente la version **0.4.0**, disponible sur [PyPI](https://pypi.org/project/aelitium/0.4.0/).
+Les tags et releases GitHub historiques ont été supprimés ; aucune release GitHub
+n’est actuellement disponible.
 
 ## Fonctionnalités
 
@@ -23,8 +24,10 @@ Ce README présente la version **0.4.0**. D’après le registre des versions du
 - Repérer les appels de modèles de langage (LLM) pris en charge par analyse
   statique du code Python.
 
-La [liste des fonctionnalités de la version 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/FEATURE_MATRIX.md)
-précise les limites. La capture et l’analyse statique ne couvrent pas tous les appels LLM.
+La [liste des fonctionnalités sur main](https://github.com/aelitium-dev/aelitium-v3/blob/main/FEATURE_MATRIX.md),
+sections 1-13, précise les chemins pris en charge et les limites de la version 0.4.0.
+Les sections suivantes décrivent des travaux non publiés. La capture et l’analyse
+statique ne couvrent pas tous les appels LLM.
 
 ## Installation
 
@@ -90,9 +93,12 @@ et les métadonnées avant de les partager. Les empreintes n’anonymisent pas l
 
 ## Documentation
 
-- [Documentation de la version 0.4.0](https://github.com/aelitium-dev/aelitium-v3/tree/v0.4.0/docs)
-- [Connecteurs de capture pour la version 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/INTEGRATION_CAPTURE.md)
-- [Règles de comparaison de la version 0.4.0](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/CANONICAL_REQUEST.md)
+Les liens ci-dessous suivent la branche `main` actuelle. Consultez la version et
+le statut indiqués dans chaque document pour utiliser le paquet PyPI 0.4.0.
+
+- [Documentation du dépôt (main)](https://github.com/aelitium-dev/aelitium-v3/tree/main/docs)
+- [Connecteurs de capture (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/INTEGRATION_CAPTURE.md)
+- [Règles de comparaison pour la version 0.4.0 (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/CANONICAL_REQUEST.md#impact-on-compare)
 - [Contribuer au projet](CONTRIBUTING.md)
 
 Ce dépôt contient aussi des travaux non publiés. Consultez le [journal des versions](CHANGELOG.md)

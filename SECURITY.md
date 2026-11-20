@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-Support is stated against **released, tagged versions**. `v0.4.0` is the current
-published release, so `0.4.x` is the supported line and `0.3.x` is superseded.
+Version `0.4.0` is available on PyPI. There is no current GitHub release.
+The historical GitHub tags and releases have been removed. The `0.4.x` line
+remains supported and `0.3.x` remains superseded.
 
 | Version | State | Released support |
 |---------|-------|------------------|
-| 0.4.x   | Current published line (latest release: `v0.4.0`) | ✅ |
+| 0.4.x   | Current supported line (latest PyPI release: `0.4.0`) | ✅ |
 | 0.3.x   | Superseded (latest release: `v0.3.0`) | ❌ |
 | 0.2.x   | Superseded (latest release: `v0.2.4`) | ❌ |
 | < 0.2   | Superseded | ❌ |
