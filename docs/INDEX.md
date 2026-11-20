@@ -4,15 +4,20 @@ Start with the [English README](../README.md) or the
 [French README](../README.fr.md) for installation, a synthetic offline example
 and the limits of verification.
 
-## Published 0.4.0
+## PyPI 0.4.0 and repository documentation
 
-Use the documentation for the version you run. The links below point to the
-published 0.4.0 tag.
+Version **0.4.0** is available on [PyPI](https://pypi.org/project/aelitium/0.4.0/).
+The historical GitHub tags and releases have been removed; there is no current
+GitHub release.
 
-- [Documentation for 0.4.0](https://github.com/aelitium-dev/aelitium-v3/tree/v0.4.0/docs)
-- [Supported features and limits](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/FEATURE_MATRIX.md)
-- [Capture adapters](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/INTEGRATION_CAPTURE.md)
-- [Comparison rules](https://github.com/aelitium-dev/aelitium-v3/blob/v0.4.0/docs/CANONICAL_REQUEST.md)
+The links below follow the current `main` branch. Consult each document's stated
+version and status when using the PyPI 0.4.0 package. Feature matrix sections 1–13
+cover 0.4.0; later sections cover unpublished work.
+
+- [Repository documentation (main)](https://github.com/aelitium-dev/aelitium-v3/tree/main/docs)
+- [Supported features and limits (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/FEATURE_MATRIX.md)
+- [Capture adapters (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/INTEGRATION_CAPTURE.md)
+- [Comparison rules for 0.4.0 (main)](https://github.com/aelitium-dev/aelitium-v3/blob/main/docs/CANONICAL_REQUEST.md#impact-on-compare)
 
 ## Project information
 
